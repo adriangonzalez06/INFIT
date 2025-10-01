@@ -1,12 +1,7 @@
+// Rutinas.js
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Modal,
-  TextInput,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -33,6 +28,7 @@ export default function Rutinas() {
     const nuevaRutina = {
       id: Date.now().toString(),
       nombre: nombreRutina.trim(),
+      ejercicios: [], // ← Aquí se guardarán los ejercicios
     };
 
     setRutinas((prev) => ({
@@ -44,8 +40,19 @@ export default function Rutinas() {
     setModalVisible(false);
   };
 
-  const handleEntrarRutina = (rutina) => {
-    navigation.navigate('PantallaRutina', { rutina });
+  const handleEntrarRutina = (rutina, grupoKey) => {
+    navigation.navigate('PantallaRutina', {
+      rutina,
+      grupoKey,
+      actualizarRutina: (rutinaActualizada) => {
+        setRutinas((prev) => ({
+          ...prev,
+          [grupoKey]: prev[grupoKey].map((r) =>
+            r.id === rutinaActualizada.id ? rutinaActualizada : r
+          ),
+        }));
+      },
+    });
   };
 
   const renderGrupo = (titulo, rutinasGrupo, grupoKey) => (
@@ -56,7 +63,7 @@ export default function Rutinas() {
           <TouchableOpacity
             key={rutina.id}
             style={styles.rutinaCard}
-            onPress={() => handleEntrarRutina(rutina)}
+            onPress={() => handleEntrarRutina(rutina, grupoKey)}
           >
             <Text style={styles.rutinaTexto}>{rutina.nombre}</Text>
           </TouchableOpacity>
@@ -73,12 +80,10 @@ export default function Rutinas() {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
-      </TouchableOpacity>
-
+    <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+      <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
+    </TouchableOpacity>
       <Text style={styles.title}>Mis rutinas</Text>
-
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {renderGrupo('Grupo muscular 1', rutinas.grupo1, 'grupo1')}
         {renderGrupo('Grupo muscular 2', rutinas.grupo2, 'grupo2')}
@@ -109,18 +114,13 @@ export default function Rutinas() {
   );
 }
 
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingTop: 60,
     paddingHorizontal: 20,
     backgroundColor: '#fff',
-  },
-  backButton: {
-    position: 'absolute',
-    top: 40,
-    left: 20,
-    zIndex: 1,
   },
   title: {
     fontSize: 24,

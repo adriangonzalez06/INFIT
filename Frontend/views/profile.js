@@ -141,9 +141,9 @@ const ProfileScreen = () => {
           </Modal>
         </View>
 
-        <TouchableOpacity style={styles.boton}>
-          <Text style={styles.botonTexto}>Guardar perfil</Text>
-        </TouchableOpacity>
+        <TouchableOpacity style={styles.boton} onPress={() => navigation.navigate('MainTabs')}>
+                    <Text style={styles.botonTexto}>Guardar</Text>
+                  </TouchableOpacity>
 
         <TouchableOpacity style={styles.boton} onPress={cerrarSesion}>
           <Text style={styles.botonTexto}>Cerrar sesión</Text>
