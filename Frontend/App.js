@@ -94,7 +94,7 @@ function LoginScreen({ navigation }) {
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => navigation.navigate('Registro')}>
-            <Text style={styles.link}>¿No tienes cuenta todavía? Regístrate</Text>
+            <Text style={styles.link}>borrame, soy una prueba</Text>
           </TouchableOpacity>
 
           <Text style={styles.dividerText}>─── O inicia sesión con ───</Text>
