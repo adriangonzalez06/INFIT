@@ -1,0 +1,70 @@
+openapi: 3.0.0
+info:
+  title: IN-FIT API
+  version: 1.0.0
+  description: Documentación de la API de usuarios
+
+servers:
+  - url: http://localhost:4000
+
+paths:
+  /api/usuarios:
+    get:
+      summary: Obtener todos los usuarios
+      responses:
+        '200':
+          description: Lista de usuarios
+    post:
+      summary: Crear un nuevo usuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id_user:
+                  type: number
+                nombre:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+                birthdate:
+                  type: string
+                  format: date
+                height:
+                  type: number
+                weight:
+                  type: number
+                goal:
+                  type: string
+      responses:
+        '200':
+          description: Usuario creado
+
+  /api/usuarios/{id}:
+    get:
+      summary: Obtener usuario por ID de MongoDB
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Usuario encontrado
+
+  /api/usuarios/buscar/{id_user}:
+    get:
+      summary: Obtener usuario por id_user
+      parameters:
+        - name: id_user
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        '200':
