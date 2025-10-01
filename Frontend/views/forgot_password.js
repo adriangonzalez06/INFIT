@@ -1,19 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-
-import {getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { initializeApp } from 'firebase/app';
-import { firebaseConfig } from '../firebaseConfig';
-import { initializeAuth, getReactNativePersistence, sendPasswordResetEmail} from 'firebase/auth';
-import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 export default function ForgotPassword({ navigation }) {
   const [email, setEmail] = useState('');
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app, {
-  persistence: getReactNativePersistence(ReactNativeAsyncStorage)
-  });
 
   const handlePasswordReset = () => {
     if (!email.trim()) {
@@ -21,27 +11,26 @@ export default function ForgotPassword({ navigation }) {
       return;
     }
 
-    try {
-        sendPasswordResetEmail(auth, email);
-      } catch (error) {
-        Alert.alert('Error', error.message);
-      }
-
     Alert.alert(
       '¡Listo!',
       `Te hemos enviado un enlace a:\n${email}`,
       [
         {
           text: 'OK',
-          onPress: () => navigation.navigate('ChangingPassword', { email }),
+          onPress: () => navigation.navigate('Verificacion', { email }),
         },
       ]
     );
+
     setEmail('');
   };
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
+      </TouchableOpacity>
+
       <Text style={styles.title}>Recuperar contraseña</Text>
       <Text style={styles.subtitle}>
         Introduce tu correo electrónico para recibir un enlace de recuperación.
@@ -68,6 +57,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 40,
+    left: 20,
+    zIndex: 1,
   },
   title: {
     fontSize: 22,

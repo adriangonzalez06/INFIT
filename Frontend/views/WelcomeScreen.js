@@ -1,98 +1,157 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import React, { useRef, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Pressable,
+  Animated,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
 export default function WelcomeScreen() {
   const navigation = useNavigation();
-
   const userName = 'Sergi';
+  const streakDays = 12;
+
+  const slideRutinas = useRef(new Animated.Value(100)).current;
+  const slideAlimentacion = useRef(new Animated.Value(100)).current;
+  const scaleRutinas = useRef(new Animated.Value(1)).current;
+  const scaleAlimentacion = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.stagger(200, [
+      Animated.spring(slideRutinas, {
+        toValue: 0,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAlimentacion, {
+        toValue: 0,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  const animateIn = (scale) => {
+    Animated.spring(scale, {
+      toValue: 0.97,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const animateOut = (scale) => {
+    Animated.spring(scale, {
+      toValue: 1,
+      friction: 3,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+  };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.greeting}>¡Hola, {userName}! </Text>
-      <Text style={styles.motivation}>Hoy es un gran día para entrenar </Text>
-
-      <Image
-        source={require('../assets/logos/logo_white_bg.svg')}
-        style={styles.logo}
-      />
-
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.navigate('ChatBot')}
-        >
-          <Text style={styles.buttonText}>Ir al Chatbot</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.navigate('Buscar')}
-        >
-          <Text style={styles.buttonText}>Buscar ejercicios</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.button, styles.profileButton]}
-          onPress={() => navigation.navigate('Perfil')}
-        >
-          <Text style={styles.buttonText}>Ver perfil</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.button, styles.profileButton]}
-          onPress={() => navigation.navigate('Ajustes')}
-        >
-          <Text style={styles.buttonText}>Ajustes</Text>
-        </TouchableOpacity>
+    <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.greeting}>¡Hola, {userName}!</Text>
+        <Text style={styles.subtitle}>Hoy es un gran día para entrenar</Text>
+        <View style={styles.divider}>
+          <Text style={styles.streakLabel}>Racha: {streakDays} días seguidos</Text>
+        </View>
       </View>
-    </View>
+
+      <Pressable
+        onPress={() => navigation.navigate('Rutinas')}
+        onPressIn={() => animateIn(scaleRutinas)}
+        onPressOut={() => animateOut(scaleRutinas)}
+      >
+        <Animated.View
+          style={[
+            styles.card,
+            { transform: [{ scale: scaleRutinas }, { translateY: slideRutinas }] },
+          ]}
+        >
+          <Text style={styles.cardTitle}>Rutinas de hoy ➔</Text>
+          <Text style={styles.cardDescription}>
+            Descubre tus ejercicios diarios y sigue tu progreso
+          </Text>
+        </Animated.View>
+      </Pressable>
+
+      <Pressable
+        onPress={() => navigation.navigate('Alimentacion')}
+        onPressIn={() => animateIn(scaleAlimentacion)}
+        onPressOut={() => animateOut(scaleAlimentacion)}
+      >
+        <Animated.View
+          style={[
+            styles.card,
+            { transform: [{ scale: scaleAlimentacion }, { translateY: slideAlimentacion }] },
+          ]}
+        >
+          <Text style={styles.cardTitle}>Alimentación recomendada ➔</Text>
+          <Text style={styles.cardDescription}>
+            Consulta tus comidas ideales para hoy
+          </Text>
+        </Animated.View>
+      </Pressable>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#dddbd1',
-    justifyContent: 'center',
+    backgroundColor: '#f4f4f4',
+    paddingVertical: 40,
+    paddingHorizontal: 25,
     alignItems: 'center',
-    paddingHorizontal: 30,
+  },
+  header: {
+    width: '100%',
+    marginBottom: 30,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+    alignItems: 'center',
   },
   greeting: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#ef2b2d',
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#555',
     marginBottom: 10,
     textAlign: 'center',
   },
-  motivation: {
+  divider: {
+    marginTop: 10,
+  },
+  streakLabel: {
     fontSize: 16,
-    color: '#333',
+    color: '#ef2b2d',
+    fontWeight: '600',
+  },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 25,
     marginBottom: 20,
-    textAlign: 'center',
-  },
-  logo: {
-    width: 160,
-    height: 160,
-    resizeMode: 'contain',
-    marginBottom: 30,
-  },
-  buttonContainer: {
     width: '100%',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  button: {
-    backgroundColor: '#ef2b2d',
-    paddingVertical: 15,
-    borderRadius: 10,
-    marginBottom: 15,
-    alignItems: 'center',
-  },
-  profileButton: {
-    backgroundColor: '#333',
-  },
-  buttonText: {
-    color: '#fff',
+  cardTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
-    fontSize: 16,
+    color: '#333',
+    marginBottom: 10,
+  },
+  cardDescription: {
+    fontSize: 15,
+    color: '#666',
   },
 });

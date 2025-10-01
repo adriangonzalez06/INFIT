@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 export default function VerificationScreen({ route, navigation }) {
   const [code, setCode] = useState(['', '', '', '', '']);
@@ -11,7 +12,6 @@ export default function VerificationScreen({ route, navigation }) {
       newCode[index] = text;
       setCode(newCode);
 
-      // Mover al siguiente input
       if (index < 4) {
         inputs.current[index + 1].focus();
       }
@@ -29,20 +29,22 @@ export default function VerificationScreen({ route, navigation }) {
       return;
     }
 
-    // Simulación de verificación
     Alert.alert('Verificado', `Código ingresado: ${fullCode}`);
-    navigation.navigate('Perfil'); // o a donde quieras llevar al usuario
+    navigation.navigate('Perfil');
   };
 
   const handleResend = () => {
     Alert.alert('Correo reenviado', 'Te hemos enviado un nuevo código.');
   };
 
-  // Simulación de email oculto
   const email = route?.params?.email || 'ex****@g********';
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
+      </TouchableOpacity>
+
       <Text style={styles.title}>Verificación</Text>
       <Text style={styles.subtitle}>
         Introduce el número de 5 dígitos que se ha enviado al correo {email}
@@ -80,6 +82,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 40,
+    left: 20,
+    zIndex: 1,
   },
   title: {
     fontSize: 22,

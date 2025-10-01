@@ -4,7 +4,7 @@ import { View, Text, StyleSheet } from 'react-native';
 const NombreDelComponente = () => {
   return (
     <View style={styles.container}>
-      <Text>Hola desde NombreDelComponente</Text>
+      <Text>Componente de chatbot (sin hacer)</Text>
     </View>
   );
 };

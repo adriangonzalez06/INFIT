@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  ScrollView,
   View,
   Text,
   TextInput,
@@ -9,7 +10,10 @@ import {
   Modal,
 } from 'react-native';
 
-const objetivos = ['Perder peso', 'Ganar músculo', 'Mantenerme'];
+import { useNavigation } from '@react-navigation/native';
+import { getAuth, signOut } from 'firebase/auth';
+
+const objetivos = ['Perder peso', 'Ganar músculo', 'Mantenerme', 'Ganar peso'];
 
 const ProfileScreen = () => {
   const [nombre, setNombre] = useState('');
@@ -20,17 +24,31 @@ const ProfileScreen = () => {
   const [objetivo, setObjetivo] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
 
+  const navigation = useNavigation();
+
   const validarFecha = (text) => {
-    setFechaNacimiento(text); // permite escribir libremente
+    setFechaNacimiento(text);
   };
 
+  const cerrarSesion = async () => {
+    try {
+      const auth = getAuth();
+      await signOut(auth);
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
+  };
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.scrollContainer}>
       <View style={styles.card}>
         <TouchableOpacity style={styles.avatarContainer}>
           <Image
-            source={require('../assets/avatar.png')} // usa tu imagen o una por defecto
+            source={require('../assets/avatar.png')}
             style={styles.avatar}
           />
           <Text style={styles.editPhoto}>Cambiar foto</Text>
@@ -49,7 +67,6 @@ const ProfileScreen = () => {
             onChangeText={validarFecha}
             placeholder="DD/MM/AAAA"
             keyboardType="numbers"
-
           />
         </View>
 
@@ -127,16 +144,23 @@ const ProfileScreen = () => {
         <TouchableOpacity style={styles.boton}>
           <Text style={styles.botonTexto}>Guardar perfil</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity style={styles.boton} onPress={cerrarSesion}>
+          <Text style={styles.botonTexto}>Cerrar sesión</Text>
+        </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#dddbd1', justifyContent: 'center' },
+  scrollContainer: {
+    paddingVertical: 40,
+    backgroundColor: '#dddbd1',
+  },
   card: {
     backgroundColor: '#fff',
-    margin: 20,
+    marginHorizontal: 20,
     borderRadius: 20,
     padding: 20,
     elevation: 5,

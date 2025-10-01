@@ -12,11 +12,6 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { getAuth, getReactNativePersistence, createUserWithEmailAndPassword } from 'firebase/auth';
-import { initializeApp } from 'firebase/app';
-import { firebaseConfig } from '../firebaseConfig';
-import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
-
 function RegisterScreen({ navigation }) {
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
@@ -25,40 +20,19 @@ function RegisterScreen({ navigation }) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
 
-  const app = React.useMemo(() => initializeApp(firebaseConfig), []);
-  const auth = React.useMemo(() => getAuth(app, {
-    persistence: getReactNativePersistence(ReactNativeAsyncStorage),
-  }), [app]);
-
   const handleRegister = () => {
     if (!nombre || !email || !usuario || !password || !confirmPassword) {
       setError('Por favor, completa todos los campos.');
-      alert('Por favor, completa todos los campos.');
       return;
     }
     if (password !== confirmPassword) {
       setError('Las contraseñas no coinciden.');
-      alert('Las contraseñas no coinciden.');
       return;
     }
 
-    //firebase create account
-    createUserWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => { 
-        console.log('Account created!');
-        const user = userCredential.user;
-        console.log(user)
-      })
-      .catch(error => {
-        console.error(error)
-        Alert.alert(error.message)
-      });
-
-
     setError('');
-    navigation.navigate('Bienvenida');
+    navigation.navigate('Verificacion');
   };
-
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -106,7 +80,7 @@ function RegisterScreen({ navigation }) {
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
-          <TouchableOpacity style={styles.boton} onPress={handleRegister}>
+          <TouchableOpacity style={styles.boton} onPress={() => navigation.navigate('Perfil')}>
             <Text style={styles.botonTexto}>Registrarse</Text>
           </TouchableOpacity>
 
