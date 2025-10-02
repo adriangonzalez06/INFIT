@@ -4,19 +4,28 @@ import { Image } from 'expo-image';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
-import MainTabs from './views/MainTabs';
+//firebase
+import { initializeApp } from 'firebase/app';
+import { firebaseConfig } from './firebaseConfig';
+import { getAuth, signInWithEmailAndPassword, getReactNativePersistence } from 'firebase/auth';
+
+//Login and register screens
 import ForgotPassword from './views/forgot_password';
 import VerificationScreen from './views/verificacion';
 import RegisterScreen from './views/RegisterScreen';
+import ChangingPassword from './views/changing_password';
+
+//Other screens
+import MainTabs from './views/MainTabs';
+import WelcomeScreen from './views/WelcomeScreen';
 import ProfileScreen from './views/profile';
+import SettingsScreen from './views/settings';
 import AlimentacionScreen from './views/Alimentacion'
 import RutinasScreen from './views/Rutinas'
-import { initializeApp } from 'firebase/app';
-import { firebaseConfig } from './firebaseConfig';
-import { getAuth, createUserWithEmailAndPassword, getReactNativePersistence } from 'firebase/auth';
-import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 import PantallaRutina from './views/PantallaRutina';
+
 const Stack = createNativeStackNavigator();
 
 function LoginScreen({ navigation }) {
@@ -28,18 +37,20 @@ function LoginScreen({ navigation }) {
     persistence: getReactNativePersistence(ReactNativeAsyncStorage),
   }), [app]);
 
-  const handleCreateAccount = () => {
-    createUserWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'MainTabs' }],
+    //sign in function
+    const handleLogin = () => {
+      signInWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+          console.log('Logged in!');
+          const user = userCredential.user;
+          console.log(user);
+          navigation.navigate("Bienvenida");
+        })
+        .catch(error => {
+          console.error(error)
+          Alert.alert(error.message)
         });
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-  };
+    }
 
   return (
     <View style={styles.container}>
@@ -53,7 +64,7 @@ function LoginScreen({ navigation }) {
             <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
               <Text style={styles.link}>¿Has olvidado tu contraseña?</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.boton} onPress={handleCreateAccount}>
+            <TouchableOpacity style={styles.boton} onPress={handleLogin}>
               <Text style={styles.botonTexto}>Siguiente</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => navigation.navigate('Registro')}>
@@ -72,16 +83,21 @@ export default function App() {
     <SafeAreaProvider>
       <NavigationContainer>
         <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
+          {/* auth screens */}
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Registro" component={RegisterScreen} />
           <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
           <Stack.Screen name="Verificacion" component={VerificationScreen} />
+          <Stack.Screen name="ChangingPassword" component={ChangingPassword} />
+
           <Stack.Screen name="MainTabs" component={MainTabs} />
+          {/* screens */}
           <Stack.Screen name="Perfil" component={ProfileScreen} />
           <Stack.Screen name="Alimentacion" component={AlimentacionScreen} />
           <Stack.Screen name="Rutinas" component={RutinasScreen} />
           <Stack.Screen name="PantallaRutina" component={PantallaRutina} />
-
+          <Stack.Screen name="Ajustes" component={SettingsScreen} />
+          <Stack.Screen name="Bienvenida" component={WelcomeScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

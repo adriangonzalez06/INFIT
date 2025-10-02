@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "expo": "^54.0.12",
     "express": "^5.1.0",
     "firebase": "^12.2.1",
     "firebase-admin": "^13.5.0",
