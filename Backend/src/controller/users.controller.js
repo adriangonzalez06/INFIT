@@ -8,11 +8,44 @@ usuarioCtl.getUsu = async (req, res) => {
 }
 
 usuarioCtl.createUsu = async (req, res) => {
-    const {nombre, email, password} = req.body;
-    const newUsuario = new Usuario({nombre: nombre, email: email, password: password, });
-    await newUsuario.save();    
-    res.json({message: 'Usuario creado'});
-}
+  try {
+    const {
+      id_user,
+      name,
+      email,
+      password,
+      photo,
+      birthday,
+      sex,
+      height,
+      weight,
+      goal
+    } = req.body;
+
+    const saltRounds = 10;
+    const hasedPassword = await bcrypt.hash(password, saltRounds);
+
+    const newUsuario = new Usuario({
+      id_user,
+      name,
+      email,
+      password: hasedPassword,
+      photo,
+      birthday,
+      sex,
+      height,
+      weight,
+      goal
+    });
+
+    await newUsuario.save();
+    res.status(201).json({ message: 'Usuario creado correctamente', usuario: newUsuario });
+  } catch (error) {
+    console.error('Error al crear usuario:', error);
+    res.status(500).json({ message: 'Error al crear el usuario', error });
+  }
+};
+
 
 usuarioCtl.getUsuById = async (req, res) => {
     const usuario = await Usuario.findById(req.params.id);

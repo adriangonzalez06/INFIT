@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "3752609566",
+    "project_id": "in-fit-945de",
+    "storage_bucket": "in-fit-945de.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:3752609566:android:500c40210cf609477b6b0f",
+        "android_client_info": {
+          "package_name": "com.coboliers.infit"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "3752609566-9mp2qkbqfonav8t7u5pf757jdorgernd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCz1krYTXRP5Td0jfFSelt5eASqT-s8SD0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "3752609566-9mp2qkbqfonav8t7u5pf757jdorgernd.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
