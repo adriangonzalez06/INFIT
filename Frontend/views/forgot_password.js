@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 export default function ForgotPassword({ navigation }) {
   const [email, setEmail] = useState('');
@@ -21,12 +22,15 @@ export default function ForgotPassword({ navigation }) {
       ]
     );
 
-
     setEmail('');
   };
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
+      </TouchableOpacity>
+
       <Text style={styles.title}>Recuperar contraseña</Text>
       <Text style={styles.subtitle}>
         Introduce tu correo electrónico para recibir un enlace de recuperación.
@@ -53,6 +57,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 40,
+    left: 20,
+    zIndex: 1,
   },
   title: {
     fontSize: 22,

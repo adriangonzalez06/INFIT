@@ -1,6 +1,7 @@
 import axios from 'axios';
 import React, { useState } from 'react';
 import {
+  ScrollView,
   View,
   Text,
   TextInput,
@@ -9,66 +10,68 @@ import {
   Image,
   Modal,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { getAuth, signOut } from 'firebase/auth';
 
 const objetivos = ['Perder peso', 'Ganar músculo', 'Mantenerme'];
 
 const ProfileScreen = () => {
+  const navigation = useNavigation();
 
-const valorInicial = {
-nombre: '',
-fechadenacimiento: '',
-sexo: '',
-peso: '',
-altura: '',
-objetivo: '',
-correo: '',
-contraseña: ''
-};
+  const valorInicial = {
+    nombre: '',
+    fechadenacimiento: '',
+    sexo: '',
+    peso: '',
+    altura: '',
+    objetivo: '',
+    correo: '',
+    contraseña: '',
+  };
 
-const [usuario, setUsuario] = useState(valorInicial);
-
-const capturarDatos = (campo) => (valor) => {
-    setUsuario((prevUsuario) => ({ ...prevUsuario, [campo]: valor}));
-};
-
-const guardarDatos = async () => {
-
-try {
-    console.log('Datos del usaurio', usuario);
-
-    //Crear la logica para la peticion POST
-
-    const newUser = {
-        nombre: usuario.nombre,
-        fechadenacimiento: usuario.fechadenacimiento,
-        sexo:usuario.sexo,
-        peso: usuario.peso,
-        altura: usuario.altura,
-        objetivo: usuario.objetivo
-
-    };
-
-
-
-    await axios.post('http://10.0.2.2:8082/api/usuarios', newUser);
-
-    setUsuario({...valorInicial});
-
-} catch(error){
-    console.error('Error al guardar los datos:', error.message);
-};
-};
-
-
+  const [usuario, setUsuario] = useState(valorInicial);
   const [modalVisible, setModalVisible] = useState(false);
 
+  const capturarDatos = (campo) => (valor) => {
+    setUsuario((prevUsuario) => ({ ...prevUsuario, [campo]: valor }));
+  };
+
+  const guardarDatos = async () => {
+    try {
+      console.log('Datos del usuario:', usuario);
+
+      const newUser = {
+        nombre: usuario.nombre,
+        fechadenacimiento: usuario.fechadenacimiento,
+        sexo: usuario.sexo,
+        peso: usuario.peso,
+        altura: usuario.altura,
+        objetivo: usuario.objetivo,
+      };
+
+      await axios.post('http://10.0.2.2:8082/api/usuarios', newUser);
+      setUsuario({ ...valorInicial });
+      navigation.navigate('MainTabs');
+    } catch (error) {
+      console.error('Error al guardar los datos:', error.message);
+    }
+  };
+
+  const cerrarSesion = async () => {
+    try {
+      await signOut(getAuth());
+      navigation.navigate('Login');
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error.message);
+    }
+  };
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.scrollContainer}>
       <View style={styles.card}>
         <TouchableOpacity style={styles.avatarContainer}>
           <Image
-            source={require('../assets/avatar.png')} // usa tu imagen o una por defecto
+            source={require('../assets/avatar.png')}
             style={styles.avatar}
           />
           <Text style={styles.editPhoto}>Cambiar foto</Text>
@@ -76,7 +79,11 @@ try {
 
         <View style={styles.field}>
           <Text style={styles.label}>Nombre</Text>
-          <TextInput style={styles.input} value={usuario.nombre} onChangeText={capturarDatos('nombre')} />
+          <TextInput
+            style={styles.input}
+            value={usuario.nombre}
+            onChangeText={capturarDatos('nombre')}
+          />
         </View>
 
         <View style={styles.field}>
@@ -86,23 +93,28 @@ try {
             value={usuario.fechadenacimiento}
             onChangeText={capturarDatos('fechadenacimiento')}
             placeholder="DD/MM/AAAA"
-            keyboardType="numbers"
-
+            keyboardType="default"
           />
         </View>
 
-          <Text style={styles.label}>Sexo</Text>
         <View style={styles.field}>
+          <Text style={styles.label}>Sexo</Text>
           <View style={styles.sexoContainer}>
             <TouchableOpacity
-              style={[styles.sexoBtn, usuario.sexo === 'Hombre' && styles.sexoActivo]}
-              onPress={() => setUsuario({ ...usuario, sexo: 'Hombre'})}
+              style={[
+                styles.sexoBtn,
+                usuario.sexo === 'Hombre' && styles.sexoActivo,
+              ]}
+              onPress={() => setUsuario({ ...usuario, sexo: 'Hombre' })}
             >
               <Text>Hombre</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.sexoBtn, usuario.sexo === 'Mujer' && styles.sexoActivo]}
-              onPress={() => setUsuario({ ...usuario, sexo: 'Mujer'})}
+              style={[
+                styles.sexoBtn,
+                usuario.sexo === 'Mujer' && styles.sexoActivo,
+              ]}
+              onPress={() => setUsuario({ ...usuario, sexo: 'Mujer' })}
             >
               <Text>Mujer</Text>
             </TouchableOpacity>
@@ -150,7 +162,7 @@ try {
                     key={item}
                     style={styles.modalOption}
                     onPress={() => {
-                      setUsuario({ ...usuario, objetivo: item});
+                      setUsuario({ ...usuario, objetivo: item });
                       setModalVisible(false);
                     }}
                   >
@@ -163,18 +175,25 @@ try {
         </View>
 
         <TouchableOpacity style={styles.boton} onPress={guardarDatos}>
-          <Text style={styles.botonTexto}>Guardar perfil</Text>
+          <Text style={styles.botonTexto}>Guardar</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.boton} onPress={cerrarSesion}>
+          <Text style={styles.botonTexto}>Cerrar sesión</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#dddbd1', justifyContent: 'center' },
+  scrollContainer: {
+    paddingVertical: 40,
+    backgroundColor: '#dddbd1',
+  },
   card: {
     backgroundColor: '#fff',
-    margin: 20,
+    marginHorizontal: 20,
     borderRadius: 20,
     padding: 20,
     elevation: 5,

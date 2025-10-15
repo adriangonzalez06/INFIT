@@ -1,5 +1,5 @@
 // App.js
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -8,6 +8,8 @@ import {
   TouchableOpacity,
   ScrollView,
   StatusBar,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
@@ -18,6 +20,11 @@ import MainTabs from './views/MainTabs';
 import ForgotPassword from './views/forgot_password';
 import VerificationScreen from './views/verificacion';
 import RegisterScreen from './views/RegisterScreen';
+import ProfileScreen from './views/profile';
+import AlimentacionScreen from './views/Alimentacion';
+import RutinasScreen from './views/Rutinas';
+import PantallaRutina from './views/PantallaRutina';
+
 import { initializeApp } from 'firebase/app';
 import { firebaseConfig } from './firebaseConfig';
 import {
@@ -30,37 +37,38 @@ import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 const Stack = createNativeStackNavigator();
 
 function LoginScreen({ navigation }) {
-  const [email, setEmail] = React.useState('');
-  const [password, setPassword] = React.useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
-  const app = React.useMemo(() => initializeApp(firebaseConfig), []);
-  const auth = React.useMemo(() => getAuth(app, {
-    persistence: getReactNativePersistence(ReactNativeAsyncStorage),
-  }), [app]);
+  const app = useMemo(() => initializeApp(firebaseConfig), []);
+  const auth = useMemo(() =>
+    getAuth(app, {
+      persistence: getReactNativePersistence(ReactNativeAsyncStorage),
+    }), [app]);
 
-  const handleCreateAccount = () => {
-    createUserWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => {
-        console.log('Account created!');
-        const user = userCredential.user;
-        console.log(user);
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'MainTabs' }],
-        });
-      })
-      .catch((error) => {
-        console.error(error);
+  const handleCreateAccount = async () => {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      console.log('Account created!', userCredential.user);
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'MainTabs' }],
       });
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
       <StatusBar style="auto" />
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <Image
           style={styles.logo}
-          source={require('./assets/logos/logo_white_bg.svg')}
+          source={require('./assets/logos/logo_white_bg.png')} // ✅ Usa PNG o JPG
         />
         <SafeAreaView>
           <TextInput
@@ -92,7 +100,7 @@ function LoginScreen({ navigation }) {
           <Text style={styles.dividerText}>─── O inicia sesión con ───</Text>
         </SafeAreaView>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -106,6 +114,10 @@ export default function App() {
           <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
           <Stack.Screen name="Verificacion" component={VerificationScreen} />
           <Stack.Screen name="MainTabs" component={MainTabs} />
+          <Stack.Screen name="Perfil" component={ProfileScreen} />
+          <Stack.Screen name="Alimentacion" component={AlimentacionScreen} />
+          <Stack.Screen name="Rutinas" component={RutinasScreen} />
+          <Stack.Screen name="PantallaRutina" component={PantallaRutina} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

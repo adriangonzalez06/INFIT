@@ -80,7 +80,7 @@ function RegisterScreen({ navigation }) {
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
-          <TouchableOpacity style={styles.boton} onPress={() => navigation.navigate('Bienvenida')}>
+          <TouchableOpacity style={styles.boton} onPress={() => navigation.navigate('Perfil')}>
             <Text style={styles.botonTexto}>Registrarse</Text>
           </TouchableOpacity>
 
