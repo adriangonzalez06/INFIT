@@ -15,6 +15,7 @@ import { Image } from 'expo-image';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
 
 import MainTabs from './views/MainTabs';
 import ForgotPassword from './views/forgot_password';
@@ -24,6 +25,7 @@ import ProfileScreen from './views/profile';
 import AlimentacionScreen from './views/Alimentacion';
 import RutinasScreen from './views/Rutinas';
 import PantallaRutina from './views/PantallaRutina';
+import RuedaSettings from './views/RuedaSettings';
 
 import { initializeApp } from 'firebase/app';
 import { firebaseConfig } from './firebaseConfig';
@@ -68,7 +70,7 @@ function LoginScreen({ navigation }) {
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <Image
           style={styles.logo}
-          source={require('./assets/logos/logo_white_bg.png')} // ✅ Usa PNG o JPG
+          source={require('./assets/logos/logo_white_bg.svg')}
         />
         <SafeAreaView>
           <TextInput
@@ -108,16 +110,75 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <NavigationContainer>
-        <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Registro" component={RegisterScreen} />
-          <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
-          <Stack.Screen name="Verificacion" component={VerificationScreen} />
-          <Stack.Screen name="MainTabs" component={MainTabs} />
-          <Stack.Screen name="Perfil" component={ProfileScreen} />
-          <Stack.Screen name="Alimentacion" component={AlimentacionScreen} />
-          <Stack.Screen name="Rutinas" component={RutinasScreen} />
-          <Stack.Screen name="PantallaRutina" component={PantallaRutina} />
+        <Stack.Navigator initialRouteName="Login">
+          {/* Pantallas sin header */}
+          <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="Registro" component={RegisterScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPassword} options={{ headerShown: false }} />
+          <Stack.Screen name="Verificacion" component={VerificationScreen} options={{ headerShown: false }} />
+
+          {/* Pantallas protegidas con icono de ajustes */}
+          <Stack.Screen
+            name="MainTabs"
+            component={MainTabs}
+            options={({ navigation }) => ({
+              headerShown: true,
+              headerRight: () => (
+                <TouchableOpacity onPress={() => navigation.navigate('Ajustes')} style={{ marginRight: 15 }}>
+                  <Ionicons name="settings-outline" size={24} color="#333" />
+                </TouchableOpacity>
+              ),
+            })}
+          />
+          <Stack.Screen
+            name="Perfil"
+            component={ProfileScreen}
+            options={({ navigation }) => ({
+              headerShown: true,
+              headerRight: () => (
+                <TouchableOpacity onPress={() => navigation.navigate('Ajustes')} style={{ marginRight: 15 }}>
+                  <Ionicons name="settings-outline" size={24} color="#333" />
+                </TouchableOpacity>
+              ),
+            })}
+          />
+          <Stack.Screen
+            name="Alimentacion"
+            component={AlimentacionScreen}
+            options={({ navigation }) => ({
+              headerShown: true,
+              headerRight: () => (
+                <TouchableOpacity onPress={() => navigation.navigate('Ajustes')} style={{ marginRight: 15 }}>
+                  <Ionicons name="settings-outline" size={24} color="#333" />
+                </TouchableOpacity>
+              ),
+            })}
+          />
+          <Stack.Screen
+            name="Rutinas"
+            component={RutinasScreen}
+            options={({ navigation }) => ({
+              headerShown: true,
+              headerRight: () => (
+                <TouchableOpacity onPress={() => navigation.navigate('Ajustes')} style={{ marginRight: 15 }}>
+                  <Ionicons name="settings-outline" size={24} color="#333" />
+                </TouchableOpacity>
+              ),
+            })}
+          />
+          <Stack.Screen
+            name="PantallaRutina"
+            component={PantallaRutina}
+            options={({ navigation }) => ({
+              headerShown: true,
+              headerRight: () => (
+                <TouchableOpacity onPress={() => navigation.navigate('Ajustes')} style={{ marginRight: 15 }}>
+                  <Ionicons name="settings-outline" size={24} color="#333" />
+                </TouchableOpacity>
+              ),
+            })}
+          />
+          <Stack.Screen name="Ajustes" component={RuedaSettings} options={{ headerShown: true }} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
