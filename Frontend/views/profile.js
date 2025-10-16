@@ -47,6 +47,8 @@ const ProfileScreen = () => {
         peso: usuario.peso,
         altura: usuario.altura,
         objetivo: usuario.objetivo,
+        correo: usuario.correo,
+        contraseña: usuario.contraseña,
       };
 
       await axios.post('http://10.0.2.2:8082/api/usuarios', newUser);
@@ -172,6 +174,28 @@ const ProfileScreen = () => {
               </View>
             </View>
           </Modal>
+        </View>
+
+        <View style={styles.field}>
+          <Text style={styles.label}>Correo electrónico</Text>
+          <TextInput
+            style={styles.input}
+            value={usuario.correo}
+            onChangeText={capturarDatos('correo')}
+            keyboardType="email-address"
+            placeholder="ejemplo@correo.com"
+          />
+        </View>
+
+        <View style={styles.field}>
+          <Text style={styles.label}>Contraseña</Text>
+          <TextInput
+            style={styles.input}
+            value={usuario.contraseña}
+            onChangeText={capturarDatos('contraseña')}
+            secureTextEntry
+            placeholder="••••••••"
+          />
         </View>
 
         <TouchableOpacity style={styles.boton} onPress={guardarDatos}>

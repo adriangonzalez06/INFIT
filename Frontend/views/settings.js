@@ -20,6 +20,23 @@ export default function SettingsScreen() {
             //funcion
           }}
           style={({pressed}) => [{backgroundColor: pressed ? '#fdd' : 'white',}, styles.optionBorder ]}>
+          <Text>Unidades</Text>
+      </Pressable>
+
+      <Pressable
+          onPress={() => {
+            //funcion
+          }}
+          style={({pressed}) => [{backgroundColor: pressed ? '#fdd' : 'white',}, styles.optionBorder ]}>
+          <Text>Idioma</Text>
+      </Pressable>
+
+
+      <Pressable
+          onPress={() => {
+            //funcion
+          }}
+          style={({pressed}) => [{backgroundColor: pressed ? '#fdd' : 'white',}, styles.optionBorder ]}>
           <Text>Cambiar contraseña</Text>
       </Pressable>
 
@@ -36,7 +53,31 @@ export default function SettingsScreen() {
             //funcion
           }}
           style={({pressed}) => [{backgroundColor: pressed ? '#fdd' : 'white',}, styles.optionBorder ]}>
-          <Text>Idioma</Text>
+          <Text>Valóranos</Text>
+      </Pressable>
+
+      <Pressable
+          onPress={() => {
+            //funcion
+          }}
+          style={({pressed}) => [{backgroundColor: pressed ? '#fdd' : 'white',}, styles.optionBorder ]}>
+          <Text>Borrar caché</Text>
+      </Pressable>
+
+      <Pressable
+          onPress={() => {
+            //funcion
+          }}
+          style={({pressed}) => [{backgroundColor: pressed ? '#fdd' : 'white',}, styles.optionBorder ]}>
+          <Text>Borrar todos los datos</Text>
+      </Pressable>
+
+      <Pressable
+          onPress={() => {
+            //funcion
+          }}
+          style={({pressed}) => [{backgroundColor: pressed ? '#fdd' : 'white',}, styles.optionBorder ]}>
+          <Text>Política de privacidad</Text>
       </Pressable>
 
     </View>

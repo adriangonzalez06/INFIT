@@ -138,11 +138,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 25,
     marginBottom: 20,
-    width: '100%',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
+    textAlign: 'center',
   },
   cardTitle: {
     fontSize: 20,

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,9 +8,25 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import axios from 'axios';
+
+import {
+  getAuth,
+  getReactNativePersistence,
+  createUserWithEmailAndPassword,
+} from 'firebase/auth';
+import { initializeApp, getApps } from 'firebase/app';
+import { firebaseConfig } from '../firebaseConfig';
+import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
+
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+const auth = getAuth(app, {
+  persistence: getReactNativePersistence(ReactNativeAsyncStorage),
+});
 
 function RegisterScreen({ navigation }) {
   const [nombre, setNombre] = useState('');
@@ -20,18 +36,40 @@ function RegisterScreen({ navigation }) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (!nombre || !email || !usuario || !password || !confirmPassword) {
       setError('Por favor, completa todos los campos.');
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden.');
+      Alert.alert('Error', 'Por favor, completa todos los campos.');
       return;
     }
 
-    setError('');
-    navigation.navigate('Verificacion');
+    if (password !== confirmPassword) {
+      setError('Las contraseñas no coinciden.');
+      Alert.alert('Error', 'Las contraseñas no coinciden.');
+      return;
+    }
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
+      const user = userCredential.user;
+      console.log('Cuenta creada en Firebase:', user.uid);
+
+      const newUser = {
+        nombre,
+        correo: email.trim(),
+        usuario,
+        contraseña: password,
+      };
+
+      await axios.post('http://10.0.2.2:8082/api/usuarios', newUser);
+      console.log('Datos guardados en la base de datos');
+
+      setError('');
+      navigation.navigate('Login');
+    } catch (error) {
+      console.error('Error al registrar:', error.message);
+      Alert.alert('Error', error.message);
+    }
   };
 
   return (
@@ -56,6 +94,7 @@ function RegisterScreen({ navigation }) {
             keyboardType="email-address"
             value={email}
             onChangeText={setEmail}
+            autoCapitalize="none"
           />
           <TextInput
             style={styles.input}
@@ -80,7 +119,7 @@ function RegisterScreen({ navigation }) {
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
-          <TouchableOpacity style={styles.boton} onPress={() => navigation.navigate('Perfil')}>
+          <TouchableOpacity style={styles.boton} onPress={handleRegister}>
             <Text style={styles.botonTexto}>Registrarse</Text>
           </TouchableOpacity>
 
@@ -150,3 +189,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+``

@@ -1,15 +1,14 @@
-// App.js
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
   Text,
-  View,
   TextInput,
   TouchableOpacity,
   ScrollView,
   StatusBar,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
@@ -17,48 +16,57 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 
+import WelcomeScreen from './views/WelcomeScreen';
+import ProfileScreen from './views/profile';
+import SettingsScreen from './views/settings';
 import MainTabs from './views/MainTabs';
 import ForgotPassword from './views/forgot_password';
 import VerificationScreen from './views/verificacion';
 import RegisterScreen from './views/RegisterScreen';
-import ProfileScreen from './views/profile';
 import AlimentacionScreen from './views/Alimentacion';
 import RutinasScreen from './views/Rutinas';
 import PantallaRutina from './views/PantallaRutina';
 import RuedaSettings from './views/RuedaSettings';
+import ChangingPassword from './views/changing_password';
 
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps } from 'firebase/app';
 import { firebaseConfig } from './firebaseConfig';
 import {
   getAuth,
-  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
   getReactNativePersistence,
 } from 'firebase/auth';
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
 const Stack = createNativeStackNavigator();
 
+// Inicialización segura de Firebase
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+const auth = getAuth(app, {
+  persistence: getReactNativePersistence(ReactNativeAsyncStorage),
+});
+
 function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const app = useMemo(() => initializeApp(firebaseConfig), []);
-  const auth = useMemo(() =>
-    getAuth(app, {
-      persistence: getReactNativePersistence(ReactNativeAsyncStorage),
-    }), [app]);
-
-  const handleCreateAccount = async () => {
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      console.log('Account created!', userCredential.user);
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'MainTabs' }],
-      });
-    } catch (error) {
-      console.error(error);
+  const handleLogin = () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Por favor, completa todos los campos.');
+      return;
     }
+
+    signInWithEmailAndPassword(auth, email.trim(), password)
+      .then((userCredential) => {
+        console.log('Logged in!');
+        const user = userCredential.user;
+        console.log(user);
+        navigation.navigate('MainTabs');
+      })
+      .catch((error) => {
+        console.error(error);
+        Alert.alert('Error', error.message);
+      });
   };
 
   return (
@@ -70,14 +78,16 @@ function LoginScreen({ navigation }) {
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <Image
           style={styles.logo}
-          source={require('./assets/logos/logo_white_bg.svg')}
+          source={require('./assets/logos/logo_white_bg.svg')} // Asegúrate que sea PNG o JPG
         />
         <SafeAreaView>
           <TextInput
             style={styles.input}
-            placeholder="Usuario o e-mail"
+            placeholder="Correo electrónico"
             value={email}
             onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
           />
           <TextInput
             style={styles.input}
@@ -91,7 +101,7 @@ function LoginScreen({ navigation }) {
             <Text style={styles.link}>¿Has olvidado tu contraseña?</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.boton} onPress={handleCreateAccount}>
+          <TouchableOpacity style={styles.boton} onPress={handleLogin}>
             <Text style={styles.botonTexto}>Siguiente</Text>
           </TouchableOpacity>
 
@@ -111,13 +121,10 @@ export default function App() {
     <SafeAreaProvider>
       <NavigationContainer>
         <Stack.Navigator initialRouteName="Login">
-          {/* Pantallas sin header */}
           <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Registro" component={RegisterScreen} options={{ headerShown: false }} />
           <Stack.Screen name="ForgotPassword" component={ForgotPassword} options={{ headerShown: false }} />
           <Stack.Screen name="Verificacion" component={VerificationScreen} options={{ headerShown: false }} />
-
-          {/* Pantallas protegidas con icono de ajustes */}
           <Stack.Screen
             name="MainTabs"
             component={MainTabs}
@@ -142,43 +149,12 @@ export default function App() {
               ),
             })}
           />
-          <Stack.Screen
-            name="Alimentacion"
-            component={AlimentacionScreen}
-            options={({ navigation }) => ({
-              headerShown: true,
-              headerRight: () => (
-                <TouchableOpacity onPress={() => navigation.navigate('Ajustes')} style={{ marginRight: 15 }}>
-                  <Ionicons name="settings-outline" size={24} color="#333" />
-                </TouchableOpacity>
-              ),
-            })}
-          />
-          <Stack.Screen
-            name="Rutinas"
-            component={RutinasScreen}
-            options={({ navigation }) => ({
-              headerShown: true,
-              headerRight: () => (
-                <TouchableOpacity onPress={() => navigation.navigate('Ajustes')} style={{ marginRight: 15 }}>
-                  <Ionicons name="settings-outline" size={24} color="#333" />
-                </TouchableOpacity>
-              ),
-            })}
-          />
-          <Stack.Screen
-            name="PantallaRutina"
-            component={PantallaRutina}
-            options={({ navigation }) => ({
-              headerShown: true,
-              headerRight: () => (
-                <TouchableOpacity onPress={() => navigation.navigate('Ajustes')} style={{ marginRight: 15 }}>
-                  <Ionicons name="settings-outline" size={24} color="#333" />
-                </TouchableOpacity>
-              ),
-            })}
-          />
-          <Stack.Screen name="Ajustes" component={RuedaSettings} options={{ headerShown: true }} />
+          <Stack.Screen name="Rutinas" component={RutinasScreen} />
+          <Stack.Screen name="PantallaRutina" component={PantallaRutina} />
+          <Stack.Screen name="Alimentacion" component={AlimentacionScreen} />
+          <Stack.Screen name="RuedaSettings" component={RuedaSettings} />
+          <Stack.Screen name="Ajustes" component={SettingsScreen} />
+          <Stack.Screen name="ChangingPassword" component={ChangingPassword} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

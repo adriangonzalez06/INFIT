@@ -12,6 +12,7 @@ export default function VerificationScreen({ route, navigation }) {
       newCode[index] = text;
       setCode(newCode);
 
+      // Mover al siguiente input
       if (index < 4) {
         inputs.current[index + 1].focus();
       }
@@ -29,6 +30,7 @@ export default function VerificationScreen({ route, navigation }) {
       return;
     }
 
+    // Simulación de verificación
     Alert.alert('Verificado', `Código ingresado: ${fullCode}`);
     navigation.navigate('Perfil');
   };
