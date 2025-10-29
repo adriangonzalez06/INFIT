@@ -15,7 +15,7 @@ import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-
+import DailyChallenge from './views/DailyChallenge';
 import WelcomeScreen from './views/WelcomeScreen';
 import ProfileScreen from './views/profile';
 import SettingsScreen from './views/settings';
@@ -129,7 +129,7 @@ export default function App() {
             name="MainTabs"
             component={MainTabs}
             options={({ navigation }) => ({
-              headerShown: true,
+              headerShown: false,
               headerRight: () => (
                 <TouchableOpacity onPress={() => navigation.navigate('Ajustes')} style={{ marginRight: 15 }}>
                   <Ionicons name="settings-outline" size={24} color="#333" />
@@ -141,7 +141,7 @@ export default function App() {
             name="Perfil"
             component={ProfileScreen}
             options={({ navigation }) => ({
-              headerShown: true,
+              headerShown: false,
               headerRight: () => (
                 <TouchableOpacity onPress={() => navigation.navigate('Ajustes')} style={{ marginRight: 15 }}>
                   <Ionicons name="settings-outline" size={24} color="#333" />
@@ -149,12 +149,12 @@ export default function App() {
               ),
             })}
           />
-          <Stack.Screen name="Rutinas" component={RutinasScreen} />
-          <Stack.Screen name="PantallaRutina" component={PantallaRutina} />
-          <Stack.Screen name="Alimentacion" component={AlimentacionScreen} />
-          <Stack.Screen name="RuedaSettings" component={RuedaSettings} />
-          <Stack.Screen name="Ajustes" component={SettingsScreen} />
-          <Stack.Screen name="ChangingPassword" component={ChangingPassword} />
+          <Stack.Screen name="Rutinas" component={RutinasScreen} options={{headerShown: false}} />
+          <Stack.Screen name="PantallaRutina" component={PantallaRutina}options={{headerShown: false}} />
+          <Stack.Screen name="Alimentacion" component={AlimentacionScreen} options={{headerShown: false}} />
+          <Stack.Screen name="RuedaSettings" component={RuedaSettings} options={{headerShown: false}} />
+          <Stack.Screen name="Ajustes" component={SettingsScreen} options={{headerShown: false}}/>
+          <Stack.Screen name="ChangingPassword" component={ChangingPassword} options={{headerShown: false}}/>
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

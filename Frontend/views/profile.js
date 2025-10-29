@@ -1,311 +1,181 @@
-import axios from 'axios';
-import React, { useState } from 'react';
+import React from 'react';
 import {
-  ScrollView,
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
   StyleSheet,
   Image,
-  Modal,
+  TouchableOpacity,
+  ScrollView,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { getAuth, signOut } from 'firebase/auth';
 
-const objetivos = ['Perder peso', 'Ganar músculo', 'Mantenerme'];
-
-const ProfileScreen = () => {
+export default function ProfileScreen() {
   const navigation = useNavigation();
 
-  const valorInicial = {
-    nombre: '',
-    fechadenacimiento: '',
-    sexo: '',
-    peso: '',
-    altura: '',
-    objetivo: '',
-    correo: '',
-    contraseña: '',
+  const user = {
+    nombre: 'Sergi Velasco',
+    foto: require('../assets/avatar.png'),
+    peso: 72,
+    altura: 1.78,
+    registros: [
+      { tipo: 'Ejercicio', detalle: '30 min de cardio', fecha: '22/10/2025' },
+      { tipo: 'Alimentación', detalle: 'Desayuno saludable', fecha: '22/10/2025' },
+      { tipo: 'Sueño', detalle: 'Dormido 7h 45min', fecha: '21/10/2025' },
+    ],
   };
 
-  const [usuario, setUsuario] = useState(valorInicial);
-  const [modalVisible, setModalVisible] = useState(false);
-
-  const capturarDatos = (campo) => (valor) => {
-    setUsuario((prevUsuario) => ({ ...prevUsuario, [campo]: valor }));
-  };
-
-  const guardarDatos = async () => {
-    try {
-      console.log('Datos del usuario:', usuario);
-
-      const newUser = {
-        nombre: usuario.nombre,
-        fechadenacimiento: usuario.fechadenacimiento,
-        sexo: usuario.sexo,
-        peso: usuario.peso,
-        altura: usuario.altura,
-        objetivo: usuario.objetivo,
-        correo: usuario.correo,
-        contraseña: usuario.contraseña,
-      };
-
-      await axios.post('http://10.0.2.2:8082/api/usuarios', newUser);
-      setUsuario({ ...valorInicial });
-      navigation.navigate('MainTabs');
-    } catch (error) {
-      console.error('Error al guardar los datos:', error.message);
-    }
-  };
-
-  const cerrarSesion = async () => {
-    try {
-      await signOut(getAuth());
-      navigation.navigate('Login');
-    } catch (error) {
-      console.error('Error al cerrar sesión:', error.message);
-    }
-  };
+  const imc = (user.peso / (user.altura * user.altura)).toFixed(1);
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer}>
-      <View style={styles.card}>
-        <TouchableOpacity style={styles.avatarContainer}>
-          <Image
-            source={require('../assets/avatar.png')}
-            style={styles.avatar}
-          />
-          <Text style={styles.editPhoto}>Cambiar foto</Text>
-        </TouchableOpacity>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>Nombre</Text>
-          <TextInput
-            style={styles.input}
-            value={usuario.nombre}
-            onChangeText={capturarDatos('nombre')}
-          />
-        </View>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>Fecha de nacimiento</Text>
-          <TextInput
-            style={styles.input}
-            value={usuario.fechadenacimiento}
-            onChangeText={capturarDatos('fechadenacimiento')}
-            placeholder="DD/MM/AAAA"
-            keyboardType="default"
-          />
-        </View>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>Sexo</Text>
-          <View style={styles.sexoContainer}>
-            <TouchableOpacity
-              style={[
-                styles.sexoBtn,
-                usuario.sexo === 'Hombre' && styles.sexoActivo,
-              ]}
-              onPress={() => setUsuario({ ...usuario, sexo: 'Hombre' })}
-            >
-              <Text>Hombre</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.sexoBtn,
-                usuario.sexo === 'Mujer' && styles.sexoActivo,
-              ]}
-              onPress={() => setUsuario({ ...usuario, sexo: 'Mujer' })}
-            >
-              <Text>Mujer</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>Peso y Altura</Text>
-          <View style={styles.row}>
-            <TextInput
-              style={[styles.input, styles.inputSmall]}
-              value={usuario.peso}
-              onChangeText={capturarDatos('peso')}
-              keyboardType="numeric"
-              placeholder="Peso"
-            />
-            <Text style={styles.unit}>kg</Text>
-            <TextInput
-              style={[styles.input, styles.inputSmall]}
-              value={usuario.altura}
-              onChangeText={capturarDatos('altura')}
-              keyboardType="numeric"
-              placeholder="Altura"
-            />
-            <Text style={styles.unit}>cm</Text>
-          </View>
-        </View>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>Objetivo</Text>
-          <TouchableOpacity
-            style={styles.selectBox}
-            onPress={() => setModalVisible(true)}
-          >
-            <Text style={styles.selectText}>
-              {usuario.objetivo || 'Selecciona un objetivo...'}
-            </Text>
-          </TouchableOpacity>
-
-          <Modal visible={modalVisible} transparent animationType="fade">
-            <View style={styles.modalOverlay}>
-              <View style={styles.modalContent}>
-                {objetivos.map((item) => (
-                  <TouchableOpacity
-                    key={item}
-                    style={styles.modalOption}
-                    onPress={() => {
-                      setUsuario({ ...usuario, objetivo: item });
-                      setModalVisible(false);
-                    }}
-                  >
-                    <Text style={styles.modalText}>{item}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          </Modal>
-        </View>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>Correo electrónico</Text>
-          <TextInput
-            style={styles.input}
-            value={usuario.correo}
-            onChangeText={capturarDatos('correo')}
-            keyboardType="email-address"
-            placeholder="ejemplo@correo.com"
-          />
-        </View>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>Contraseña</Text>
-          <TextInput
-            style={styles.input}
-            value={usuario.contraseña}
-            onChangeText={capturarDatos('contraseña')}
-            secureTextEntry
-            placeholder="••••••••"
-          />
-        </View>
-
-        <TouchableOpacity style={styles.boton} onPress={guardarDatos}>
-          <Text style={styles.botonTexto}>Guardar</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.boton} onPress={cerrarSesion}>
-          <Text style={styles.botonTexto}>Cerrar sesión</Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      {/* Cabecera normal (no sticky) */}
+      <View style={styles.headerContent}>
+        <View style={{ flex: 1 }} />
+        <TouchableOpacity onPress={() => navigation.navigate('Ajustes')}>
+          <Ionicons name="settings-outline" size={28} color="#333" />
         </TouchableOpacity>
       </View>
+
+      <View style={styles.profileSection}>
+        <Image source={user.foto} style={styles.fotoPerfil} />
+        <Text style={styles.nombre}>{user.nombre}</Text>
+      </View>
+
+      <View style={styles.statsContainer}>
+        <Stat label="Peso" value={`${user.peso} kg`} />
+        <Stat label="Altura" value={`${user.altura} m`} />
+        <Stat label="IMC" value={imc} />
+      </View>
+
+      <Text style={styles.sectionTitle}>Últimos registros</Text>
+      {user.registros.map((registro, index) => (
+        <View key={index} style={styles.registroBox}>
+          <Text style={styles.registroTipo}>{registro.tipo}</Text>
+          <Text style={styles.registroDetalle}>{registro.detalle}</Text>
+          <Text style={styles.registroFecha}>{registro.fecha}</Text>
+        </View>
+      ))}
+
+      <TouchableOpacity
+        style={styles.boton}
+        onPress={() => navigation.navigate('RegistroNuevo')}
+      >
+        <Text style={styles.botonTexto}>Añadir nuevo registro</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
-};
+}
+
+function Stat({ label, value }) {
+  return (
+    <View style={styles.statBox}>
+      <Text style={styles.statLabel}>{label}</Text>
+      <Text style={styles.statValue}>{value}</Text>
+    </View>
+  );
+}
 
 const styles = StyleSheet.create({
-  scrollContainer: {
-    paddingVertical: 40,
-    backgroundColor: '#dddbd1',
+  container: {
+    paddingBottom: 60,
+    backgroundColor: '#f9f9f9',
   },
-  card: {
-    backgroundColor: '#fff',
-    marginHorizontal: 20,
-    borderRadius: 20,
-    padding: 20,
-    elevation: 5,
-  },
-  avatarContainer: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#ccc',
-  },
-  editPhoto: {
-    marginTop: 8,
-    color: '#007AFF',
-    fontSize: 14,
-  },
-  field: { marginBottom: 15 },
-  label: { fontSize: 16, fontWeight: 'bold', marginBottom: 5 },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 10,
-    padding: 10,
-    backgroundColor: '#fff',
-  },
-  inputSmall: {
-    width: 80,
-    marginRight: 10,
-  },
-  row: {
+  headerContent: {
     flexDirection: 'row',
+    justifyContent: 'flex-end',
     alignItems: 'center',
+    paddingTop: 40,
+    paddingHorizontal: 20,
+    paddingBottom: 10,
+    backgroundColor: '#f9f9f9',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+    marginBottom: 30, // Espacio entre la rueda y la foto
   },
-  unit: { marginHorizontal: 5, fontSize: 14 },
-  sexoContainer: {
+  profileSection: {
+    alignItems: 'center',
+    marginBottom: 25,
+  },
+  fotoPerfil: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 2,
+    borderColor: '#ef2b2d',
+    marginBottom: 10,
+  },
+  nombre: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#333',
+    textAlign: 'center',
+  },
+  statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    marginBottom: 30,
   },
-  sexoBtn: {
-    padding: 10,
-    borderWidth: 1,
-    borderRadius: 10,
-    width: '48%',
+  statBox: {
     alignItems: 'center',
-    backgroundColor: '#fff',
-  },
-  sexoActivo: { backgroundColor: '#fdd' },
-  selectBox: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 10,
-    padding: 10,
-    backgroundColor: '#fff',
-  },
-  selectText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 20,
-    width: '80%',
+  statLabel: {
+    fontSize: 14,
+    color: '#777',
+    marginBottom: 4,
   },
-  modalOption: {
-    paddingVertical: 10,
-  },
-  modalText: {
-    fontSize: 16,
+  statValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
     color: '#111',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#444',
+    paddingHorizontal: 20,
+  },
+  registroBox: {
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 10,
+    marginHorizontal: 20,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowRadius: 5,
+    elevation: 2,
+    borderLeftWidth: 3,
+    borderLeftColor: '#ef2b2d',
+  },
+  registroTipo: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    color: '#222',
+  },
+  registroDetalle: {
+    fontSize: 14,
+    marginTop: 4,
+    color: '#555',
+  },
+  registroFecha: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 2,
   },
   boton: {
     backgroundColor: '#ef2b2d',
     padding: 15,
-    borderRadius: 10,
+    borderRadius: 8,
+    marginTop: 30,
     alignItems: 'center',
-    marginTop: 10,
+    marginHorizontal: 20,
   },
-  botonTexto: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  botonTexto: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
 });
-
-export default ProfileScreen;
