@@ -50,7 +50,6 @@ export default function Rutinas() {
   const [opcionesVisible, setOpcionesVisible] = useState(false);
   const [rutinaSeleccionada, setRutinaSeleccionada] = useState(null);
 
-  // ✅ Cargar rutinas desde AsyncStorage
   useEffect(() => {
     const cargarRutinas = async () => {
       const data = await AsyncStorage.getItem('rutinas');
@@ -61,7 +60,7 @@ export default function Rutinas() {
     cargarRutinas();
   }, []);
 
-  // ✅ Detectar sugerencias según el nombre
+
   useEffect(() => {
     const palabraClave = Object.keys(SUGERENCIAS).find((clave) =>
       nombreRutina.toLowerCase().includes(clave)
