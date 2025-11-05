@@ -16,8 +16,8 @@ export default function ProfileScreen() {
   const user = {
     nombre: 'Sergi Velasco',
     foto: require('../assets/avatar.png'),
-    peso: 72,
-    altura: 1.78,
+    peso: 80,
+    altura: 1.90,
     registros: [
       { tipo: 'Ejercicio', detalle: '30 min de cardio', fecha: '22/10/2025' },
       { tipo: 'Alimentación', detalle: 'Desayuno saludable', fecha: '22/10/2025' },
