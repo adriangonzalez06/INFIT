@@ -29,14 +29,13 @@ const lightTheme = {
 
 
 
-
 const ROUTINE_CARD_TEXT = {
   title: 'RUTINAS DE HOY',
   last: 'Última rutina: Piernas y abdomen',
 };
 
 const MEAL_CARD_TEXT = {
-  title: 'ALIMENTCIÓN RECOMENDADA',
+  title: 'ALIMENTACIÓN RECOMENDADA',
   last: 'Última comida: Pollo frito',
 };
 
@@ -256,6 +255,7 @@ const styles = StyleSheet.create({
     height: 88,
     borderRadius: 44,
     marginBottom: 12,
+    marginTop: 20,
   },
   greeting: {
     fontSize: 28,

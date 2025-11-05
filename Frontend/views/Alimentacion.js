@@ -1,9 +1,9 @@
-// Alimentacion.js
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput,
-  SafeAreaView,
+    View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput,
+    SafeAreaView,
 } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
@@ -20,13 +20,12 @@ export default function Alimentacion() {
   });
 
   const renderGrupo = (titulo, recetasGrupo, grupoKey) => (
-    //Container group
     <View style={styles.grupoContainer}>
-        //group title
+      {/* group title */}
       <Text style={styles.grupoTitulo}>{titulo}</Text>
-        //routines row
-      <View style={styles.rutinasRow}>
-          //map displays a list of the items that are inside the function
+      {/* routines row */}
+      <View style={styles.recetasRow}>
+        {/* map displays a list of the items that are inside the function */}
         {recetasGrupo.map((receta) => (
           <TouchableOpacity
             key={receta.id}
@@ -38,19 +37,15 @@ export default function Alimentacion() {
         ))}
 
         <ScrollView horizontal showsHorizontalScrollIndicator={true}>
-          <TouchableOpacity
-              style={styles.addCard}
-            >
+
+          <TouchableOpacity style={styles.addCard}>
             <Ionicons name="add" size={32} color="#ef2b2d" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.rutinasCard} />
-          <TouchableOpacity style={styles.rutinasCard} />
-          <TouchableOpacity style={styles.rutinasCard} />
+          <TouchableOpacity style={styles.recetasCard} />
+          <TouchableOpacity style={styles.recetasCard} />
 
-          <TouchableOpacity
-              style={styles.seeMoreCard}
-            >
+          <TouchableOpacity style={styles.seeMoreCard}>
             <Text style={{ color: '#000000ff', fontWeight: '600' }}>Ver más</Text>
           </TouchableOpacity>
 
@@ -68,29 +63,30 @@ export default function Alimentacion() {
   };
 
   return (
-    <View style={styles.container}>
 
-      //go back button
+    <View style={styles.container}>
+      <StatusBar style="auto" />
+      {/* go back button */}
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
         <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
       </TouchableOpacity>
 
-      //title
+      {/* title */}
       <Text style={styles.title}>Alimentación</Text>
 
-      //render groups
+      {/* render groups */}
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <SafeAreaView>
           {renderGrupo('Trending', recetas.grupo1, 'grupo1')}
           {renderGrupo('Para ganar músculo', recetas.grupo2, 'grupo2')}
-          {renderGrupo('Para mantener la figura', recetas.grupo3, 'grupo3')}
+          {renderGrupo('Mis dietas', recetas.grupo3, 'grupo3')}
           {renderGrupo('Para mantener la figura', recetas.grupo4, 'grupo4')}
           {renderGrupo('Para mantener la figura', recetas.grupo5, 'grupo5')}
           {renderGrupo('Para mantener la figura', recetas.grupo6, 'grupo6')}
         </SafeAreaView>
       </ScrollView>
-
     </View>
+
   );
 }
 
@@ -101,6 +97,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 20,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
   },
   backButton: {
     position: 'absolute',
@@ -132,12 +135,12 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     color: '#333',
   },
-  rutinasRow: {
+  recetasRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
   },
-  rutinasCard: {
+  recetasCard: {
     width: 120,
     height: 100,
     backgroundColor: '#f2f2f2',
@@ -162,7 +165,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     marginRight: 12,
   },
-    seeMoreCard: {
+  seeMoreCard: {
     width: 120,
     height: 100,
     backgroundColor: '#ffffffff',

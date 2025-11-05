@@ -202,11 +202,11 @@ export default function Rutinas() {
 
   return (
     <View style={styles.container}>
+
+      <Text style={styles.title}>Mis rutinas</Text>
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
         <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
       </TouchableOpacity>
-
-      <Text style={styles.title}>Mis rutinas</Text>
 
       <TextInput
         style={styles.searchInput}
@@ -315,7 +315,7 @@ export default function Rutinas() {
 
     backButton: {
       position: 'absolute',
-      top: 20,
+      top: 60,
       left: 20,
       zIndex: 10,
     },

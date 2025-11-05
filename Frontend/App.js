@@ -40,7 +40,7 @@ import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
 const Stack = createNativeStackNavigator();
 
-// Inicialización segura de Firebase
+{/* Inicialización segura de Firebase */}
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const auth = getAuth(app, {
   persistence: getReactNativePersistence(ReactNativeAsyncStorage),
@@ -78,7 +78,7 @@ function LoginScreen({ navigation }) {
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <Image
           style={styles.logo}
-          source={require('./assets/logos/logo_white_bg.svg')} // Asegúrate que sea PNG o JPG
+          source={require('./assets/logos/logo_white_bg.svg')}
         />
         <SafeAreaView>
           <TextInput
@@ -112,12 +112,11 @@ function LoginScreen({ navigation }) {
           <Text style={styles.dividerText}>─── O inicia sesión con ───</Text>
         </SafeAreaView>
 
-           //Boton para ir al menu sin iniciar sesion para no perder tanto tiempo
+           {/* Boton para ir al menu sin iniciar sesion para no perder tanto tiempo */}
           <TouchableOpacity style={styles.boton} onPress = {() => navigation.navigate('MainTabs')}>
             <Text style={styles.botonTexto}>Debug ir al menu</Text> 
             </TouchableOpacity>
-          //----------------
-          
+
       </ScrollView>
     </KeyboardAvoidingView>
   );
