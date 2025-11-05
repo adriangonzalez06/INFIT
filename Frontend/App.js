@@ -111,6 +111,13 @@ function LoginScreen({ navigation }) {
 
           <Text style={styles.dividerText}>─── O inicia sesión con ───</Text>
         </SafeAreaView>
+
+           //Boton para ir al menu sin iniciar sesion para no perder tanto tiempo
+          <TouchableOpacity style={styles.boton} onPress = {() => navigation.navigate('MainTabs')}>
+            <Text style={styles.botonTexto}>Debug ir al menu</Text> 
+            </TouchableOpacity>
+          //----------------
+          
       </ScrollView>
     </KeyboardAvoidingView>
   );
