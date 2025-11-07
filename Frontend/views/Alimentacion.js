@@ -27,6 +27,50 @@ export default function Alimentacion() {
       <View style={styles.recetasRow}>
         {/* map displays a list of the items that are inside the function */}
         {recetasGrupo.map((receta) => (
+          
+          <TouchableOpacity
+            key={receta.id}
+            style={[styles.recetaCard, styles.shadow]}
+            onPress={() => handleEntrarReceta(receta, grupoKey)}
+          >
+            <Text style={styles.recetaTexto}>{receta.nombre}</Text>
+          </TouchableOpacity>
+        ))}
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+
+          <TouchableOpacity style={styles.recetaCard}>
+            <Text style={styles.recetaTextoTitulo}>Nombre</Text>
+            <Text style={styles.recetaTexto}>Subtítulo</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.recetaCard}>
+            <Text style={styles.recetaTextoTitulo}>Nombre</Text>
+            <Text style={styles.recetaTexto}>Subtítulo</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+          style={styles.seeMoreCard}
+          onPress={() => handleEntrarGrupoCompleto()}>
+            <Ionicons name="arrow-back" size={24} color="#000000ff" />
+            <Text style={{ color: '#000000ff', fontWeight: '600' }}>Ver más</Text>
+          </TouchableOpacity>
+
+        </ScrollView>
+
+      </View>
+    </View>
+  );
+
+    const renderGrupoAdd = (titulo, recetasGrupo, grupoKey) => (
+    <View style={styles.grupoContainer}>
+      {/* group title */}
+      <Text style={styles.grupoTitulo}>{titulo}</Text>
+      {/* routines row */}
+      <View style={styles.recetasRow}>
+        {/* map displays a list of the items that are inside the function */}
+        {recetasGrupo.map((receta) => (
+          
           <TouchableOpacity
             key={receta.id}
             style={styles.recetaCard}
@@ -36,16 +80,25 @@ export default function Alimentacion() {
           </TouchableOpacity>
         ))}
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={true}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
 
-          <TouchableOpacity style={styles.addCard}>
+          <TouchableOpacity style={[styles.addCard, styles.shadow]}>
             <Ionicons name="add" size={32} color="#ef2b2d" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.recetasCard} />
-          <TouchableOpacity style={styles.recetasCard} />
+          <TouchableOpacity style={[styles.recetaCard, styles.shadow]}>
+            <Text style={styles.recetaTextoTitulo}>Nombre</Text>
+            <Text style={styles.recetaTexto}>Subtítulo</Text>
+          </TouchableOpacity> 
+
+          <TouchableOpacity style={[styles.recetaCard, styles.shadow]}>
+            <Text style={styles.recetaTextoTitulo}>Nombre</Text>
+            <Text style={styles.recetaTexto}>Subtítulo</Text>
+          </TouchableOpacity> 
+
 
           <TouchableOpacity style={styles.seeMoreCard}>
+            <Ionicons name="arrow-back" size={32} color="#181818ff" />
             <Text style={{ color: '#000000ff', fontWeight: '600' }}>Ver más</Text>
           </TouchableOpacity>
 
@@ -56,10 +109,14 @@ export default function Alimentacion() {
   );
 
   const handleEntrarReceta = (rutina, grupoKey) => {
-    navigation.navigate('PantallaRutina', {
+    navigation.navigate('PantallaReceta', {
       rutina,
       grupoKey,
     });
+  };
+
+  const handleEntrarGrupoCompleto = () => {
+    navigation.navigate('ListaGrupoRecetas');
   };
 
   return (
@@ -75,14 +132,14 @@ export default function Alimentacion() {
       <Text style={styles.title}>Alimentación</Text>
 
       {/* render groups */}
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView  contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <SafeAreaView>
           {renderGrupo('Trending', recetas.grupo1, 'grupo1')}
-          {renderGrupo('Para ganar músculo', recetas.grupo2, 'grupo2')}
-          {renderGrupo('Mis dietas', recetas.grupo3, 'grupo3')}
-          {renderGrupo('Para mantener la figura', recetas.grupo4, 'grupo4')}
-          {renderGrupo('Para mantener la figura', recetas.grupo5, 'grupo5')}
-          {renderGrupo('Para mantener la figura', recetas.grupo6, 'grupo6')}
+          {renderGrupoAdd('Para ganar músculo', recetas.grupo2, 'grupo2')}
+          {renderGrupoAdd('Mis dietas', recetas.grupo3, 'grupo3')}
+          {renderGrupoAdd('Para mantener la figura', recetas.grupo4, 'grupo4')}
+          {renderGrupoAdd('Para mantener la figura', recetas.grupo5, 'grupo5')}
+          {renderGrupoAdd('Para mantener la figura', recetas.grupo6, 'grupo6')}
         </SafeAreaView>
       </ScrollView>
     </View>
@@ -140,22 +197,46 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 12,
   },
-  recetasCard: {
-    width: 120,
+  recetaCard: {
+    width: 140,
     height: 100,
-    backgroundColor: '#f2f2f2',
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderColor: '#5c5c5cff',
+    borderRadius: 9,
+    borderWidth: 1,
+    padding: 10,
     marginRight: 12,
+    backgroundColor: '#fff',
+    // iOS shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 7, height: 7 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    // Android shadow
+    elevation: 5,
+  },
+  shadow: {
+    // iOS shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    // Android shadow
+    elevation: 5,
   },
   recetaTexto: {
     fontSize: 14,
     color: '#111114',
     textAlign: 'center',
   },
+  recetaTextoTitulo: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111114',
+    textAlign: 'center',
+    margin: 10,
+  },
   addCard: {
-    width: 120,
+    width: 100,
     height: 100,
     borderRadius: 10,
     borderWidth: 2,
@@ -168,9 +249,9 @@ const styles = StyleSheet.create({
   seeMoreCard: {
     width: 120,
     height: 100,
-    backgroundColor: '#ffffffff',
+    backgroundColor: '#f8f8f8ff',
     borderRadius: 10,
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: '#494949ff',
     justifyContent: 'center',
     alignItems: 'center',

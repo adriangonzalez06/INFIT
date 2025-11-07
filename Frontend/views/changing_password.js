@@ -3,7 +3,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-function WelcomeScreen({ navigation }) {
+function ChangingPassword({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.subtitle}>Hemos enviado un mensaje a su correo electrónico con un enlace para cambiar su contraseña. 
@@ -19,7 +19,7 @@ function WelcomeScreen({ navigation }) {
 }
 
 
-export default WelcomeScreen;
+export default ChangingPassword;
 
 const styles = StyleSheet.create({
   container: {
