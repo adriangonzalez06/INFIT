@@ -39,12 +39,12 @@ export default function Alimentacion() {
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
 
-          <TouchableOpacity style={styles.recetaCard}>
+          <TouchableOpacity style={styles.recetaCard} onPress={() => navigation.navigate("Receta")}>
             <Text style={styles.recetaTextoTitulo}>Nombre</Text>
             <Text style={styles.recetaTexto}>Subtítulo</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.recetaCard}>
+          <TouchableOpacity style={styles.recetaCard} onPress={() => navigation.navigate("Receta")}>
             <Text style={styles.recetaTextoTitulo}>Nombre</Text>
             <Text style={styles.recetaTexto}>Subtítulo</Text>
           </TouchableOpacity>
@@ -86,12 +86,12 @@ export default function Alimentacion() {
             <Ionicons name="add" size={32} color="#ef2b2d" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.recetaCard, styles.shadow]}>
+          <TouchableOpacity style={[styles.recetaCard, styles.shadow]} onPress={() => navigation.navigate("Receta")}>
             <Text style={styles.recetaTextoTitulo}>Nombre</Text>
             <Text style={styles.recetaTexto}>Subtítulo</Text>
           </TouchableOpacity> 
 
-          <TouchableOpacity style={[styles.recetaCard, styles.shadow]}>
+          <TouchableOpacity style={[styles.recetaCard, styles.shadow]} onPress={() => navigation.navigate("Receta")}>
             <Text style={styles.recetaTextoTitulo}>Nombre</Text>
             <Text style={styles.recetaTexto}>Subtítulo</Text>
           </TouchableOpacity> 

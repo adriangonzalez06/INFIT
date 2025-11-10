@@ -29,6 +29,7 @@ import PantallaRutina from './views/PantallaRutina';
 import RuedaSettings from './views/RuedaSettings';
 import ChangingPassword from './views/changing_password';
 import ListaGrupoRecetas from './views/ListaGrupoRecetas';
+import Receta from './views/Receta';
 
 import { initializeApp, getApps } from 'firebase/app';
 import { firebaseConfig } from './firebaseConfig';
@@ -163,6 +164,7 @@ export default function App() {
           <Stack.Screen name="Ajustes" component={SettingsScreen} options={{headerShown: false}}/>
           <Stack.Screen name="ChangingPassword" component={ChangingPassword} options={{headerShown: false}}/>
           <Stack.Screen name="ListaGrupoRecetas" component={ListaGrupoRecetas} options={{headerShown: false}}/>
+          <Stack.Screen name="Receta" component={Receta} options={{headerShown: false}}/>
 
         </Stack.Navigator>
       </NavigationContainer>
