@@ -7,20 +7,17 @@ import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import styles from './stylesheet';
+import plato from './Plato';
 
 export default function Receta() {
   const navigation = useNavigation();
+    //var id_plato, nombre, fotoUrl, macronutrientes, ingredientes, aporte_calorico, vegetariano, vegano, sin_gluten;
 
-  var nombreReceta = "Receta de ejemplo";
-  var descripcionReceta = "Esta es una descripción de ejemplo para la receta.";
+  var plato1 = new plato(1, "Nombre1", "url1", 400, ["ingrediente1", "ingrediente2"], 500, false, false, true);
+  var plato2 = new plato(1, "Nombre2", "url2", 550, ["ingrediente1", "ingrediente2"], 550, true, false, true);
 
-  var nombrePrimerPlato = "Ensalada César";
-  var caloriasPrimerPlato = 250;
 
-  var nombreSegundoPlato = "Pollo al horno";
-  var caloriasSegundoPlato = 450;
-
-  var caloriasTotales = caloriasPrimerPlato + caloriasSegundoPlato;
+  var caloriasTotales = plato1.apo + caloriasSegundoPlato;
 
   return (
 

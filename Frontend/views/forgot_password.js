@@ -7,6 +7,8 @@ import { initializeApp } from 'firebase/app';
 import { firebaseConfig } from '../firebaseConfig';
 import { initializeAuth, getReactNativePersistence, sendPasswordResetEmail} from 'firebase/auth';
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
+import styles from './stylesheet';
+
 
 export default function ForgotPassword({ navigation }) {
   const [email, setEmail] = useState('');
@@ -48,8 +50,8 @@ export default function ForgotPassword({ navigation }) {
         <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
       </TouchableOpacity>
 
-      <Text style={styles.title}>Recuperar contraseña</Text>
-      <Text style={styles.subtitle}>
+      <Text style={styles.changingPassTitle}>Recuperar contraseña</Text>
+      <Text style={styles.changingPassSubtitle}>
         Introduce tu correo electrónico para recibir un enlace de recuperación.
       </Text>
       <TextInput
@@ -67,51 +69,4 @@ export default function ForgotPassword({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#dddbd1',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  backButton: {
-    position: 'absolute',
-    top: 40,
-    left: 20,
-    zIndex: 1,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#111114',
-  },
-  subtitle: {
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 20,
-    color: '#30383a',
-  },
-  input: {
-    width: '100%',
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 10,
-    backgroundColor: '#fff',
-    marginBottom: 20,
-  },
-  button: {
-    backgroundColor: '#ef2b2d',
-    padding: 15,
-    borderRadius: 8,
-    width: '100%',
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 15,
-  },
-});
+

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import styles from './stylesheet';
 
 const NombreDelComponente = () => {
   return (
@@ -11,10 +12,3 @@ const NombreDelComponente = () => {
 
 export default NombreDelComponente;
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});

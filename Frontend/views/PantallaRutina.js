@@ -38,7 +38,7 @@ export default function PantallaRutina({ route, navigation }) {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={styles.rutinaContainer}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
@@ -151,13 +151,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     backgroundColor: '#fff',
   },
-  grupoTitulo: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginTop: 10,
-    marginBottom: 5,
-    color: '#ef2b2d',
-  },
+
   ejercicioItemModal: {
     paddingVertical: 8,
     borderBottomWidth: 1,
