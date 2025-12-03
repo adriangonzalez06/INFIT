@@ -1,21 +1,25 @@
 
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
   Text,
-  StyleSheet,
+  TouchableOpacity,
   FlatList,
-  TouchableOpacity
+  StyleSheet,
+  SafeAreaView,
+  Animated,
+  Dimensions,
+  TextInput,
+  PanResponder
 } from "react-native";
-import BottomSheet from "@gorhom/bottom-sheet";
-import { Searchbar } from "react-native-paper";
+
+const { height } = Dimensions.get("window");
 
 const BuscarScreen = () => {
+  const [mostrarMenu, setMostrarMenu] = useState(false);
   const [tipoMenu, setTipoMenu] = useState(null);
   const [searchText, setSearchText] = useState("");
-  const bottomSheetRef = useRef(null);
-
-  const snapPoints = useMemo(() => ["50%", "90%"], []);
+  const slideAnim = useRef(new Animated.Value(height)).current;
 
   const ejercicios = [
     { id: "1", nombre: "Correr", calorias: 300, tiempo: 30 },
@@ -35,15 +39,47 @@ const BuscarScreen = () => {
 
   const abrirMenu = (tipo) => {
     setTipoMenu(tipo);
+    setMostrarMenu(true);
     setSearchText("");
-    bottomSheetRef.current?.expand();
+    Animated.timing(slideAnim, {
+      toValue: height * 0.2, // posición inicial del bottom sheet
+      duration: 300,
+      useNativeDriver: false
+    }).start();
   };
 
   const cerrarMenu = () => {
-    bottomSheetRef.current?.close();
-    setTipoMenu(null);
-    setSearchText("");
+    Animated.timing(slideAnim, {
+      toValue: height,
+      duration: 300,
+      useNativeDriver: false
+    }).start(() => {
+      setMostrarMenu(false);
+      setTipoMenu(null);
+    });
   };
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gestureState) => gestureState.dy > 10,
+      onPanResponderMove: (_, gestureState) => {
+        if (gestureState.dy > 0) {
+          slideAnim.setValue(height * 0.2 + gestureState.dy);
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dy > 100) {
+          cerrarMenu();
+        } else {
+          Animated.timing(slideAnim, {
+            toValue: height * 0.2,
+            duration: 200,
+            useNativeDriver: false
+          }).start();
+        }
+      }
+    })
+  ).current;
 
   const data = tipoMenu === "ejercicios" ? ejercicios : alimentos;
   const filteredData = data.filter(item =>
@@ -51,71 +87,72 @@ const BuscarScreen = () => {
   );
 
   const renderItem = ({ item }) => (
-    <View style={styles.card}>
-      <View>
-        <Text style={styles.cardTitle}>{item.nombre}</Text>
-        <Text style={styles.cardSubtitle}>
+    <View style={styles.cardContainer}>
+      {/* Imagen arriba */}
+      <View style={styles.imageContainer}>
+        <Text style={styles.imagePlaceholder}>📷</Text>
+      </View>
+
+      {/* Info abajo */}
+      <View style={styles.infoContainer}>
+        <Text style={styles.publisher}>Publicado por: Juan Pérez</Text>
+        <Text style={styles.routineName}>{item.nombre}</Text>
+        <Text style={styles.description}>
           {tipoMenu === "ejercicios"
-            ? `${item.calorias} kcal / ${item.tiempo} min`
-            : `${item.calorias} kcal / 100g`}
+            ? `Rutina para quemar ${item.calorias} kcal en ${item.tiempo} min`
+            : `Plato con ${item.calorias} kcal por 100g`}
         </Text>
       </View>
-      <TouchableOpacity style={styles.addButton}>
-        <Text style={styles.addButtonText}>+</Text>
-      </TouchableOpacity>
     </View>
   );
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Explora y Añade</Text>
-      <Text style={styles.subHeader}>Selecciona una opción para buscar</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <Text style={styles.header}>Explora y Añade</Text>
+        <Text style={styles.subHeader}>Selecciona una opción para buscar</Text>
 
-      <TouchableOpacity style={styles.mainButton} onPress={() => abrirMenu("ejercicios")}>
-        <Text style={styles.buttonText}>🏋️ Buscar Ejercicios</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.mainButton} onPress={() => abrirMenu("ejercicios")}>
+          <Text style={styles.buttonText}> Buscar Ejercicios</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity style={styles.mainButton} onPress={() => abrirMenu("alimentos")}>
-        <Text style={styles.buttonText}>🍎 Buscar Alimentos</Text>
-      </TouchableOpacity>
-
-      {/* Footer */}
-      <View style={styles.footer}>
-        <TouchableOpacity style={styles.caloriesButton}>
-          <Text style={styles.caloriesText}>🔥 Total: 320 kcal</Text>
-          <Text style={styles.continueText}>Continuar →</Text>
+        <TouchableOpacity style={styles.mainButton} onPress={() => abrirMenu("alimentos")}>
+          <Text style={styles.buttonText}> Buscar Alimentos</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Bottom Sheet */}
-      <BottomSheet
-        ref={bottomSheetRef}
-        index={-1}
-        snapPoints={snapPoints}
-        enablePanDownToClose={true}
-        onClose={cerrarMenu}
-      >
-        <View style={styles.sheetContent}>
-          <Searchbar
+      {mostrarMenu && (
+        <Animated.View
+          style={[styles.bottomSheet, { top: slideAnim }]}
+          {...panResponder.panHandlers}
+        >
+          <View style={styles.dragIndicator} />
+          <Text style={styles.sheetTitle}>
+            {tipoMenu === "ejercicios" ? "Ejercicios Disponibles" : "Alimentos Disponibles"}
+          </Text>
+
+          <TextInput
+            style={styles.searchInput}
             placeholder="Buscar..."
             value={searchText}
             onChangeText={setSearchText}
-            style={styles.searchBar}
           />
+
           <FlatList
             data={filteredData}
             keyExtractor={(item) => item.id}
             renderItem={renderItem}
           />
-        </View>
-      </BottomSheet>
-    </View>
+        </Animated.View>
+      )}
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: "#f9f9f9" },
-  header: { fontSize: 28, fontWeight: "bold", color: "#333", marginBottom: 8 },
+  safeArea: { flex: 1, backgroundColor: "#f9f9f9" },
+  container: { flex: 1, paddingHorizontal: 16, paddingTop: 20 },
+  header: { fontSize: 28, fontWeight: "bold", color: "#333" },
   subHeader: { fontSize: 16, color: "#666", marginBottom: 20 },
   mainButton: {
     backgroundColor: "#4CAF50",
@@ -125,40 +162,75 @@ const styles = StyleSheet.create({
     alignItems: "center"
   },
   buttonText: { color: "#fff", fontSize: 18, fontWeight: "bold" },
-  footer: { position: "absolute", bottom: 20, left: 16, right: 16 },
-  caloriesButton: {
-    backgroundColor: "#4CAF50",
-    borderRadius: 16,
-    paddingVertical: 18,
-    paddingHorizontal: 24,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center"
-  },
-  caloriesText: { color: "#fff", fontSize: 18, fontWeight: "bold" },
-  continueText: { color: "#fff", fontSize: 16 },
-  sheetContent: { flex: 1, padding: 16 },
-  searchBar: { marginBottom: 16 },
-  card: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  bottomSheet: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    height: height * 0.8, // más grande
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     padding: 16,
-    backgroundColor: "#f9f9f9",
-    borderRadius: 12,
-    marginBottom: 12
+    elevation: 10
   },
-  cardTitle: { fontSize: 16, fontWeight: "bold", color: "#333" },
-  cardSubtitle: { fontSize: 14, color: "#666" },
-  addButton: {
-    backgroundColor: "#4CAF50",
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  dragIndicator: {
+    width: 50,
+    height: 5,
+    backgroundColor: "#ccc",
+    borderRadius: 3,
+    alignSelf: "center",
+    marginBottom: 10
+  },
+  sheetTitle: { fontSize: 22, fontWeight: "bold", marginBottom: 16 },
+  searchInput: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 16,
+    fontSize: 16
+  },
+  cardContainer: {
+    width: "100%",
+    aspectRatio: 1,
+    borderRadius: 16,
+    overflow: "hidden",
+    marginBottom: 16,
+    backgroundColor: "#fff",
+    elevation: 4
+  },
+  imageContainer: {
+    flex: 1,
+    backgroundColor: "#ddd",
     justifyContent: "center",
     alignItems: "center"
   },
-  addButtonText: { color: "#fff", fontSize: 22, fontWeight: "bold" }
+  imagePlaceholder: {
+    fontSize: 40,
+    color: "#999"
+  },
+  infoContainer: {
+    flex: 1,
+    backgroundColor: "#fff",
+    padding: 12,
+    justifyContent: "center"
+  },
+  publisher: {
+    fontSize: 12,
+    color: "#666",
+    marginBottom: 4
+  },
+  routineName: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 6
+  },
+  description: {
+    fontSize: 14,
+    color: "#555"
+  }
 });
 
 export default BuscarScreen;
