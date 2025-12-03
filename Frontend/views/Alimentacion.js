@@ -53,7 +53,7 @@ export default function Alimentacion() {
           <TouchableOpacity 
           style={styles.seeMoreCard}
           onPress={() => handleEntrarGrupoCompleto()}>
-            <Ionicons name="arrow-back" size={24} color="#000000ff" />
+            <Ionicons name="arrow-forward" size={24} color="#000000ff" />
             <Text style={{ color: '#000000ff', fontWeight: '600' }}>Ver más</Text>
           </TouchableOpacity>
 
@@ -99,7 +99,7 @@ export default function Alimentacion() {
 
 
           <TouchableOpacity style={styles.seeMoreCard}>
-            <Ionicons name="arrow-back" size={32} color="#181818ff" />
+            <Ionicons name="arrow-forward" size={24} color="#181818ff" />
             <Text style={{ color: '#000000ff', fontWeight: '600' }}>Ver más</Text>
           </TouchableOpacity>
 
@@ -119,6 +119,7 @@ export default function Alimentacion() {
   const handleEntrarGrupoCompleto = () => {
     navigation.navigate('ListaGrupoRecetas');
   };
+
 
   return (
 

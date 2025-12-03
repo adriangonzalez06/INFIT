@@ -159,6 +159,30 @@ export default StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
+
+// Receta Screen Styles
+  platoContainer: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 20,
+    width: '100%',
+    backgroundColor: '#f9f9f9',
+    textAlign: 'left',
+  },
+  platoText: {
+    fontSize: 14,
+    color: '#333',
+    textAlign: 'left',
+    marginBottom: 5,
+  },
+  platoImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
 //pantalla rutina styles
   rutinaContainer: {
     flex: 1,
