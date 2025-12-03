@@ -1,21 +1,21 @@
-import React, { useState } from "react";
+
+import React, { useState, useMemo, useRef } from "react";
 import {
   View,
   Text,
-  TouchableOpacity,
-  FlatList,
   StyleSheet,
-  SafeAreaView,
-  Animated,
-  Dimensions
+  FlatList,
+  TouchableOpacity
 } from "react-native";
-
-const { height } = Dimensions.get("window");
+import BottomSheet from "@gorhom/bottom-sheet";
+import { Searchbar } from "react-native-paper";
 
 const BuscarScreen = () => {
-  const [mostrarMenu, setMostrarMenu] = useState(false);
   const [tipoMenu, setTipoMenu] = useState(null);
-  const slideAnim = useState(new Animated.Value(height))[0];
+  const [searchText, setSearchText] = useState("");
+  const bottomSheetRef = useRef(null);
+
+  const snapPoints = useMemo(() => ["50%", "90%"], []);
 
   const ejercicios = [
     { id: "1", nombre: "Correr", calorias: 300, tiempo: 30 },
@@ -35,31 +35,27 @@ const BuscarScreen = () => {
 
   const abrirMenu = (tipo) => {
     setTipoMenu(tipo);
-    setMostrarMenu(true);
-    Animated.timing(slideAnim, {
-      toValue: height * 0.3,
-      duration: 300,
-      useNativeDriver: false
-    }).start();
+    setSearchText("");
+    bottomSheetRef.current?.expand();
   };
 
   const cerrarMenu = () => {
-    Animated.timing(slideAnim, {
-      toValue: height,
-      duration: 300,
-      useNativeDriver: false
-    }).start(() => {
-      setMostrarMenu(false);
-      setTipoMenu(null);
-    });
+    bottomSheetRef.current?.close();
+    setTipoMenu(null);
+    setSearchText("");
   };
 
-  const renderItem = (item, tipo) => (
+  const data = tipoMenu === "ejercicios" ? ejercicios : alimentos;
+  const filteredData = data.filter(item =>
+    item.nombre.toLowerCase().includes(searchText.toLowerCase())
+  );
+
+  const renderItem = ({ item }) => (
     <View style={styles.card}>
       <View>
         <Text style={styles.cardTitle}>{item.nombre}</Text>
         <Text style={styles.cardSubtitle}>
-          {tipo === "ejercicio"
+          {tipoMenu === "ejercicios"
             ? `${item.calorias} kcal / ${item.tiempo} min`
             : `${item.calorias} kcal / 100g`}
         </Text>
@@ -71,80 +67,65 @@ const BuscarScreen = () => {
   );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <Text style={styles.header}>Explora y Añade</Text>
-        <Text style={styles.subHeader}>Selecciona una opción para buscar</Text>
+    <View style={styles.container}>
+      <Text style={styles.header}>Explora y Añade</Text>
+      <Text style={styles.subHeader}>Selecciona una opción para buscar</Text>
 
-        {/* Botones principales */}
-        <TouchableOpacity
-          style={styles.mainButton}
-          onPress={() => abrirMenu("ejercicios")}
-        >
-          <Text style={styles.buttonIcon}>🏋️</Text>
-          <Text style={styles.buttonText}>Buscar Ejercicios</Text>
+      <TouchableOpacity style={styles.mainButton} onPress={() => abrirMenu("ejercicios")}>
+        <Text style={styles.buttonText}>🏋️ Buscar Ejercicios</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.mainButton} onPress={() => abrirMenu("alimentos")}>
+        <Text style={styles.buttonText}>🍎 Buscar Alimentos</Text>
+      </TouchableOpacity>
+
+      {/* Footer */}
+      <View style={styles.footer}>
+        <TouchableOpacity style={styles.caloriesButton}>
+          <Text style={styles.caloriesText}>🔥 Total: 320 kcal</Text>
+          <Text style={styles.continueText}>Continuar →</Text>
         </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.mainButton}
-          onPress={() => abrirMenu("alimentos")}
-        >
-          <Text style={styles.buttonIcon}>🍎</Text>
-          <Text style={styles.buttonText}>Buscar Alimentos</Text>
-        </TouchableOpacity>
-
-        {/* Footer */}
-        <View style={styles.footer}>
-          <TouchableOpacity style={styles.caloriesButton}>
-            <Text style={styles.caloriesText}>🔥 Total: 320 kcal</Text>
-            <Text style={styles.continueText}>Continuar →</Text>
-          </TouchableOpacity>
-        </View>
       </View>
 
       {/* Bottom Sheet */}
-      {mostrarMenu && (
-        <Animated.View style={[styles.bottomSheet, { top: slideAnim }]}>
-          <Text style={styles.sheetTitle}>
-            {tipoMenu === "ejercicios" ? "Ejercicios Disponibles" : "Alimentos Disponibles"}
-          </Text>
-          <FlatList
-            data={tipoMenu === "ejercicios" ? ejercicios : alimentos}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => renderItem(item, tipoMenu)}
+      <BottomSheet
+        ref={bottomSheetRef}
+        index={-1}
+        snapPoints={snapPoints}
+        enablePanDownToClose={true}
+        onClose={cerrarMenu}
+      >
+        <View style={styles.sheetContent}>
+          <Searchbar
+            placeholder="Buscar..."
+            value={searchText}
+            onChangeText={setSearchText}
+            style={styles.searchBar}
           />
-          <TouchableOpacity style={styles.closeButton} onPress={cerrarMenu}>
-            <Text style={styles.closeButtonText}>Cerrar</Text>
-          </TouchableOpacity>
-        </Animated.View>
-      )}
-    </SafeAreaView>
+          <FlatList
+            data={filteredData}
+            keyExtractor={(item) => item.id}
+            renderItem={renderItem}
+          />
+        </View>
+      </BottomSheet>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#f9f9f9" },
-  container: { flex: 1, paddingHorizontal: 16, paddingTop: 20 },
-  header: { fontSize: 28, fontWeight: "bold", color: "#333" },
+  container: { flex: 1, padding: 16, backgroundColor: "#f9f9f9" },
+  header: { fontSize: 28, fontWeight: "bold", color: "#333", marginBottom: 8 },
   subHeader: { fontSize: 16, color: "#666", marginBottom: 20 },
   mainButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
     backgroundColor: "#4CAF50",
     paddingVertical: 18,
     borderRadius: 16,
     marginBottom: 16,
-    elevation: 4
+    alignItems: "center"
   },
-  buttonIcon: { fontSize: 26, marginRight: 12 },
   buttonText: { color: "#fff", fontSize: 18, fontWeight: "bold" },
-  footer: {
-    position: "absolute",
-    bottom: 20,
-    left: 16,
-    right: 16
-  },
+  footer: { position: "absolute", bottom: 20, left: 16, right: 16 },
   caloriesButton: {
     backgroundColor: "#4CAF50",
     borderRadius: 16,
@@ -152,23 +133,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    elevation: 4
+    alignItems: "center"
   },
   caloriesText: { color: "#fff", fontSize: 18, fontWeight: "bold" },
   continueText: { color: "#fff", fontSize: 16 },
-  bottomSheet: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    height: height * 0.7,
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 16,
-    elevation: 10
-  },
-  sheetTitle: { fontSize: 22, fontWeight: "bold", marginBottom: 16 },
+  sheetContent: { flex: 1, padding: 16 },
+  searchBar: { marginBottom: 16 },
   card: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -176,8 +146,7 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: "#f9f9f9",
     borderRadius: 12,
-    marginBottom: 12,
-    elevation: 2
+    marginBottom: 12
   },
   cardTitle: { fontSize: 16, fontWeight: "bold", color: "#333" },
   cardSubtitle: { fontSize: 14, color: "#666" },
@@ -189,15 +158,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center"
   },
-  addButtonText: { color: "#fff", fontSize: 22, fontWeight: "bold" },
-  closeButton: {
-    backgroundColor: "#4CAF50",
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: "center",
-    marginTop: 20
-  },
-  closeButtonText: { color: "#fff", fontSize: 18, fontWeight: "bold" }
+  addButtonText: { color: "#fff", fontSize: 22, fontWeight: "bold" }
 });
 
 export default BuscarScreen;
