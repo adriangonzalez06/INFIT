@@ -31,6 +31,8 @@ import ChangingPassword from './views/changing_password';
 import ListaGrupoRecetas from './views/ListaGrupoRecetas';
 import Receta from './views/Receta';
 
+import colors from './views/colors';
+
 import { initializeApp, getApps } from 'firebase/app';
 import { firebaseConfig } from './firebaseConfig';
 import {
@@ -175,7 +177,7 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#dddbd1',
+    backgroundColor: colors.bg_gray,
   },
   scrollContainer: {
     paddingTop: 60,
@@ -196,15 +198,15 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     fontSize: 14,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: colors.gray,
     borderRadius: 10,
-    color: '#111114',
-    backgroundColor: '#fff',
+    color: colors.dark_gray,
+    backgroundColor: colors.white,
     width: 250,
     alignSelf: 'center',
   },
   boton: {
-    backgroundColor: '#ef2b2d',
+    backgroundColor: colors.primary,
     padding: 15,
     borderRadius: 8,
     marginTop: 20,
@@ -223,6 +225,6 @@ const styles = StyleSheet.create({
     marginTop: 30,
     marginBottom: 40,
     textAlign: 'center',
-    color: '#333',
+    color: colors.dark_gray,
   },
 });

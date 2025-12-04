@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import {
     View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput,
     SafeAreaView,
+    ImageBackground,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import styles from './stylesheet';
+import colors from './colors.js';
 
 export default function Alimentacion() {
   const navigation = useNavigation();
@@ -41,20 +43,24 @@ export default function Alimentacion() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
 
           <TouchableOpacity style={styles.recetaCard} onPress={() => navigation.navigate("Receta")}>
+            <ImageBackground source={require('../assets/images/images_diet/diet_01.jpg')} resizeMode="cover" style={{width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', zIndex: -1, borderRadius: 14, overflow: 'hidden'}}>
             <Text style={styles.recetaTextoTitulo}>Nombre</Text>
             <Text style={styles.recetaTexto}>Subtítulo</Text>
+            </ImageBackground>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.recetaCard} onPress={() => navigation.navigate("Receta")}>
+            <ImageBackground source={require('../assets/images/images_diet/diet_02.jpg')} resizeMode="cover" style={{width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', zIndex: -1, borderRadius: 14, overflow: 'hidden'}}>
             <Text style={styles.recetaTextoTitulo}>Nombre</Text>
             <Text style={styles.recetaTexto}>Subtítulo</Text>
+            </ImageBackground>
           </TouchableOpacity>
 
           <TouchableOpacity 
           style={styles.seeMoreCard}
           onPress={() => handleEntrarGrupoCompleto()}>
-            <Ionicons name="arrow-forward" size={24} color="#000000ff" />
-            <Text style={{ color: '#000000ff', fontWeight: '600' }}>Ver más</Text>
+            <Ionicons name="arrow-forward" size={24} color="#111114" />
+            <Text style={{ color: '##111114', fontWeight: '600' }}>Ver más</Text>
           </TouchableOpacity>
 
         </ScrollView>
@@ -81,26 +87,32 @@ export default function Alimentacion() {
           </TouchableOpacity>
         ))}
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <ScrollView style="alignItems: 'center'; justifyContent: 'center';" horizontal showsHorizontalScrollIndicator={false}>
 
-          <TouchableOpacity style={[styles.addCard, styles.shadow]}>
+
+
+          <TouchableOpacity style={[styles.recetaCard, styles.shadow]} onPress={() => navigation.navigate("Receta")}>
+            <ImageBackground source={require('../assets/images/images_diet/diet_01.jpg')} resizeMode="cover" style={{width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', zIndex: -1, borderRadius: 14, overflow: 'hidden'}}>
+            <Text style={styles.recetaTextoTitulo}>Nombre</Text>
+            <Text style={styles.recetaTexto}>Subtítulo</Text>
+            </ImageBackground>
+          </TouchableOpacity> 
+
+          <TouchableOpacity style={[styles.recetaCard, styles.shadow]} onPress={() => navigation.navigate("Receta")}>
+            <ImageBackground source={require('../assets/images/images_diet/diet_01.jpg')} resizeMode="cover" style={{width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', zIndex: -1, borderRadius: 14, overflow: 'hidden'}}>
+            <Text style={styles.recetaTextoTitulo}>Nombre</Text>
+            <Text style={styles.recetaTexto}>Subtitulo</Text>
+            </ImageBackground>
+          </TouchableOpacity> 
+
+          <TouchableOpacity style={[styles.addCard]}>
             <Ionicons name="add" size={32} color="#ef2b2d" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.recetaCard, styles.shadow]} onPress={() => navigation.navigate("Receta")}>
-            <Text style={styles.recetaTextoTitulo}>Nombre</Text>
-            <Text style={styles.recetaTexto}>Subtítulo</Text>
-          </TouchableOpacity> 
-
-          <TouchableOpacity style={[styles.recetaCard, styles.shadow]} onPress={() => navigation.navigate("Receta")}>
-            <Text style={styles.recetaTextoTitulo}>Nombre</Text>
-            <Text style={styles.recetaTexto}>Subtítulo</Text>
-          </TouchableOpacity> 
-
 
           <TouchableOpacity style={styles.seeMoreCard}>
-            <Ionicons name="arrow-forward" size={24} color="#181818ff" />
-            <Text style={{ color: '#000000ff', fontWeight: '600' }}>Ver más</Text>
+            <Ionicons name="arrow-forward" size={24} color="##111114" />
+            <Text style={{ color: '##111114', fontWeight: '600' }}>Ver más</Text>
           </TouchableOpacity>
 
         </ScrollView>
@@ -137,11 +149,11 @@ export default function Alimentacion() {
       <ScrollView  contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <SafeAreaView>
           {renderGrupo('Trending', recetas.grupo1, 'grupo1')}
-          {renderGrupoAdd('Para ganar músculo', recetas.grupo2, 'grupo2')}
-          {renderGrupoAdd('Mis dietas', recetas.grupo3, 'grupo3')}
-          {renderGrupoAdd('Para mantener la figura', recetas.grupo4, 'grupo4')}
-          {renderGrupoAdd('Para mantener la figura', recetas.grupo5, 'grupo5')}
-          {renderGrupoAdd('Para mantener la figura', recetas.grupo6, 'grupo6')}
+          {renderGrupoAdd('Mis dietas', recetas.grupo2, 'grupo2')}
+          {renderGrupo('Para ganar músculo', recetas.grupo3, 'grupo3')}
+          {renderGrupo('Para mantener la figura', recetas.grupo4, 'grupo4')}
+          {renderGrupo('Para mantener la figura', recetas.grupo5, 'grupo5')}
+          {renderGrupo('Para mantener la figura', recetas.grupo6, 'grupo6')}
         </SafeAreaView>
       </ScrollView>
     </View>

@@ -47,6 +47,7 @@ export default function Receta() {
   const renderPlato = (plato) => {
     return (
           <View style={styles.platoContainer} key={plato.id_plato}>
+            <Image style={styles.platoImage} source={{ uri: plato.fotoUrl }} />
             <Text style={styles.recetaTextoTitulo}>{plato.nombre}</Text>
             <Text style={styles.platoText}>Calorías: {plato.aporte_calorico} kcal</Text>
             <Text style={styles.platoText}>Macronutrientes: {plato.macronutrientes} g</Text>
