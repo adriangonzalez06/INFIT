@@ -2,20 +2,31 @@ openapi: 3.0.0
 info:
   title: IN-FIT API
   version: 1.0.0
-  description: Documentación de la API de usuarios
+  description: Documentación completa de la API de IN-FIT con todas las colecciones
 
 servers:
-  - url: http://localhost:4000
+  - url: http://localhost:8082
 
 paths:
+  # ==================== USUARIOS ====================
   /api/usuarios:
     get:
       summary: Obtener todos los usuarios
+      tags:
+        - Usuarios
       responses:
         '200':
-          description: Lista de usuarios
+          description: Lista de todos los usuarios
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Usuario'
     post:
       summary: Crear un nuevo usuario
+      tags:
+        - Usuarios
       requestBody:
         required: true
         content:
@@ -23,13 +34,83 @@ paths:
             schema:
               type: object
               properties:
-                id_user:
-                  type: number
                 nombre:
                   type: string
                 email:
                   type: string
                 password:
+                  type: string
+                photo:
+                  type: string
+                birthdate:
+                  type: string
+                  format: date
+                height:
+                  type: number
+                weight:
+                  type: number
+                goal:
+                  type: string
+              required:
+                - nombre
+                - email
+                - password
+                - birthdate
+                - height
+                - weight
+                - goal
+      responses:
+        '200':
+          description: Usuario creado exitosamente
+        '400':
+          description: El email ya existe
+
+  /api/usuarios/{id}:
+    get:
+      summary: Obtener usuario por ID
+      tags:
+        - Usuarios
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del documento en Firestore
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Usuario encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+        '404':
+          description: Usuario no encontrado
+    put:
+      summary: Actualizar usuario
+      tags:
+        - Usuarios
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del documento en Firestore
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nombre:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+                photo:
                   type: string
                 birthdate:
                   type: string
@@ -42,11 +123,471 @@ paths:
                   type: string
       responses:
         '200':
-          description: Usuario creado
+          description: Usuario actualizado
+    delete:
+      summary: Eliminar usuario
+      tags:
+        - Usuarios
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del documento en Firestore
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Usuario eliminado
 
-  /api/usuarios/{id}:
+  /api/usuarios/buscar/{id_user}:
     get:
-      summary: Obtener usuario por ID de MongoDB
+      summary: Obtener usuario por id_user (campo personalizado)
+      tags:
+        - Usuarios
+      parameters:
+        - name: id_user
+          in: path
+          required: true
+          description: Campo id_user del usuario
+          schema:
+            type: number
+      responses:
+        '200':
+          description: Usuario encontrado
+        '404':
+          description: Usuario no encontrado
+
+  # ==================== FREE USUARIOS ====================
+  /api/freeusuarios:
+    get:
+      summary: Obtener todos los usuarios free
+      tags:
+        - Free Usuarios
+      responses:
+        '200':
+          description: Lista de todos los usuarios free
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FreeUser'
+    post:
+      summary: Crear un nuevo usuario free
+      tags:
+        - Free Usuarios
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userID:
+                  type: string
+                  description: ID del usuario en la colección users
+                ads_per_hour_gone:
+                  type: number
+              required:
+                - userID
+      responses:
+        '200':
+          description: Usuario free creado exitosamente
+        '400':
+          description: userID es requerido
+
+  /api/freeusuarios/{id}:
+    get:
+      summary: Obtener usuario free por ID
+      tags:
+        - Free Usuarios
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del documento en Firestore
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Usuario free encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FreeUser'
+        '404':
+          description: Usuario free no encontrado
+    put:
+      summary: Actualizar usuario free
+      tags:
+        - Free Usuarios
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del documento en Firestore
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userID:
+                  type: string
+                ads_per_hour_gone:
+                  type: number
+      responses:
+        '200':
+          description: Usuario free actualizado
+    delete:
+      summary: Eliminar usuario free
+      tags:
+        - Free Usuarios
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del documento en Firestore
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Usuario free eliminado
+
+  # ==================== USUARIOS PREMIUM ====================
+  /api/premiumusuarios:
+    get:
+      summary: Obtener todos los usuarios premium
+      tags:
+        - Premium Usuarios
+      responses:
+        '200':
+          description: Lista de todos los usuarios premium
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PremiumUser'
+    post:
+      summary: Crear un nuevo usuario premium
+      tags:
+        - Premium Usuarios
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userID:
+                  type: string
+                  description: ID del usuario en la colección users
+                expiration_day:
+                  type: string
+                  format: date
+                payment_method:
+                  type: string
+                auto_renew:
+                  type: boolean
+              required:
+                - userID
+      responses:
+        '200':
+          description: Usuario premium creado exitosamente
+        '400':
+          description: userID es requerido
+
+  /api/premiumusuarios/{id}:
+    get:
+      summary: Obtener usuario premium por ID
+      tags:
+        - Premium Usuarios
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del documento en Firestore
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Usuario premium encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PremiumUser'
+        '404':
+          description: Usuario premium no encontrado
+    put:
+      summary: Actualizar usuario premium
+      tags:
+        - Premium Usuarios
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del documento en Firestore
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userID:
+                  type: string
+                expiration_day:
+                  type: string
+                  format: date
+                payment_method:
+                  type: string
+                auto_renew:
+                  type: boolean
+      responses:
+        '200':
+          description: Usuario premium actualizado
+    delete:
+      summary: Eliminar usuario premium
+      tags:
+        - Premium Usuarios
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del documento en Firestore
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Usuario premium eliminado
+
+  # ==================== EJERCICIOS ====================
+  /api/ejercicios:
+    get:
+      summary: Obtener todos los ejercicios
+      tags:
+        - Ejercicios
+      responses:
+        '200':
+          description: Lista de todos los ejercicios
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Exercise'
+    post:
+      summary: Crear un nuevo ejercicio
+      tags:
+        - Ejercicios
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Nombre del ejercicio
+                difficulty:
+                  type: string
+                  description: Nivel de dificultad
+                muscular_group:
+                  type: string
+                  description: Grupo muscular que trabaja
+                gif:
+                  type: string
+                  description: URL del GIF del ejercicio
+                image:
+                  type: string
+                  description: URL de la imagen del ejercicio
+                repetitions:
+                  type: number
+                  description: Número de repeticiones
+                series:
+                  type: number
+                  description: Número de series
+                weight:
+                  type: number
+                  description: Peso recomendado
+              required:
+                - name
+      responses:
+        '200':
+          description: Ejercicio creado exitosamente
+        '400':
+          description: El nombre del ejercicio es requerido
+
+  /api/ejercicios/{id}:
+    get:
+      summary: Obtener ejercicio por ID
+      tags:
+        - Ejercicios
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del documento en Firestore
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Ejercicio encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Exercise'
+        '404':
+          description: Ejercicio no encontrado
+    put:
+      summary: Actualizar ejercicio
+      tags:
+        - Ejercicios
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del documento en Firestore
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                difficulty:
+                  type: string
+                muscular_group:
+                  type: string
+                gif:
+                  type: string
+                image:
+                  type: string
+                repetitions:
+                  type: number
+                series:
+                  type: number
+                weight:
+                  type: number
+      responses:
+        '200':
+          description: Ejercicio actualizado
+    delete:
+      summary: Eliminar ejercicio
+      tags:
+        - Ejercicios
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del documento en Firestore
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Ejercicio eliminado
+
+  /api/ejercicios/buscar/grupo/{muscular_group}:
+    get:
+      summary: Obtener ejercicios por grupo muscular
+      tags:
+        - Ejercicios
+      parameters:
+        - name: muscular_group
+          in: path
+          required: true
+          description: Nombre del grupo muscular
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista de ejercicios encontrados
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Exercise'
+        '404':
+          description: No se encontraron ejercicios para ese grupo muscular
+
+  /api/ejercicios/buscar/dificultad/{difficulty}:
+    get:
+      summary: Obtener ejercicios por dificultad
+      tags:
+        - Ejercicios
+      parameters:
+        - name: difficulty
+          in: path
+          required: true
+          description: Nivel de dificultad
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista de ejercicios encontrados
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Exercise'
+        '404':
+          description: No se encontraron ejercicios con esa dificultad
+
+  # ==================== ANSWERBOT ====================
+  /api/answerbot:
+    get:
+      summary: Obtener todos los registros de answerbot
+      tags:
+        - AnswerBot
+      responses:
+        '200':
+          description: Lista de registros
+    post:
+      summary: Crear registro de answerbot
+      tags:
+        - AnswerBot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                answer_text:
+                  type: string
+                  description: Texto de la respuesta
+                answer_timestamp:
+                  type: string
+                  format: date-time
+                  description: Timestamp de la respuesta
+                id_chatbot:
+                  type: string
+                  description: ID del chatbot relacionado
+                id_query:
+                  type: string
+                  description: ID de la consulta relacionada
+      responses:
+        '200':
+          description: Registro creado
+
+  /api/answerbot/{id}:
+    get:
+      summary: Obtener registro por ID
+      tags:
+        - AnswerBot
       parameters:
         - name: id
           in: path
@@ -55,16 +596,851 @@ paths:
             type: string
       responses:
         '200':
-          description: Usuario encontrado
-
-  /api/usuarios/buscar/{id_user}:
-    get:
-      summary: Obtener usuario por id_user
+          description: Registro encontrado
+    put:
+      summary: Actualizar registro
+      tags:
+        - AnswerBot
       parameters:
-        - name: id_user
+        - name: id
           in: path
           required: true
           schema:
-            type: number
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                answer_text:
+                  type: string
+                answer_timestamp:
+                  type: string
+                  format: date-time
+                id_chatbot:
+                  type: string
+                id_query:
+                  type: string
       responses:
         '200':
+          description: Registro actualizado
+    delete:
+      summary: Eliminar registro
+      tags:
+        - AnswerBot
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Registro eliminado
+
+  # ==================== CHATBOT ====================
+  /api/chatbot:
+    get:
+      summary: Obtener todos los registros de chatbot
+      tags:
+        - ChatBot
+      responses:
+        '200':
+          description: Lista de registros
+    post:
+      summary: Crear registro de chatbot
+      tags:
+        - ChatBot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                c_ai_model:
+                  type: string
+                  description: Modelo de IA utilizado (ej. LM Studio)
+                c_languages:
+                  type: string
+                  description: Idioma del chatbot
+                c_name:
+                  type: string
+                  description: Nombre del chatbot
+                c_state:
+                  type: string
+                  description: Estado del chatbot (Activo/Inactivo)
+                version:
+                  type: string
+                  description: Versión del chatbot
+      responses:
+        '200':
+          description: Registro creado
+
+  /api/chatbot/{id}:
+    get:
+      summary: Obtener registro por ID
+      tags:
+        - ChatBot
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Registro encontrado
+    put:
+      summary: Actualizar registro
+      tags:
+        - ChatBot
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                c_ai_model:
+                  type: string
+                c_languages:
+                  type: string
+                c_name:
+                  type: string
+                c_state:
+                  type: string
+                version:
+                  type: string
+      responses:
+        '200':
+          description: Registro actualizado
+    delete:
+      summary: Eliminar registro
+      tags:
+        - ChatBot
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Registro eliminado
+
+  # ==================== INFO MEALS ====================
+  /api/infomeals:
+    get:
+      summary: Obtener todos los registros de comidas
+      tags:
+        - InfoMeals
+      responses:
+        '200':
+          description: Lista de comidas
+    post:
+      summary: Crear registro de comida
+      tags:
+        - InfoMeals
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Nombre de la comida
+                kcal:
+                  type: number
+                  description: Calorías
+                gluten:
+                  type: boolean
+                  description: Contiene gluten
+                vegan:
+                  type: boolean
+                  description: Es vegana
+                vegetarian:
+                  type: boolean
+                  description: Es vegetariana
+                ingredients:
+                  type: string
+                  description: Ingredientes
+                macronutrients:
+                  type: number
+                  description: Macronutrientes
+                photo:
+                  type: string
+                  description: URL de la foto
+      responses:
+        '200':
+          description: Comida creada
+
+  /api/infomeals/{id}:
+    get:
+      summary: Obtener comida por ID
+      tags:
+        - InfoMeals
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Comida encontrada
+    put:
+      summary: Actualizar comida
+      tags:
+        - InfoMeals
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                kcal:
+                  type: number
+                gluten:
+                  type: boolean
+                vegan:
+                  type: boolean
+                vegetarian:
+                  type: boolean
+                ingredients:
+                  type: string
+                macronutrients:
+                  type: number
+                photo:
+                  type: string
+      responses:
+        '200':
+          description: Comida actualizada
+    delete:
+      summary: Eliminar comida
+      tags:
+        - InfoMeals
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Comida eliminada
+
+  # ==================== DOCUMENTS PDF ====================
+  /api/documentspdf:
+    get:
+      summary: Obtener todos los documentos PDF
+      tags:
+        - DocumentsPDF
+      responses:
+        '200':
+          description: Lista de documentos
+    post:
+      summary: Crear documento PDF
+      tags:
+        - DocumentsPDF
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                font:
+                  type: string
+                  description: Fuente del documento
+                title:
+                  type: string
+                  description: Título del documento
+                vectorial_embedding:
+                  type: string
+                  description: Embedding vectorial
+      responses:
+        '200':
+          description: Documento creado
+
+  /api/documentspdf/{id}:
+    get:
+      summary: Obtener documento PDF por ID
+      tags:
+        - DocumentsPDF
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Documento encontrado
+    put:
+      summary: Actualizar documento PDF
+      tags:
+        - DocumentsPDF
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                font:
+                  type: string
+                title:
+                  type: string
+                vectorial_embedding:
+                  type: string
+      responses:
+        '200':
+          description: Documento actualizado
+    delete:
+      summary: Eliminar documento PDF
+      tags:
+        - DocumentsPDF
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Documento eliminado
+
+  # ==================== INFO GENERIC DIET ====================
+  /api/infogenericdict:
+    get:
+      summary: Obtener todos los registros de dieta genérica
+      tags:
+        - InfoGenericDict
+      responses:
+        '200':
+          description: Lista de dietas genéricas
+    post:
+      summary: Crear registro de dieta genérica
+      tags:
+        - InfoGenericDict
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                carbohydrates:
+                  type: number
+                  description: Gramos de carbohidratos
+                diet_type:
+                  type: string
+                  description: Tipo de dieta
+                gluten:
+                  type: boolean
+                  description: Contiene gluten
+                id_meal:
+                  type: number
+                  description: ID de la comida
+                kcal:
+                  type: number
+                  description: Calorías totales
+                micronutrients:
+                  type: number
+                  description: Micronutrientes
+                number_meals:
+                  type: number
+                  description: Número de comidas
+                vegan:
+                  type: boolean
+                  description: Es vegana
+                vegetarian:
+                  type: boolean
+                  description: Es vegetariana
+      responses:
+        '200':
+          description: Registro creado
+
+  /api/infogenericdict/{id}:
+    get:
+      summary: Obtener registro de dieta genérica por ID
+      tags:
+        - InfoGenericDict
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Registro encontrado
+    put:
+      summary: Actualizar registro de dieta genérica
+      tags:
+        - InfoGenericDict
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                carbohydrates:
+                  type: number
+                diet_type:
+                  type: string
+                gluten:
+                  type: boolean
+                id_meal:
+                  type: number
+                kcal:
+                  type: number
+                micronutrients:
+                  type: number
+                number_meals:
+                  type: number
+                vegan:
+                  type: boolean
+                vegetarian:
+                  type: boolean
+      responses:
+        '200':
+          description: Registro actualizado
+    delete:
+      summary: Eliminar registro de dieta genérica
+      tags:
+        - InfoGenericDict
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Registro eliminado
+
+  # ==================== INFO PERSONALIZED DIET ====================
+  /api/infopersonalizeddiet:
+    get:
+      summary: Obtener todos los registros de dietas personalizadas
+      tags:
+        - InfoPersonalizedDiet
+      responses:
+        '200':
+          description: Lista de dietas personalizadas
+    post:
+      summary: Crear dieta personalizada
+      tags:
+        - InfoPersonalizedDiet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ai_model:
+                  type: string
+                  description: Modelo de IA utilizado
+                carbohydrates:
+                  type: number
+                  description: Gramos de carbohidratos
+                gluten:
+                  type: boolean
+                  description: Contiene gluten
+                id_meal:
+                  type: number
+                  description: ID de la comida
+                kcal:
+                  type: number
+                  description: Calorías totales
+                micronutrients:
+                  type: number
+                  description: Micronutrientes
+                number_meals:
+                  type: number
+                  description: Número de comidas
+                personal_specifications:
+                  type: string
+                  description: Especificaciones personales (ej. Diabetes)
+                protein:
+                  type: number
+                  description: Proteína en gramos
+                type_diet:
+                  type: string
+                  description: Tipo de dieta (ej. Ganar músculo)
+                vegan:
+                  type: boolean
+                  description: Es vegana
+                vegetarian:
+                  type: boolean
+                  description: Es vegetariana
+      responses:
+        '200':
+          description: Dieta creada
+
+  /api/infopersonalizeddiet/{id}:
+    get:
+      summary: Obtener dieta personalizada por ID
+      tags:
+        - InfoPersonalizedDiet
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Dieta encontrada
+    put:
+      summary: Actualizar dieta personalizada
+      tags:
+        - InfoPersonalizedDiet
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ai_model:
+                  type: string
+                carbohydrates:
+                  type: number
+                gluten:
+                  type: boolean
+                id_meal:
+                  type: number
+                kcal:
+                  type: number
+                micronutrients:
+                  type: number
+                number_meals:
+                  type: number
+                personal_specifications:
+                  type: string
+                protein:
+                  type: number
+                type_diet:
+                  type: string
+                vegan:
+                  type: boolean
+                vegetarian:
+                  type: boolean
+      responses:
+        '200':
+          description: Dieta actualizada
+    delete:
+      summary: Eliminar dieta personalizada
+      tags:
+        - InfoPersonalizedDiet
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+              description: Dieta eliminada
+    get:
+      summary: Obtener registro por ID
+      tags:
+        - InfoGenericDict
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Registro encontrado
+    put:
+      summary: Actualizar registro
+      tags:
+        - InfoGenericDict
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                carbohydrates:
+                  type: number
+                diet_type:
+                  type: string
+                gluten:
+                  type: boolean
+                id_meal:
+                  type: number
+                kcal:
+                  type: number
+                micronutrients:
+                  type: number
+                number_meals:
+                  type: number
+                vegan:
+                  type: boolean
+                vegetarian:
+                  type: boolean
+      responses:
+        '200':
+          description: Registro actualizado
+    delete:
+      summary: Eliminar registro
+      tags:
+        - InfoGenericDict
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Registro eliminado
+
+  # ==================== PROGRESS ====================
+  /api/progress:
+    get:
+      summary: Obtener todos los registros de progreso
+      tags:
+        - Progress
+      responses:
+        '200':
+          description: Lista de progreso
+    post:
+      summary: Crear registro de progreso
+      tags:
+        - Progress
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userID:
+                  type: string
+                date:
+                  type: string
+                  format: date
+                weight:
+                  type: number
+                measurements:
+                  type: object
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Progreso registrado
+
+  /api/progress/{id}:
+    get:
+      summary: Obtener progreso por ID
+      tags:
+        - Progress
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Progreso encontrado
+    put:
+      summary: Actualizar progreso
+      tags:
+        - Progress
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Progreso actualizado
+    delete:
+      summary: Eliminar progreso
+      tags:
+        - Progress
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Progreso eliminado
+
+components:
+  schemas:
+    Usuario:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID del documento en Firestore
+        nombre:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        photo:
+          type: string
+        birthdate:
+          type: string
+          format: date
+        height:
+          type: number
+        weight:
+          type: number
+        goal:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    FreeUser:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID del documento en Firestore
+        userID:
+          type: string
+          description: Referencia al usuario
+        ads_per_hour_gone:
+          type: number
+          description: Cantidad de anuncios mostrados por hora
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    PremiumUser:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID del documento en Firestore
+        userID:
+          type: string
+          description: Referencia al usuario
+        expiration_day:
+          type: string
+          format: date
+          description: Fecha de expiración de la suscripción
+        payment_method:
+          type: string
+          description: Método de pago utilizado
+        auto_renew:
+          type: boolean
+          description: Si se renueva automáticamente
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Exercise:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID del documento en Firestore
+        name:
+          type: string
+          description: Nombre del ejercicio
+        difficulty:
+          type: string
+          description: Nivel de dificultad (easy, medium, extreme, etc.)
+        muscular_group:
+          type: string
+          description: Grupo muscular que trabaja
+        gif:
+          type: string
+          description: URL del GIF del ejercicio
+        image:
+          type: string
+          description: URL de la imagen del ejercicio
+        repetitions:
+          type: number
+          description: Número de repeticiones recomendadas
+        series:
+          type: number
+          description: Número de series recomendadas
+        weight:
+          type: number
+          description: Peso recomendado
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time

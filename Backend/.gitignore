@@ -1,0 +1,10 @@
+node_modules/
+firebase-service-account.json
+.env
+.env.local
+.DS_Store
+*.log
+npm-debug.log*
+.idea/
+.vscode/
+dist/

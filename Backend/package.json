@@ -12,8 +12,8 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
+    "firebase-admin": "^12.0.0",
     "loader": "^2.1.1",
-    "mongoose": "^8.18.1",
     "swagger-ui-express": "^5.0.1",
     "yamljs": "^0.3.0"
   },
