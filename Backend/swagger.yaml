@@ -937,18 +937,18 @@ paths:
           description: Documento eliminado
 
   # ==================== INFO GENERIC DIET ====================
-  /api/infogenericdict:
+  /api/infogenericdiet:
     get:
       summary: Obtener todos los registros de dieta genérica
       tags:
-        - InfoGenericDict
+        - InfoGenericDiet
       responses:
         '200':
           description: Lista de dietas genéricas
     post:
       summary: Crear registro de dieta genérica
       tags:
-        - InfoGenericDict
+        - InfoGenericDiet
       requestBody:
         required: true
         content:
@@ -987,11 +987,11 @@ paths:
         '200':
           description: Registro creado
 
-  /api/infogenericdict/{id}:
+  /api/infogenericdiet/{id}:
     get:
       summary: Obtener registro de dieta genérica por ID
       tags:
-        - InfoGenericDict
+        - InfoGenericDiet
       parameters:
         - name: id
           in: path
@@ -1004,7 +1004,7 @@ paths:
     put:
       summary: Actualizar registro de dieta genérica
       tags:
-        - InfoGenericDict
+        - InfoGenericDiet
       parameters:
         - name: id
           in: path
@@ -1042,7 +1042,7 @@ paths:
     delete:
       summary: Eliminar registro de dieta genérica
       tags:
-        - InfoGenericDict
+        - InfoGenericDiet
       parameters:
         - name: id
           in: path
@@ -1187,7 +1187,7 @@ paths:
     get:
       summary: Obtener registro por ID
       tags:
-        - InfoGenericDict
+        - InfoGenericDiet
       parameters:
         - name: id
           in: path
@@ -1200,7 +1200,7 @@ paths:
     put:
       summary: Actualizar registro
       tags:
-        - InfoGenericDict
+        - InfoGenericDiet
       parameters:
         - name: id
           in: path
@@ -1238,7 +1238,7 @@ paths:
     delete:
       summary: Eliminar registro
       tags:
-        - InfoGenericDict
+        - InfoGenericDiet
       parameters:
         - name: id
           in: path
