@@ -1,16 +1,12 @@
 const {Router} = require('express');
 const router = Router();
 
-const  {createFreeUsu, getFreeUsu, getFreeUsuById, deleteFreeUsu, updateFreeUsu} = require('../controller/freeUsers.controller.js');
+const  {createFreeUsu, getFreeUsu, getFreeUserById, deleteFreeUsu, updateFreeUsu} = require('../controller/freeUsers.controller.js');
 
-router.route("/")
-
-    .get(getFreeUsu)
-    .post(createFreeUsu)
-
-router.route('/:id')
-    .get(getFreeUsuById)
-    .delete(deleteFreeUsu)
-    .put(updateFreeUsu)
+router.get('/', getFreeUsu);
+router.post('/', createFreeUsu);
+router.get('/:id', getFreeUserById);
+router.delete('/:id', deleteFreeUsu);
+router.put('/:id', updateFreeUsu);
 
 module.exports = router;

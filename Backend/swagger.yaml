@@ -157,12 +157,12 @@ paths:
         '404':
           description: Usuario no encontrado
 
-  # ==================== FREE USUARIOS ====================
-  /api/freeusuarios:
+  # ==================== USUARIOS FREE ====================
+  /api/usersfree:
     get:
       summary: Obtener todos los usuarios free
       tags:
-        - Free Usuarios
+        - Usuarios Free
       responses:
         '200':
           description: Lista de todos los usuarios free
@@ -175,7 +175,7 @@ paths:
     post:
       summary: Crear un nuevo usuario free
       tags:
-        - Free Usuarios
+        - Usuarios Free
       requestBody:
         required: true
         content:
@@ -196,11 +196,11 @@ paths:
         '400':
           description: userID es requerido
 
-  /api/freeusuarios/{id}:
+  /api/usersfree/{id}:
     get:
       summary: Obtener usuario free por ID
       tags:
-        - Free Usuarios
+        - Usuarios Free
       parameters:
         - name: id
           in: path
@@ -220,7 +220,7 @@ paths:
     put:
       summary: Actualizar usuario free
       tags:
-        - Free Usuarios
+        - Usuarios Free
       parameters:
         - name: id
           in: path
@@ -245,7 +245,7 @@ paths:
     delete:
       summary: Eliminar usuario free
       tags:
-        - Free Usuarios
+        - Usuarios Free
       parameters:
         - name: id
           in: path
@@ -937,18 +937,18 @@ paths:
           description: Documento eliminado
 
   # ==================== INFO GENERIC DIET ====================
-  /api/infogenericdict:
+  /api/infogenericdiet:
     get:
       summary: Obtener todos los registros de dieta genérica
       tags:
-        - InfoGenericDict
+        - InfoGenericdiet
       responses:
         '200':
           description: Lista de dietas genéricas
     post:
       summary: Crear registro de dieta genérica
       tags:
-        - InfoGenericDict
+        - InfoGenericdiet
       requestBody:
         required: true
         content:
@@ -987,11 +987,11 @@ paths:
         '200':
           description: Registro creado
 
-  /api/infogenericdict/{id}:
+  /api/infogenericdiet/{id}:
     get:
       summary: Obtener registro de dieta genérica por ID
       tags:
-        - InfoGenericDict
+        - InfoGenericdiet
       parameters:
         - name: id
           in: path
@@ -1004,7 +1004,7 @@ paths:
     put:
       summary: Actualizar registro de dieta genérica
       tags:
-        - InfoGenericDict
+        - InfoGenericdiet
       parameters:
         - name: id
           in: path
@@ -1042,7 +1042,7 @@ paths:
     delete:
       summary: Eliminar registro de dieta genérica
       tags:
-        - InfoGenericDict
+        - InfoGenericdiet
       parameters:
         - name: id
           in: path
@@ -1187,7 +1187,7 @@ paths:
     get:
       summary: Obtener registro por ID
       tags:
-        - InfoGenericDict
+        - InfoGenericdiet
       parameters:
         - name: id
           in: path
@@ -1200,7 +1200,7 @@ paths:
     put:
       summary: Actualizar registro
       tags:
-        - InfoGenericDict
+        - InfoGenericdiet
       parameters:
         - name: id
           in: path
@@ -1238,7 +1238,7 @@ paths:
     delete:
       summary: Eliminar registro
       tags:
-        - InfoGenericDict
+        - InfoGenericdiet
       parameters:
         - name: id
           in: path

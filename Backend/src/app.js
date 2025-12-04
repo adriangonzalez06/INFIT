@@ -25,7 +25,7 @@ app.get('/', (req, res) => {
 
 // ruta para api de usuarios
 app.use('/api/usuarios', require('./routes/users.routes'));
-app.use('/api/freeusuarios', require('./routes/freeUsers'));
+app.use('/api/usersfree', require('./routes/freeUsers'));
 app.use('/api/premiumusuarios', require('./routes/userspremium'));
 
 // ruta para api de ejercicios
@@ -36,7 +36,7 @@ app.use('/api/answerbot', require('./routes/answerbot'));
 app.use('/api/chatbot', require('./routes/chatbot'));
 app.use('/api/documentspdf', require('./routes/documentspdf'));
 app.use('/api/infomeals', require('./routes/infomeals'));
-app.use('/api/infogenericdict', require('./routes/infogenericdict'));
+app.use('/api/infogenericdiet', require('./routes/infogenericdiet'));
 app.use('/api/infopersonalizeddiet', require('./routes/infopersonalizeddiet'));
 app.use('/api/progress', require('./routes/progress'));
 
