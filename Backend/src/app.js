@@ -36,7 +36,7 @@ app.use('/api/answerbot', require('./routes/answerbot'));
 app.use('/api/chatbot', require('./routes/chatbot'));
 app.use('/api/documentspdf', require('./routes/documentspdf'));
 app.use('/api/infomeals', require('./routes/infomeals'));
-app.use('/api/infogenericdict', require('./routes/infogenericdict'));
+app.use('/api/infogenericdiet', require('./routes/infogenericdiet'));
 app.use('/api/infopersonalizeddiet', require('./routes/infopersonalizeddiet'));
 app.use('/api/progress', require('./routes/progress'));
 

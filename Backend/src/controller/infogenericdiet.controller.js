@@ -1,7 +1,7 @@
-const infogenicdictCtl = {};
+const infogenicdietCtl = {};
 const firestoreService = require('../service/firestoreservice');
 
-infogenicdictCtl.getAll = async (req, res) => {
+infogenicdietCtl.getAll = async (req, res) => {
     try {
         const items = await firestoreService.getAll('infogenericdict');
         res.json(items);
@@ -10,7 +10,7 @@ infogenicdictCtl.getAll = async (req, res) => {
     }
 }
 
-infogenicdictCtl.create = async (req, res) => {
+infogenicdietCtl.create = async (req, res) => {
     try {
         const newItem = req.body;
         const docId = await firestoreService.create('infogenericdict', newItem);
@@ -20,7 +20,7 @@ infogenicdictCtl.create = async (req, res) => {
     }
 }
 
-infogenicdictCtl.getById = async (req, res) => {
+infogenicdietCtl.getById = async (req, res) => {
     try {
         const item = await firestoreService.getById('infogenericdict', req.params.id);
         res.json(item);
@@ -29,7 +29,7 @@ infogenicdictCtl.getById = async (req, res) => {
     }
 }
 
-infogenicdictCtl.update = async (req, res) => {
+infogenicdietCtl.update = async (req, res) => {
     try {
         await firestoreService.update('infogenericdict', req.params.id, req.body);
         res.json({ message: 'Documento actualizado' });
@@ -38,7 +38,7 @@ infogenicdictCtl.update = async (req, res) => {
     }
 }
 
-infogenicdictCtl.delete = async (req, res) => {
+infogenicdietCtl.delete = async (req, res) => {
     try {
         await firestoreService.delete('infogenericdict', req.params.id);
         res.json({ message: 'Documento eliminado' });
@@ -47,4 +47,4 @@ infogenicdictCtl.delete = async (req, res) => {
     }
 }
 
-module.exports = infogenicdictCtl;
+module.exports = infogenicdietCtl;
