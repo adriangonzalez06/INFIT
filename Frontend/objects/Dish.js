@@ -1,4 +1,4 @@
-export class Plato {
+export default class Dish {
   constructor(id_plato, nombre, fotoUrl, macronutrientes, ingredientes, aporte_calorico, vegetariano, vegano, sin_gluten) {
     this.id_plato = id_plato;
     this.nombre = nombre;

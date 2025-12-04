@@ -174,18 +174,28 @@ export default StyleSheet.create({
     width: '100%',
     backgroundColor: colors.white,
     textAlign: 'left',
+    flexDirection: 'row',
   },
-  platoText: {
+
+  platoImage: {
+    width: '40%',
+    height: '100%',
+    borderRadius: 10,
+    marginRight: 10,
+  },
+  dishTitle: {
+    fontSize: 20,
+    color: colors.dark_gray,
+  },
+  dishSubtitle: {
+    fontSize: 16,
+    color: colors.medium_gray,
+  },
+  dishText: {
     fontSize: 14,
     color: colors.dark_gray,
     textAlign: 'left',
     marginBottom: 5,
-  },
-  platoImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 10,
-    marginBottom: 10,
   },
 //pantalla rutina styles
   rutinaContainer: {
