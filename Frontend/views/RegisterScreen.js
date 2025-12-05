@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import axios from 'axios';
+const axios = require('axios'); // o import axios from 'axios';
 
 import {
   getAuth,
@@ -28,7 +28,9 @@ const auth = getAuth(app, {
   persistence: getReactNativePersistence(ReactNativeAsyncStorage),
 });
 
+
 function RegisterScreen({ navigation }) {
+  // Estados para los campos del formulario
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [usuario, setUsuario] = useState('');
@@ -36,8 +38,11 @@ function RegisterScreen({ navigation }) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
 
+
   const handleRegister = async () => {
-    if (!nombre || !email || !usuario || !password || !confirmPassword) {
+    setError('');
+    // Validar campos
+    if (!nombre || !email || !usuario || !password) {
       setError('Por favor, completa todos los campos.');
       Alert.alert('Error', 'Por favor, completa todos los campos.');
       return;
@@ -49,26 +54,54 @@ function RegisterScreen({ navigation }) {
       return;
     }
 
+    const payload = {
+      nombre,
+      correo: email.trim(),
+      usuario,
+      contraseña: password, // enviar texto si el backend lo va a hashear
+    };
+
     try {
+      // Crear usuario en Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
       const user = userCredential.user;
       console.log('Cuenta creada en Firebase:', user.uid);
 
-      const newUser = {
-        nombre,
-        correo: email.trim(),
-        usuario,
-        contraseña: password,
-      };
+      // Crear el bojeto usuario para el backend
+      //Enviar datos al backend
+      const resp = await axios.post('http://localhost:8082/api/usuarios', payload, {
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 10000,
+      });
+      //Verificar respuesta
+      if (resp.status === 201 || resp.status === 200) {
+        console.log('Datos guardados en la base de datos');
+        setError('');
+        navigation.navigate('Login');
+      } else {
+        // Si la creación en el backend falla, eliminar el usuario de Firebase par ano dejar fuerfano 
+        await user.delete();
+        throw new Error('No se pudo crear el usuario, porfabor vuelva a intentarlo.');
+      }
+      
 
-      await axios.post('http://10.0.2.2:8082/api/usuarios', newUser);
-      console.log('Datos guardados en la base de datos');
-
-      setError('');
-      navigation.navigate('Login');
+      
     } catch (error) {
+      // Manejar errores de Firebase o del backend
       console.error('Error al registrar:', error.message);
       Alert.alert('Error', error.message);
+
+      // Si hubo un error, eliminar el usuario de Firebase para evitar inconsistencias
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        try {
+          await currentUser.delete();
+          console.warn('Rollback: Usuario de Firebase eliminado debido a error en backend.');
+        }catch (e){
+          console.warn('No se pudo eliminar el usuario de Firebase durante el rollback:', e?.message || e);
+        }
+        
+      }
     }
   };
 
@@ -189,4 +222,3 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
-``

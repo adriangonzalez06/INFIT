@@ -1,10 +1,9 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
-const app = express();
-const swaggerUi = require("swagger-ui-express");
 const YAML = require("yamljs");
-const swaggerDocument = YAML.load(path.join(__dirname, "../swagger.yaml"));
+
+const app = express();
 
 //Configuracion
 app.set("port", process.env.PORT || 8082);
@@ -20,29 +19,23 @@ app.use(
 
 app.use(express.json());
 
-//rutas
-app.get("/", (req, res) => {
-  res.send("Bienvenido a la API de IN-FIT");
+// Log sencillo de todas las peticiones para depuración
+app.use((req, res, next) => {
+  console.log(`[REQ] ${req.method} ${req.originalUrl}`);
+  next();
 });
 
-// ruta para api de usuarios
-app.use('/api/usuarios', require('./routes/users.routes'));
-app.use('/api/usersfree', require('./routes/freeUsers'));
-app.use('/api/premiumusuarios', require('./routes/userspremium'));
+//rutas
+app.get("/", (req, res) => {
+  res.json({ ok: true, message: "API backend" });
+});
 
-// ruta para api de ejercicios
-app.use("/api/ejercicios", require("./routes/exercises"));
-
-// rutas para otras colecciones
-app.use('/api/answerbot', require('./routes/answerbot'));
-app.use('/api/chatbot', require('./routes/chatbot'));
-app.use('/api/documentspdf', require('./routes/documentspdf'));
-app.use('/api/infomeals', require('./routes/infomeals'));
-app.use('/api/infogenericdiet', require('./routes/infogenericdiet'));
-app.use('/api/infopersonalizeddiet', require('./routes/infopersonalizeddiet'));
-app.use('/api/progress', require('./routes/progress'));
-
-//swagger
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+// importa rutas (asegúrate de que los archivos de rutas usan module.exports)
+try {
+  const usersRouter = require('./routes/users.routes');
+  app.use('/api/usuarios', usersRouter);
+} catch (e) {
+  // si no existen rutas todavía, no bloquear el arranque
+}
 
 module.exports = app;
