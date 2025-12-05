@@ -209,7 +209,7 @@ export default function WelcomeScreen() {
       <View style={{ marginTop: 16 }}>
         <View style={styles.sectionHeaderRow}>
           <Text style={[styles.sectionTitle, { color: theme.title }]}>Retos diarios</Text>
-          <Text style={[styles.sectionLink, { color: theme.primary }]}>Desliza para ver más ➔</Text>
+          <Pressable onPress={() => navigation.navigate('Challenges')} ><Text style={[styles.sectionLink, { color: theme.primary }]}>Desliza para ver más ➔</Text></Pressable>
         </View>
 
         <FlatList

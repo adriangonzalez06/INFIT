@@ -15,7 +15,7 @@ import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import DailyChallenge from './views/DailyChallenge';
+import Challenges from './views/Challenges';
 import WelcomeScreen from './views/WelcomeScreen';
 import ProfileScreen from './views/profile';
 import SettingsScreen from './views/settings';
@@ -30,9 +30,8 @@ import RuedaSettings from './views/RuedaSettings';
 import ChangingPassword from './views/changing_password';
 import ListaGrupoRecetas from './views/ListaGrupoRecetas';
 import Receta from './views/Receta';
-
 import colors from './views/colors';
-
+import { SvgUri } from 'react-native-svg';
 import { initializeApp, getApps } from 'firebase/app';
 import { firebaseConfig } from './firebaseConfig';
 import {
@@ -114,6 +113,20 @@ function LoginScreen({ navigation }) {
           </TouchableOpacity>
 
           <Text style={styles.dividerText}>─── O inicia sesión con ───</Text>
+
+
+
+
+            <TouchableOpacity style={styles.google}>
+            <Image
+             source={require('./assets/logos/googleglogo.png')}
+                 style={{ width: 24, height: 24 }}
+              resizeMode="contain"
+                />
+            </TouchableOpacity>
+
+
+
         </SafeAreaView>
 
            {/* Boton para ir al menu sin iniciar sesion para no perder tanto tiempo */}
@@ -167,6 +180,7 @@ export default function App() {
           <Stack.Screen name="ChangingPassword" component={ChangingPassword} options={{headerShown: false}}/>
           <Stack.Screen name="ListaGrupoRecetas" component={ListaGrupoRecetas} options={{headerShown: false}}/>
           <Stack.Screen name="Receta" component={Receta} options={{headerShown: false}}/>
+          <Stack.Screen name="Challenges" component={Challenges} options={{headerShown: false}}/>
 
         </Stack.Navigator>
       </NavigationContainer>
@@ -227,4 +241,20 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: colors.dark_gray,
   },
+
+  google: {
+    width: 50,
+    height: 50,
+    borderRadius: 30, // hace el botón circular
+    backgroundColor: '#fff', // fondo blanco
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 2, // sombra en Android
+    shadowColor: '#000', // sombra en iOS
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    alignSelf: 'center',
+    marginTop: -20,
+
+  }
 });
