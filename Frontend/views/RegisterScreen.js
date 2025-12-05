@@ -13,7 +13,7 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
-
+import colors from './colors.js';
 import {
   getAuth,
   getReactNativePersistence,
@@ -137,7 +137,7 @@ export default RegisterScreen;
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#dddbd1',
+    backgroundColor: colors.bg_gray,
   },
   container: {
     flex: 1,

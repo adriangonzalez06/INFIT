@@ -32,22 +32,17 @@ import ListaGrupoRecetas from './views/ListaGrupoRecetas';
 import Receta from './views/Receta';
 import colors from './views/colors';
 import { SvgUri } from 'react-native-svg';
+import { getAuth, signInWithRedirect } from "firebase/auth";
 import { initializeApp, getApps } from 'firebase/app';
 import { firebaseConfig } from './firebaseConfig';
-import {
-  getAuth,
-  signInWithEmailAndPassword,
-  getReactNativePersistence,
-} from 'firebase/auth';
+
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
 const Stack = createNativeStackNavigator();
 
-{/* Inicialización segura de Firebase */}
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-const auth = getAuth(app, {
-  persistence: getReactNativePersistence(ReactNativeAsyncStorage),
-});
+function call_login_google(){
+
+};
 
 function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -117,7 +112,7 @@ function LoginScreen({ navigation }) {
 
 
 
-            <TouchableOpacity style={styles.google}>
+            <TouchableOpacity style={styles.google} onPress={call_login_google}>
             <Image
              source={require('./assets/logos/googleglogo.png')}
                  style={{ width: 24, height: 24 }}
