@@ -1,14 +1,3 @@
-const mongoose = require('mongoose');
-
-//cadena de conexion a la base de datos
-const URI = process.env.MONGODB_URI 
-    ? process.env.MONGODB_URI
-    : 'mongodb://localhost/dbtest';
-
-mongoose.connect(URI)
-
-const connection = mongoose.connection;
-
-connection.once('open', () => {
-    console.log('La base de datos se ha conectado exitosamente');
-})
+// La conexión a Firestore se maneja en src/config/firestoreservice.js
+// Este archivo se mantiene para compatibilidad futura
+// La inicialización se realiza en src/index.js

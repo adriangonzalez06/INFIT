@@ -1,0 +1,53 @@
+
+[
+  {
+    "name": "Sentadilla con barra",
+    "muscular_group": "Piernas",
+    "difficulty": "Intermedio",
+    "gif": "https://example.com/gifs/sentadilla.gif",
+    "image": "https://example.com/images/sentadilla.jpg",
+    "repetitions": 12,
+    "series": 4,
+    "weight": "60kg"
+  },
+  {
+    "name": "Press de banca",
+    "muscular_group": "Pectoral",
+    "difficulty": "Intermedio",
+    "gif": "https://example.com/gifs/press_banca.gif",
+    "image": "https://example.com/images/press_banca.jpg",
+    "repetitions": 10,
+    "series": 4,
+    "weight": "50kg"
+  },
+  {
+    "name": "Dominadas",
+    "muscular_group": "Espalda",
+    "difficulty": "Avanzado",
+    "gif": "https://example.com/gifs/dominadas.gif",
+    "image": "https://example.com/images/dominadas.jpg",
+    "repetitions": 8,
+    "series": 3,
+    "weight": "Peso corporal"
+  },
+  {
+    "name": "Curl de bíceps con mancuernas",
+    "muscular_group": "Bíceps",
+    "difficulty": "Principiante",
+    "gif": "https://example.com/gifs/curl_biceps.gif",
+    "image": "https://example.com/images/curl_biceps.jpg",
+    "repetitions": 15,
+    "series": 3,
+    "weight": "10kg"
+  },
+  {
+    "name": "Plancha abdominal",
+    "muscular_group": "Core",
+    "difficulty": "Principiante",
+    "gif": "https://example.com/gifs/plancha.gif",
+    "image": "https://example.com/images/plancha.jpg",
+    "repetitions": "30 segundos",
+    "series": 3,
+    "weight": "Sin peso"
+  }
+]

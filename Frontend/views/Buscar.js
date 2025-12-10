@@ -188,6 +188,8 @@ const BuscarScreen = () => {
   );
 };
 
+
+
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#f9f9f9" },
   container: { flex: 1, paddingHorizontal: 16, paddingTop: 20 },
