@@ -10,10 +10,9 @@ import {
   Animated,
   Dimensions,
   TextInput,
-  PanResponder,
-  Pressable,
+  PanResponder
 } from "react-native";
-
+import { Pressable } from "react-native";
 const { height } = Dimensions.get("window");
 
 const BuscarScreen = () => {
@@ -27,7 +26,7 @@ const BuscarScreen = () => {
     { id: "2", nombre: "Bicicleta", calorias: 250, tiempo: 30 },
     { id: "3", nombre: "Flexiones", calorias: 130, tiempo: 15 },
     { id: "4", nombre: "Sentadillas", calorias: 150, tiempo: 20 },
-    { id: "5", nombre: "Burpees", calorias: 200, tiempo: 15 },
+    { id: "5", nombre: "Burpees", calorias: 200, tiempo: 15 }
   ];
 
   const alimentos = [
@@ -35,17 +34,19 @@ const BuscarScreen = () => {
     { id: "2", nombre: "Pollo", calorias: 239, cantidad: 100 },
     { id: "3", nombre: "Arroz", calorias: 130, cantidad: 100 },
     { id: "4", nombre: "Avena", calorias: 389, cantidad: 100 },
-    { id: "5", nombre: "Huevo", calorias: 155, cantidad: 100 },
+    { id: "5", nombre: "Huevo", calorias: 155, cantidad: 100 }
   ];
 
-  const [favoritos, setFavoritos] = useState([]);
-  const [soloFavoritos, setSoloFavoritos] = useState(false);
+ const [favoritos, setFavoritos] = useState([]);
+ const [soloFavoritos, setSoloFavoritos] = useState(false);
 
-  const toggleFavorito = (id) => {
-    setFavoritos((prev) =>
-      prev.includes(id) ? prev.filter((favId) => favId !== id) : [...prev, id]
-    );
-  };
+ const toggleFavorito = (id) =>  {
+    if (favoritos.includes(id)) {
+      setFavoritos(favoritos.filter(favId => favId !==id));
+    } else {
+      setFavoritos([...favoritos, id]);
+    }
+ };
 
   const abrirMenu = (tipo) => {
     setTipoMenu(tipo);
@@ -54,7 +55,7 @@ const BuscarScreen = () => {
     Animated.timing(slideAnim, {
       toValue: height * 0.2, // posición inicial del bottom sheet
       duration: 300,
-      useNativeDriver: false,
+      useNativeDriver: false
     }).start();
   };
 
@@ -62,7 +63,7 @@ const BuscarScreen = () => {
     Animated.timing(slideAnim, {
       toValue: height,
       duration: 300,
-      useNativeDriver: false,
+      useNativeDriver: false
     }).start(() => {
       setMostrarMenu(false);
       setTipoMenu(null);
@@ -84,20 +85,20 @@ const BuscarScreen = () => {
           Animated.timing(slideAnim, {
             toValue: height * 0.2,
             duration: 200,
-            useNativeDriver: false,
+            useNativeDriver: false
           }).start();
         }
-      },
+      }
     })
   ).current;
 
   const data = tipoMenu === "ejercicios" ? ejercicios : alimentos;
-
-  const filteredData = data
-    .filter((item) =>
-      item.nombre.toLowerCase().includes(searchText.toLowerCase())
-    )
-    .filter((item) => !soloFavoritos || favoritos.includes(item.id));
+  const filteredData = data.filter(item =>
+    item.nombre.toLowerCase().includes(searchText.toLowerCase())
+  )
+  .filter(item=>
+    !soloFavoritos  || favoritos.includes(item.id)
+  )
 
   const renderItem = ({ item }) => (
     <View style={styles.cardContainer}>
@@ -106,34 +107,36 @@ const BuscarScreen = () => {
         <Text style={styles.imagePlaceholder}>📷</Text>
       </View>
 
-      {/* Info abajo */}
-      <View style={styles.infoContainer}>
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <Text style={styles.publisher}>Publicado por: Juan Pérez</Text>
 
-          {/* Corazón para favoritos */}
-          <Pressable onPress={() => toggleFavorito(item.id)}>
-            <Text style={{ fontSize: 20 }}>
-              {favoritos.includes(item.id) ? "❤️" : "🤍"}
-            </Text>
-          </Pressable>
-        </View>
+    {/* Info abajo */}
+        <View style={styles.infoContainer}>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+        <Text style={styles.publisher}>Publicado por: Juan Pérez</Text>
 
-        <Text style={styles.routineName}>{item.nombre}</Text>
-        <Text style={styles.description}>
-          {tipoMenu === "ejercicios"
-            ? `Rutina para quemar ${item.calorias} kcal en ${item.tiempo} min`
-            : `Plato con ${item.calorias} kcal por 100g`}
-        </Text>
-      </View>
+    {/* Corazón para favoritos */}
+    <Pressable onPress={() => toggleFavorito(item.id)}>
+      <Text style={{ fontSize: 20 }}>
+        {favoritos.includes(item.id) ? "❤️" : "🤍"}
+      </Text>
+    </Pressable>
+  </View>
+
+  <Text style={styles.routineName}>{item.nombre}</Text>
+  <Text style={styles.description}>
+    {tipoMenu === "ejercicios"
+      ? `Rutina para quemar ${item.calorias} kcal en ${item.tiempo} min`
+      : `Plato con ${item.calorias} kcal por 100g`}
+  </Text>
+  
+</View>
+
+
+
     </View>
   );
+
+
+
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -141,17 +144,11 @@ const BuscarScreen = () => {
         <Text style={styles.header}>Explora y Añade</Text>
         <Text style={styles.subHeader}>Selecciona una opción para buscar</Text>
 
-        <TouchableOpacity
-          style={styles.mainButton}
-          onPress={() => abrirMenu("ejercicios")}
-        >
+        <TouchableOpacity style={styles.mainButton} onPress={() => abrirMenu("ejercicios")}>
           <Text style={styles.buttonText}> Buscar Ejercicios</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.mainButton}
-          onPress={() => abrirMenu("alimentos")}
-        >
+        <TouchableOpacity style={styles.mainButton} onPress={() => abrirMenu("alimentos")}>
           <Text style={styles.buttonText}> Buscar Alimentos</Text>
         </TouchableOpacity>
       </View>
@@ -163,9 +160,7 @@ const BuscarScreen = () => {
         >
           <View style={styles.dragIndicator} />
           <Text style={styles.sheetTitle}>
-            {tipoMenu === "ejercicios"
-              ? "Ejercicios Disponibles"
-              : "Alimentos Disponibles"}
+            {tipoMenu === "ejercicios" ? "Ejercicios Disponibles" : "Alimentos Disponibles"}
           </Text>
 
           <TextInput
@@ -173,24 +168,20 @@ const BuscarScreen = () => {
             placeholder="Buscar..."
             value={searchText}
             onChangeText={setSearchText}
-            returnKeyType="search"
           />
 
           <TouchableOpacity
             style={{ paddingVertical: 10 }}
-            onPress={() => setSoloFavoritos((s) => !s)}
-          >
-            <Text style={{ fontSize: 16, color: "#4CAF50", marginBottom: 10 }}>
-              {soloFavoritos ? "Mostrar todos" : "Mostrar solo favoritos"}
+          onPress={() => setSoloFavoritos(!soloFavoritos)}>
+          <Text style={{ fontSize: 16, color: "#4CAF50", marginBottom: 10 }}>
+            {soloFavoritos ? "Mostrar todos" : "Mostrar solo favoritos"}
             </Text>
-          </TouchableOpacity>
+        </TouchableOpacity>
 
           <FlatList
             data={filteredData}
             keyExtractor={(item) => item.id}
             renderItem={renderItem}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
           />
         </Animated.View>
       )}
@@ -208,19 +199,19 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
     borderRadius: 16,
     marginBottom: 16,
-    alignItems: "center",
+    alignItems: "center"
   },
   buttonText: { color: "#fff", fontSize: 18, fontWeight: "bold" },
   bottomSheet: {
     position: "absolute",
     left: 0,
     right: 0,
-    height: height * 0.8,
+    height: height * 0.8, // más grande
     backgroundColor: "#fff",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 16,
-    elevation: 10,
+    elevation: 10
   },
   dragIndicator: {
     width: 50,
@@ -228,7 +219,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#ccc",
     borderRadius: 3,
     alignSelf: "center",
-    marginBottom: 10,
+    marginBottom: 10
   },
   sheetTitle: { fontSize: 22, fontWeight: "bold", marginBottom: 16 },
   searchInput: {
@@ -238,46 +229,48 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     marginBottom: 16,
-    fontSize: 16,
+    fontSize: 16
   },
   cardContainer: {
     width: "100%",
+    aspectRatio: 1,
     borderRadius: 16,
     overflow: "hidden",
     marginBottom: 16,
     backgroundColor: "#fff",
-    elevation: 4,
+    elevation: 4
   },
   imageContainer: {
-    height: 140,
+    flex: 1,
     backgroundColor: "#ddd",
     justifyContent: "center",
-    alignItems: "center",
+    alignItems: "center"
   },
   imagePlaceholder: {
     fontSize: 40,
-    color: "#999",
+    color: "#999"
   },
   infoContainer: {
+    flex: 1,
     backgroundColor: "#fff",
     padding: 12,
-    justifyContent: "center",
+    justifyContent: "center"
   },
   publisher: {
     fontSize: 12,
     color: "#666",
-    marginBottom: 4,
+    marginBottom: 4
   },
   routineName: {
     fontSize: 16,
     fontWeight: "bold",
     color: "#333",
-    marginBottom: 6,
+    marginBottom: 6
   },
   description: {
     fontSize: 14,
-    color: "#555",
-  },
+    color: "#555"
+  }
 });
 
 export default BuscarScreen;
