@@ -4,6 +4,7 @@ const {Schema, model} = require('mongoose');
 //Ejemplo para crear un esquema de usuario, cambiar segun las necesidades
 const UsersSchema = new Schema({
     id_user: {type: Number, required: true},
+    username: {type: String, required: true, unique: true},
     nombre: {type: String, required: true},
     email: {type: String, required: true, unique: true},
     password: {type: String, required: true},

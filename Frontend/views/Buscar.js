@@ -12,7 +12,7 @@ import {
   TextInput,
   PanResponder
 } from "react-native";
-import { Pressable } from "react-native";
+
 const { height } = Dimensions.get("window");
 
 const BuscarScreen = () => {
@@ -36,17 +36,6 @@ const BuscarScreen = () => {
     { id: "4", nombre: "Avena", calorias: 389, cantidad: 100 },
     { id: "5", nombre: "Huevo", calorias: 155, cantidad: 100 }
   ];
-
- const [favoritos, setFavoritos] = useState([]);
- const [soloFavoritos, setSoloFavoritos] = useState(false);
-
- const toggleFavorito = (id) =>  {
-    if (favoritos.includes(id)) {
-      setFavoritos(favoritos.filter(favId => favId !==id));
-    } else {
-      setFavoritos([...favoritos, id]);
-    }
- };
 
   const abrirMenu = (tipo) => {
     setTipoMenu(tipo);
@@ -95,10 +84,7 @@ const BuscarScreen = () => {
   const data = tipoMenu === "ejercicios" ? ejercicios : alimentos;
   const filteredData = data.filter(item =>
     item.nombre.toLowerCase().includes(searchText.toLowerCase())
-  )
-  .filter(item=>
-    !soloFavoritos  || favoritos.includes(item.id)
-  )
+  );
 
   const renderItem = ({ item }) => (
     <View style={styles.cardContainer}>
@@ -107,36 +93,18 @@ const BuscarScreen = () => {
         <Text style={styles.imagePlaceholder}>📷</Text>
       </View>
 
-
-    {/* Info abajo */}
-        <View style={styles.infoContainer}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+      {/* Info abajo */}
+      <View style={styles.infoContainer}>
         <Text style={styles.publisher}>Publicado por: Juan Pérez</Text>
-
-    {/* Corazón para favoritos */}
-    <Pressable onPress={() => toggleFavorito(item.id)}>
-      <Text style={{ fontSize: 20 }}>
-        {favoritos.includes(item.id) ? "❤️" : "🤍"}
-      </Text>
-    </Pressable>
-  </View>
-
-  <Text style={styles.routineName}>{item.nombre}</Text>
-  <Text style={styles.description}>
-    {tipoMenu === "ejercicios"
-      ? `Rutina para quemar ${item.calorias} kcal en ${item.tiempo} min`
-      : `Plato con ${item.calorias} kcal por 100g`}
-  </Text>
-  
-</View>
-
-
-
+        <Text style={styles.routineName}>{item.nombre}</Text>
+        <Text style={styles.description}>
+          {tipoMenu === "ejercicios"
+            ? `Rutina para quemar ${item.calorias} kcal en ${item.tiempo} min`
+            : `Plato con ${item.calorias} kcal por 100g`}
+        </Text>
+      </View>
     </View>
   );
-
-
-
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -169,14 +137,6 @@ const BuscarScreen = () => {
             value={searchText}
             onChangeText={setSearchText}
           />
-
-          <TouchableOpacity
-            style={{ paddingVertical: 10 }}
-          onPress={() => setSoloFavoritos(!soloFavoritos)}>
-          <Text style={{ fontSize: 16, color: "#4CAF50", marginBottom: 10 }}>
-            {soloFavoritos ? "Mostrar todos" : "Mostrar solo favoritos"}
-            </Text>
-        </TouchableOpacity>
 
           <FlatList
             data={filteredData}

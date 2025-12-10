@@ -44,7 +44,7 @@ import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
 const Stack = createNativeStackNavigator();
 
-{/* Inicialización segura de Firebase */}
+// Inicialización segura de Firebase
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const auth = getAuth(app, {
   persistence: getReactNativePersistence(ReactNativeAsyncStorage),

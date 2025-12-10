@@ -4,7 +4,7 @@ const firestoreService = require('../service/firestoreservice');
 userPremiumCtl.createUsu = async (req, res) => {
     try {
         const { userID, expiration_day, payment_method, auto_renew } = req.body;
-        
+
         if (!userID) {
             return res.status(400).json({ message: 'userID es requerido' });
         }
@@ -54,7 +54,7 @@ userPremiumCtl.updateUsu = async (req, res) => {
     try {
         const { userID, expiration_day, payment_method, auto_renew } = req.body;
         const updateData = {};
-        
+
         if (userID) updateData.userID = userID;
         if (expiration_day) updateData.expiration_day = expiration_day;
         if (payment_method) updateData.payment_method = payment_method;
