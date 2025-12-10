@@ -50,7 +50,7 @@ export default StyleSheet.create({
     color: colors.medium_gray,
   },
 
-  
+
   modalOverlay: {
     flex: 1,
     backgroundColor: colors.black_translucent,

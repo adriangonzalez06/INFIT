@@ -32,6 +32,7 @@ import ListaGrupoRecetas from './views/ListaGrupoRecetas';
 import RecipeView from './views/RecipeView';
 
 import colors from './views/colors';
+
 import { initializeApp, getApps } from 'firebase/app';
 import { firebaseConfig } from './firebaseConfig';
 import {
@@ -113,6 +114,16 @@ function LoginScreen({ navigation }) {
           </TouchableOpacity>
 
           <Text style={styles.dividerText}>─── O inicia sesión con ───</Text>
+
+
+           <TouchableOpacity style={styles.google}>
+           <Image
+            source={require('./assets/logos/google.png')}
+                style={{ width: 24, height: 24 }}
+             resizeMode="contain"
+               />
+           </TouchableOpacity>
+
         </SafeAreaView>
 
            {/* Boton para ir al menu sin iniciar sesion para no perder tanto tiempo */}
@@ -165,7 +176,6 @@ export default function App() {
           <Stack.Screen name="Ajustes" component={SettingsScreen} options={{headerShown: false}}/>
           <Stack.Screen name="ChangingPassword" component={ChangingPassword} options={{headerShown: false}}/>
           <Stack.Screen name="ListaGrupoRecetas" component={ListaGrupoRecetas} options={{headerShown: false}}/>
-          <Stack.Screen name="Challenges" component={Challenges} options={{headerShown: false}}/>
           <Stack.Screen name="Recipe" component={RecipeView} options={{headerShown: false}}/>
 
         </Stack.Navigator>
@@ -227,5 +237,21 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: colors.dark_gray,
   },
-});
 
+google: {
+  width: 50,
+  height: 50,
+  borderRadius: 30, // hace el botón circular
+  backgroundColor: '#fff', // fondo blanco
+  justifyContent: 'center',
+  alignItems: 'center',
+  elevation: 2, // sombra en Android
+  shadowColor: '#000', // sombra en iOS
+  shadowOpacity: 0.2,
+  shadowRadius: 4,
+  alignSelf: 'center',
+  marginTop: -20,
+
+},
+
+});
