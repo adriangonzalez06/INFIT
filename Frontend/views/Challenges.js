@@ -230,6 +230,7 @@ export default function ChallengesScreen() {
       (acc, c) => acc + ((weeklyState[c.id] ?? 0) >= c.target ? c.points : 0),
       0
     );
+
     const pointsTotal = WEEKLY_CHALLENGES.reduce((acc, c) => acc + c.points, 0);
     return {
       total: WEEKLY_CHALLENGES.length,
