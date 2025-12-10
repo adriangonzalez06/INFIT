@@ -1,0 +1,11 @@
+
+node_modules/
+in-fit-945de-firebase-adminsdk-fbsvc-3f3ff1a1fc.json
+.env
+.env.local
+.DS_Store
+*.log
+npm-debug.log*
+.idea/
+.vscode/
+dist/
