@@ -18,24 +18,28 @@ class FirestoreService {
    */
   initialize() {
     try {
-      // Buscar archivo de credenciales
+      // Buscar archivo de credenciales (últimas versiones primero)
       const possiblePaths = [
-        path.join(__dirname, '../../in-fit-945de-firebase-adminsdk-fbsvc-73060b4f8d.json'),
-        path.join(__dirname, '../../firebase-service-account.json')
+        path.join(__dirname, '../../in-fit-945de-firebase-adminsdk-fbsvc-3f3ff1a1fc.json'),
+        path.join(__dirname, '../../firebase-service-account.json'),
+        path.join(__dirname, '../../in-fit-945de-firebase-adminsdk-fbsvc-73060b4f8d.json') // Versión antigua (revocada)
       ];
 
       let serviceAccountPath = null;
       for (const filePath of possiblePaths) {
         if (fs.existsSync(filePath)) {
           serviceAccountPath = filePath;
+          console.log(`📄 Usando credenciales: ${path.basename(filePath)}`);
           break;
         }
       }
 
       if (!serviceAccountPath) {
-        console.error('⚠️  IMPORTANTE: No se encontró el archivo de credenciales Firebase');
-        console.error('Se espera uno de estos archivos en la carpeta Backend/:');
+        console.error('⚠️  ERROR: No se encontró el archivo de credenciales Firebase');
+        console.error('Se espera uno de estos archivos en Backend/:');
         possiblePaths.forEach(p => console.error(`  - ${path.basename(p)}`));
+        console.error('\n🔴 CRÍTICO: Debes descargar nuevas credenciales desde Firebase Console');
+        console.error('   Ir a: Configuración > Cuentas de servicio > Generar nueva clave privada');
         process.exit(1);
       }
 

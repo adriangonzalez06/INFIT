@@ -1,10 +1,31 @@
-
 require('dotenv').config();
 const admin = require('firebase-admin');
+const path = require('path');
+const fs = require('fs');
 const exercises = require('./import.json');
 
-// Detectar credenciales de Firebase desde archivo de servicio
-const credentialPath = process.env.FIREBASE_CREDENTIALS || './in-fit-945de-firebase-adminsdk-fbsvc-73060b4f8d.json';
+// Detectar credenciales de Firebase con prioridad a la versión nueva
+const possiblePaths = [
+  './in-fit-945de-firebase-adminsdk-fbsvc-3f3ff1a1fc.json',
+  process.env.FIREBASE_CREDENTIALS || './in-fit-945de-firebase-adminsdk-fbsvc-3f3ff1a1fc.json',
+  './firebase-service-account.json'
+];
+
+let credentialPath = null;
+for (const filePath of possiblePaths) {
+  if (fs.existsSync(filePath)) {
+    credentialPath = filePath;
+    console.log(`📄 Usando credenciales: ${path.basename(filePath)}`);
+    break;
+  }
+}
+
+if (!credentialPath) {
+  console.error('❌ ERROR: No se encontró el archivo de credenciales Firebase');
+  console.error('Se espera en la raíz de Backend/: in-fit-945de-firebase-adminsdk-fbsvc-3f3ff1a1fc.json');
+  process.exit(1);
+}
+
 const clearFirst = process.argv.includes('--clear'); // Agregar --clear para limpiar primero
 
 try {
