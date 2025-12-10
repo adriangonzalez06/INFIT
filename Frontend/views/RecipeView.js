@@ -1,32 +1,21 @@
 import React, { useState } from 'react';
 import {
     View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput,
-    SafeAreaView, Image
+    SafeAreaView, Image, ImageBackground
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import styles from './stylesheet';
-import Dish from '../objects/Dish';
 import { useRoute } from '@react-navigation/native';
-import { DebugObjects } from '../objects/DebugObjects';
-import { Receta } from '../objects/Recipe';
+import Recipe from '../objects/Recipe';
+import Dish from '../objects/Dish';
 
+export default function RecipeView({ route }) {
 
-export default function RecetaView() {
-
-  var r1 = new Receta(1, "Dieta Balanceada", "url1", [plato1, plato2, plato3]);
-
-  const route = useRoute();
   const navigation = useNavigation();
 
-  const receta = r1;
-  console.log('RecetaView recibe receta:', r1);
-
-    //var id_plato, nombre, fotoUrl, macronutrientes, ingredientes, aporte_calorico, vegetariano, vegano, sin_gluten;
-
-  var nombreReceta = "Receta Ejemplo";
-  var descripcionReceta = "Esta es una descripción de ejemplo para la receta. Aquí se detallan los pasos para preparar el plato y cualquier otra información relevante.";
+  const receta = route?.params?.receta ?? route?.params ?? null;
 
   {/*platos placeholder, leer los datos de la base de datos*/}
   var plato1 = new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, true, true, false);
@@ -36,35 +25,39 @@ export default function RecetaView() {
   const [platos] = useState(receta?.platos ?? [plato1, plato2, plato3]);
 
   {/*Totales de la receta*/}
-  var caloriasTotales = plato1.aporte_calorico + plato2.aporte_calorico;
+  const caloriasTotales = ( (receta?.platos ?? [plato1, plato2, plato3]) .reduce((sum,p) => sum + (p?.aporte_calorico || 0), 0) );
+  const macronutrientesTotales = ( (receta?.platos ?? [plato1, plato2, plato3]) .reduce((sum,p) => sum + (p?.macronutrientes || 0), 0) );
 
  {/*variables para lista de caracteristicas (vegano, gluten)*/}
   let nextId = 0;
   const [cars, setCars] = useState([]);
 
+  {/*modal ingredientes*/}
+  const [modalVisible, setModalVisible] = useState(false);
+
 
   {/*funcion para renderizar cada plato de la receta*/}
   const renderPlato = (plato) => {
     return (
-          <View style={styles.platoContainer} key={plato.id_plato}>
+          <View style={styles.platoContainer} key={plato.id_plato} onClick={() => setModalVisible(true)}>
             <Image
               style={styles.platoImage}
               source={ typeof plato.fotoUrl === 'number' ? plato.fotoUrl : { uri: plato.fotoUrl } }
             />          
               <View style={{ margin: 5, flex: 1 }}>  
-              <Text style={styles.dishTitle}>{plato.nombre}</Text>
+                <Text style={styles.dishTitle}>{plato.nombre}</Text>
 
-              <Text style={styles.dishSubtitle}>Calorías</Text>
-                <Text style={styles.dishText}>{plato.aporte_calorico} kcal</Text>
+                <Text style={styles.dishSubtitle}>Calorías</Text>
+                  <Text style={styles.dishText}>{plato.aporte_calorico} kcal</Text>
 
-              <Text style={styles.dishSubtitle}>Macronutrientes</Text>
-                <Text style={styles.dishText}>{plato.macronutrientes} g</Text>
+                <Text style={styles.dishSubtitle}>Macronutrientes</Text>
+                  <Text style={styles.dishText}>{plato.macronutrientes} g</Text>
 
-              <Text style={styles.dishSubtitle}>Ingredientes {Array.isArray(plato.ingredientes) ? plato.ingredientes.join(', ') : plato.ingredientes}</Text>
-              {renderCaracteristicas(plato).length > 0 && (
-                <Text style={styles.platoText}>{renderCaracteristicas(plato)}</Text>
-              )}
-            </View>
+                <Text style={styles.dishSubtitle}>Ingredientes {Array.isArray(plato.ingredientes) ? plato.ingredientes.join(', ') : plato.ingredientes}</Text>
+                {renderCaracteristicas(plato).length > 0 && (
+                  <Text style={styles.platoText}>{renderCaracteristicas(plato)}</Text>
+                )}
+              </View>
           </View>
     );
   };
@@ -81,7 +74,30 @@ export default function RecetaView() {
   {/*funcion para renderizar la lista de platos*/}
   const renderPlatoList = () => {
     return platos.map((plato) => renderPlato(plato))
-    }
+
+  }
+
+  const renderModalIngredients = (ingredientes) => {
+
+    {/* Modal para ver ingredientes */}
+          <Modal visible={modalVisible} transparent animationType="fade">
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+
+                <Text style={styles.modalTitle}>Ingredientes</Text>
+
+                <Text style={styles.modalText}>{ingredientes.join(', ')}</Text>
+
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.modalButton}>
+                    <Text style={styles.modalButtonText}>OK</Text>
+                  </TouchableOpacity>
+                </View>
+
+              </View>
+            </View>
+          </Modal>
+  }
 
 
   return (
@@ -94,15 +110,14 @@ export default function RecetaView() {
       </TouchableOpacity>
 
       {/* title */}
-      <Text style={styles.title}>Nombre de la receta</Text>
+      <Text style={styles.title}>{receta.nombre}</Text>
 
       {/* render groups */}
       <ScrollView  contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <SafeAreaView>
             <View style={styles.grupoContainer}>
 
-                <Text style={styles.grupoTitulo}>{receta.nombre}</Text>
-                <Text style={styles.text}>{descripcionReceta}</Text>
+                <Text style={styles.text}>{receta.description}</Text>
 
                 <Text style={styles.grupoTitulo}>Platos</Text>
 
@@ -110,7 +125,16 @@ export default function RecetaView() {
                 {renderPlatoList()}
 
                 <Text style={styles.grupoTitulo}>Totales</Text>
-                <Text style={styles.text}>Calorías: {caloriasTotales} kcal</Text>
+
+                <View style={styles.totalsContainer}>
+                    <Text style={styles.totalsTitle}>Calorías</Text>
+                    <Text style={styles.totalsText}>{caloriasTotales} kcal</Text>
+                </View>
+
+                <View style={styles.totalsContainer}>
+                  <Text style={styles.totalsTitle}>Macronutrientes</Text>
+                  <Text style={styles.totalsText}>{macronutrientesTotales} g</Text>
+                </View>
 
             </View>
         </SafeAreaView>

@@ -1,5 +1,7 @@
-import { StyleSheet } from "react-native";
+import { StyleSheet, Dimensions } from "react-native";
 import colors from './colors.js';
+
+var width = Dimensions.get('window').width;
 
 export default StyleSheet.create({
 
@@ -11,6 +13,7 @@ export default StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 20,
+    width: '100%',
   },
   header: {
     flexDirection: 'row',
@@ -33,10 +36,12 @@ export default StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 40,
+    flexGrow: 1,
   },
 
   grupoContainer: {
     marginBottom: 30,
+    width: width - 50,
   },
   grupoTitulo: {
     fontSize: 20,
@@ -109,14 +114,12 @@ export default StyleSheet.create({
     flexWrap: 'wrap',
     gap: 12,
   },
-  recetaCard: {
-    width: 250,
-    height: 150,
+  //both cards
+  recipeCards: {
     borderColor: colors.light_gray,
     color: colors.white,
     borderRadius: 14,
     borderWidth: 1,
-    marginRight: 25,
     backgroundColor: colors.white,
     alignSelf: 'center',
     marginBottom: 10,
@@ -130,6 +133,19 @@ export default StyleSheet.create({
     // Android shadow
     elevation: 5,
   },
+    //all recipes in group list only
+  recetaCardGroup: {
+    width: width - width * 0.2,
+    height: 150,
+    margin: 25,
+  },
+  //recipes in recipe main list only (vista alimentacion)
+  recetaCard: {
+    width: 250,
+    height: 150,
+    marginRight: 25,
+  },
+
   shadow: {
     // iOS shadow
     shadowColor: colors.black,
@@ -164,14 +180,13 @@ export default StyleSheet.create({
     alignSelf: 'center',
   },
 
-// Receta Screen Styles
+// Recipe Screen Styles
   platoContainer: {
     borderWidth: 1,
     borderColor: colors.light_gray,
     borderRadius: 10,
     padding: 15,
     marginBottom: 20,
-    width: '100%',
     backgroundColor: colors.white,
     textAlign: 'left',
     flexDirection: 'row',
@@ -197,6 +212,25 @@ export default StyleSheet.create({
     textAlign: 'left',
     marginBottom: 5,
   },
+
+  totalsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: colors.dark_gray,
+  },
+  totalsText: {
+    fontSize: 16,
+    color: colors.dark_gray,
+    marginBottom: 5,
+  },
+
+  totalsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+
 //pantalla rutina styles
   rutinaContainer: {
     flex: 1,
@@ -305,6 +339,7 @@ export default StyleSheet.create({
     color: colors.primary,
     marginBottom: 10,
     textAlign: 'center',
+    width: '100%',
   },
   challengeTitle: {
     fontSize: 18,

@@ -9,58 +9,58 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import styles from './stylesheet';
 import colors from './colors.js';
-import { Receta } from '../objects/Recipe';
-import { Plato } from '../objects/Dish'; 
-import { DebugObjects } from '../objects/DebugObjects';
+import Dish from '../objects/Dish'; 
+import Recipe from '../objects/Recipe';
+import RecpieView from './RecipeView';
+import RecipeGroup from '../objects/RecipeGroup';
 
 export default function Alimentacion() {
 
   const navigation = useNavigation();
 
   {/*platos placeholder, leer los datos de la base de datos*/}
-  var plato1 = new Plato(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, true, true, false);
-  var plato2 = new Plato(2, "Carne", "url2", 550, ["ingrediente1", "ingrediente2"], 550, false, false, true);
-  var plato3 = new Plato(3, "Postre", "url3", 550, ["ingrediente1", "ingrediente2"], 550, true, false, false);
-  var plato4 = new Plato(4, "Pescado", "url4", 600, ["ingrediente1", "ingrediente2"], 600, false, false, false);
-  var plato5 = new Plato(5, "Sopa", "url5", 300, ["ingrediente1", "ingrediente2"], 300, true, true, true);
-  var plato6 = new Plato(6, "Pasta", "url6", 700, ["ingrediente1", "ingrediente2"], 700, false, true, false);
+  console.log('debug', Dish, Recipe);
+  let plato1 = new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, true, true, false);
+  let plato2 = new Dish(2, "Carne", "url2", 550, ["ingrediente1", "ingrediente2"], 550, false, false, true);
+  let plato3 = new Dish(3, "Postre", "url3", 550, ["ingrediente1", "ingrediente2"], 550, true, false, false);
+  let plato4 = new Dish(4, "Pescado", "url4", 600, ["ingrediente1", "ingrediente2"], 600, false, false, false);
+  let plato5 = new Dish(5, "Sopa", "url5", 300, ["ingrediente1", "ingrediente2"], 300, true, true, true);
+  let plato6 = new Dish(6, "Pasta", "url6", 700, ["ingrediente1", "ingrediente2"], 700, false, true, false);
 
   {/* recetas de prueba*/}
-  var r1 = new Receta(1, "Dieta Balanceada", "url1", [plato1, plato2, plato3]);
-  var r2 = new Receta(2, "Dieta Vegana", "url2", [plato2, plato3, plato6],);
-  var r3 = new Receta(3, "Dieta Cetogénica", "url3", [plato4, plato5]);
-  var r4 = new Receta(4, "Dieta Mediterránea", "url4", [plato5, plato1, plato6]);
-  var r5 = new Receta(5, "Dieta Alta en Proteínas", "url5", [plato3]);
-  var r6 = new Receta(6, "Dieta Baja en Carbohidratos", "url6", [plato5]);
+  let r1 = new Recipe(1, "Dieta Balanceada", "descrtyddtdrthdtjdftdyjtfhfipcion", "url1", [plato1, plato2, plato3]);
+  let r2 = new Recipe(2, "Dieta Vegana", "descripcion", "url2", [plato2, plato3, plato6],);
+  let r3 = new Recipe(3, "Dieta Cetogénica", "descripcion", "url3", [plato4, plato5]);
+  let r4 = new Recipe(4, "Dieta Mediterránea", "descripcion", "url4", [plato5, plato1, plato6]);
+  let r5 = new Recipe(5, "Dieta Alta en Proteínas", "descripcion", "url5", [plato3]);
+  let r6 = new Recipe(6, "Dieta Baja en Carbohidratos", "descripcion", "url6", [plato5]);
 
+  let g1 = new RecipeGroup(1, "Trending", [r1, r2]);
+  let g2 = new RecipeGroup(2, "Mis dietas", [r3, r4], true);
+  let g3 = new RecipeGroup(3, "Para ganar músculo", [r5, r6]);
 
-  const [recetas] = useState({
-    grupo1: [r1, r2],
-    grupo2: [r3, r4],
-    grupo3: [r5, r6],
-    grupo4: [r1, r4],
-    grupo5: [r3, r5],
-    grupo6: [r4, r2],
+  const [recipesGroups] = useState({
+    g1, g2, g3
   });
 
-  const renderGrupo = (titulo, recetasGrupo, grupoKey, addCard) => (
+  const renderGrupo = (grupo) => (
+    
     <View style={styles.grupoContainer}>
       {/* group title */}
-      <Text style={styles.grupoTitulo}>{titulo}</Text>
+      <Text style={styles.grupoTitulo}>{grupo.name}</Text>
       {/* recipes row */}
       <View style={styles.recetasRow}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-
           {/* map displays a list of the items that are inside the function */}
-          {recetasGrupo.map((receta) => (
+          {grupo.recipes.map((receta) => (
             renderRecetaCard(receta)
           ))}
-
-          {showAddCard(addCard)}
+          
+          {showAddCard(grupo.canEdit)}
 
           <TouchableOpacity 
           style={styles.seeMoreCard}
-          onPress={() => handleEntrarGrupoCompleto()}>
+          onPress={() => handleEntrarGrupoCompleto(grupo)}>
             <Ionicons name="arrow-forward" size={24} color="#111114" />
             <Text style={{ color: '##111114', fontWeight: '600' }}>Ver más</Text>
           </TouchableOpacity>
@@ -76,7 +76,7 @@ export default function Alimentacion() {
     return (
           <TouchableOpacity
             key={receta.id}
-            style={styles.recetaCard}
+            style={[styles.recipeCards, styles.recetaCard]}
             onPress={() => {
               console.log('receeta: ', receta),
               handleEntrarReceta(receta);
@@ -108,12 +108,15 @@ export default function Alimentacion() {
           console.warn('handleEntrarReceta: receta is undefined');
           return;
         }
-        navigation.navigate('Receta', { receta });
+        navigation.navigate('Recipe', { receta });
   };
 
   {/*See More button handler*/}
-  const handleEntrarGrupoCompleto = () => {
-    navigation.navigate('ListaGrupoRecetas');
+  const handleEntrarGrupoCompleto = (grupo) => {
+    navigation.navigate('ListaGrupoRecetas', { 
+      name: grupo.name,
+      recipes: grupo.recipes
+    });
   };
 
 
@@ -132,12 +135,10 @@ export default function Alimentacion() {
       {/* render groups */}
       <ScrollView  contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <SafeAreaView>
-          {renderGrupo('Trending', recetas.grupo1, 'grupo1')}
-          {renderGrupo('Mis dietas', recetas.grupo2, 'grupo2', true)}
-          {renderGrupo('Para ganar músculo', recetas.grupo3, 'grupo3')}
-          {renderGrupo('Para mantener la figura', recetas.grupo4, 'grupo4')}
-          {renderGrupo('Para mantener la figura', recetas.grupo5, 'grupo5')}
-          {renderGrupo('Para mantener la figura', recetas.grupo6, 'grupo6')}
+          {renderGrupo(recipesGroups.g1)}          
+          {renderGrupo(recipesGroups.g2)}
+          {renderGrupo(recipesGroups.g3)}
+          {renderGrupo(recipesGroups.g1)}
         </SafeAreaView>
       </ScrollView>
     </View>
