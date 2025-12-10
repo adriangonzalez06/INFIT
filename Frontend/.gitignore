@@ -35,3 +35,5 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+
+Backend/in-fit-945de-firebase-adminsdk-*.json
