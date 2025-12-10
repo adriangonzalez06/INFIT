@@ -30,7 +30,6 @@ import RuedaSettings from './views/RuedaSettings';
 import ChangingPassword from './views/changing_password';
 import ListaGrupoRecetas from './views/ListaGrupoRecetas';
 import RecipeView from './views/RecipeView';
-
 import colors from './views/colors';
 
 import { initializeApp, getApps } from 'firebase/app';

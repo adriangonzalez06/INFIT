@@ -13,7 +13,8 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
-import colors from './colors.js';
+import colors from './colors';
+
 import {
   getAuth,
   getReactNativePersistence,
@@ -91,7 +92,7 @@ function RegisterScreen({ navigation }) {
         await user.delete();
         throw new Error('No se pudo crear el usuario en el backend, por favor vuelva a intentarlo.');
       }
-
+      
     } catch (error) {
       // Mejor logging para diagnosticar Network Error
       console.error('Error al registrar:', error?.message || error);
