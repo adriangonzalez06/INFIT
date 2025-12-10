@@ -28,7 +28,7 @@ export default function RecipeView({ route }) {
   const caloriasTotales = ( (receta?.platos ?? [plato1, plato2, plato3]) .reduce((sum,p) => sum + (p?.aporte_calorico || 0), 0) );
   const macronutrientesTotales = ( (receta?.platos ?? [plato1, plato2, plato3]) .reduce((sum,p) => sum + (p?.macronutrientes || 0), 0) );
 
- {/*variables para lista de caracteristicas (vegano, gluten)*/}
+ {/*variables para lista de caracteristicas (vegano, vegetariano, gluten)*/}
   let nextId = 0;
   const [cars, setCars] = useState([]);
 
