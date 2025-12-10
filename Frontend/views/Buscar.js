@@ -1,4 +1,5 @@
 
+
 import React, { useState, useRef } from "react";
 import {
   View,
@@ -36,7 +37,6 @@ const BuscarScreen = () => {
     { id: "4", nombre: "Avena", calorias: 389, cantidad: 100 },
     { id: "5", nombre: "Huevo", calorias: 155, cantidad: 100 }
   ];
-
  const [favoritos, setFavoritos] = useState([]);
  const [soloFavoritos, setSoloFavoritos] = useState(false);
 
@@ -137,7 +137,6 @@ const BuscarScreen = () => {
 
 
 
-  return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <Text style={styles.header}>Explora y Añade</Text>
@@ -185,12 +184,8 @@ const BuscarScreen = () => {
         </Animated.View>
       )}
     </SafeAreaView>
-  );
-};
 
 
-
-const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#f9f9f9" },
   container: { flex: 1, paddingHorizontal: 16, paddingTop: 20 },
   header: { fontSize: 28, fontWeight: "bold", color: "#333" },
@@ -242,7 +237,6 @@ const styles = StyleSheet.create({
     elevation: 4
   },
   imageContainer: {
-    flex: 1,
     backgroundColor: "#ddd",
     justifyContent: "center",
     alignItems: "center"
@@ -261,7 +255,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#666",
     marginBottom: 4
-  },
   routineName: {
     fontSize: 16,
     fontWeight: "bold",
@@ -272,6 +265,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#555"
   }
-});
 
 export default BuscarScreen;

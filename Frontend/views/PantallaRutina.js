@@ -165,4 +165,9 @@ const styles = StyleSheet.create({
     color: '#ef2b2d',
     fontWeight: '600',
   },
+  rutinaContainer: {
+    flex: 1,
+    paddingTop: 60,
+    marginTop: 20,
+  }
 });
