@@ -7,5 +7,6 @@ export default {
   bg_gray: '#f4f4f4',
   white: '#ffffff',
   black: '#000000',
-  medium_green: '28a745'
+  medium_green: '28a745',
+  black_translucent: 'rgba(0, 0, 0, 0.5)'
 };

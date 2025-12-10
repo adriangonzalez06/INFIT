@@ -33,18 +33,30 @@ export default function RecipeView({ route }) {
   const [cars, setCars] = useState([]);
 
   {/*modal ingredientes*/}
-  const [modalVisible, setModalVisible] = useState(false);
+  const [visible, setModalVisible] = useState(false);
+  const [selectedIngredients, setSelectedIngredients] = useState([]);
+  
+  const showModal = (ingredientes) => {
+    setSelectedIngredients(ingredientes ?? []);
+    setModalVisible(true);
+  };
+
+  const hideModal = () => {
+    setModalVisible(false);
+    setSelectedIngredients([]);
+  };
 
 
   {/*funcion para renderizar cada plato de la receta*/}
   const renderPlato = (plato) => {
     return (
-          <View style={styles.platoContainer} key={plato.id_plato} onClick={() => setModalVisible(true)}>
-            <Image
-              style={styles.platoImage}
-              source={ typeof plato.fotoUrl === 'number' ? plato.fotoUrl : { uri: plato.fotoUrl } }
-            />          
-              <View style={{ margin: 5, flex: 1 }}>  
+          <TouchableOpacity key={plato.id_plato} onPress={() => showModal(plato.ingredientes)}>
+            <View style={styles.platoContainer}>
+              <Image
+                style={styles.platoImage}
+                source={ typeof plato.fotoUrl === 'number' ? plato.fotoUrl : { uri: plato.fotoUrl } }
+              />
+              <View style={{ margin: 5, flex: 1 }}>
                 <Text style={styles.dishTitle}>{plato.nombre}</Text>
 
                 <Text style={styles.dishSubtitle}>Calorías</Text>
@@ -53,12 +65,12 @@ export default function RecipeView({ route }) {
                 <Text style={styles.dishSubtitle}>Macronutrientes</Text>
                   <Text style={styles.dishText}>{plato.macronutrientes} g</Text>
 
-                <Text style={styles.dishSubtitle}>Ingredientes {Array.isArray(plato.ingredientes) ? plato.ingredientes.join(', ') : plato.ingredientes}</Text>
                 {renderCaracteristicas(plato).length > 0 && (
                   <Text style={styles.platoText}>{renderCaracteristicas(plato)}</Text>
                 )}
               </View>
-          </View>
+            </View>
+          </TouchableOpacity>
     );
   };
 
@@ -77,27 +89,23 @@ export default function RecipeView({ route }) {
 
   }
 
-  const renderModalIngredients = (ingredientes) => {
+  const renderIngredientsModal = () => (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={hideModal}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Ingredientes</Text>
+          <Text style={styles.dishText}>{selectedIngredients.length ? selectedIngredients.join(', ') : 'No hay ingredientes'}</Text>
 
-    {/* Modal para ver ingredientes */}
-          <Modal visible={modalVisible} transparent animationType="fade">
-            <View style={styles.modalOverlay}>
-              <View style={styles.modalContent}>
-
-                <Text style={styles.modalTitle}>Ingredientes</Text>
-
-                <Text style={styles.modalText}>{ingredientes.join(', ')}</Text>
-
-                <View style={styles.modalButtons}>
-                  <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.modalButton}>
-                    <Text style={styles.modalButtonText}>OK</Text>
-                  </TouchableOpacity>
-                </View>
-
-              </View>
-            </View>
-          </Modal>
-  }
+          
+          <View style={styles.modalButtons}>
+            <TouchableOpacity onPress={hideModal} style={styles.modalButton}>
+              <Text style={styles.modalButtonText}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
 
 
   return (
@@ -112,7 +120,7 @@ export default function RecipeView({ route }) {
       {/* title */}
       <Text style={styles.title}>{receta.nombre}</Text>
 
-      {/* render groups */}
+
       <ScrollView  contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <SafeAreaView>
             <View style={styles.grupoContainer}>
@@ -139,6 +147,9 @@ export default function RecipeView({ route }) {
             </View>
         </SafeAreaView>
       </ScrollView>
+
+      {renderIngredientsModal()}
+
     </View>
 
   );

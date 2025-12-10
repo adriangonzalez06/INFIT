@@ -53,7 +53,7 @@ export default StyleSheet.create({
   
   modalOverlay: {
     flex: 1,
-    backgroundColor: colors.dark_gray,
+    backgroundColor: colors.black_translucent,
     justifyContent: 'center',
     alignItems: 'center',
   },

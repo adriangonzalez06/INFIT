@@ -113,25 +113,11 @@ function LoginScreen({ navigation }) {
           </TouchableOpacity>
 
           <Text style={styles.dividerText}>─── O inicia sesión con ───</Text>
-
-
-
-
-            <TouchableOpacity style={styles.google} onPress={call_login_google}>
-            <Image
-             source={require('./assets/logos/googleglogo.png')}
-                 style={{ width: 24, height: 24 }}
-              resizeMode="contain"
-                />
-            </TouchableOpacity>
-
-
-
         </SafeAreaView>
 
            {/* Boton para ir al menu sin iniciar sesion para no perder tanto tiempo */}
           <TouchableOpacity style={styles.boton} onPress = {() => navigation.navigate('MainTabs')}>
-            <Text style={styles.botonTexto}>Debug ir al menu</Text> 
+            <Text style={styles.botonTexto}>Debug ir al menu</Text>
             </TouchableOpacity>
 
       </ScrollView>
@@ -241,20 +227,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: colors.dark_gray,
   },
-
-  google: {
-    width: 50,
-    height: 50,
-    borderRadius: 30, // hace el botón circular
-    backgroundColor: '#fff', // fondo blanco
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 2, // sombra en Android
-    shadowColor: '#000', // sombra en iOS
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    alignSelf: 'center',
-    marginTop: -20,
-
-  }
 });
+
