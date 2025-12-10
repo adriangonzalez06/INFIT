@@ -18,10 +18,26 @@ class FirestoreService {
    */
   initialize() {
     try {
-      // Buscar archivo de credenciales
+      // Buscar archivo de credenciales (soporta env override y múltiples nombres conocidos)
+      const rawEnvPath = process.env.SERVICE_ACCOUNT_PATH || process.env.GOOGLE_APPLICATION_CREDENTIALS;
+      if (rawEnvPath) {
+        const resolved = path.isAbsolute(rawEnvPath) ? rawEnvPath : path.resolve(process.cwd(), rawEnvPath);
+        if (fs.existsSync(resolved)) {
+          console.log('[firestoreservice] ✅ Usando credencial desde env:', resolved);
+          const serviceAccount = require(resolved);
+          if (!admin.apps.length) admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+          this.db = admin.firestore();
+          return this.db;
+        } else {
+          console.warn('[firestoreservice] ⚠ Ruta en env no encontrada:', resolved);
+        }
+      }
+
       const possiblePaths = [
-        path.join(__dirname, '../../in-fit-945de-firebase-adminsdk-fbsvc-73060b4f8d.json'),
-        path.join(__dirname, '../../firebase-service-account.json')
+        path.join(__dirname, '../../in-fit-945de-firebase-adminsdk-fbsvc-3f3ff1a1fc.json'), // nuevo
+        path.join(__dirname, '../../in-fit-945de-firebase-adminsdk-fbsvc-73060b4f8d.json'), // antiguo (fallback)
+        path.join(__dirname, '../../firebase-service-account.json'),
+        path.join(__dirname, '../config/firebase-service-account.json'),
       ];
 
       let serviceAccountPath = null;

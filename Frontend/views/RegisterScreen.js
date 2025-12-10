@@ -56,51 +56,63 @@ function RegisterScreen({ navigation }) {
 
     const payload = {
       nombre,
-      correo: email.trim(),
-      usuario,
-      contraseña: password, // enviar texto si el backend lo va a hashear
+      username: usuario,
+      email: email.trim(),
+      password: password, // enviar texto si el backend lo va a hashear
     };
 
     try {
+      // Ajustar host según plataforma/emulador
+      const host =
+        Platform.OS === 'android'
+          ? '10.0.2.2' // Android emulator (AVD). Genymotion usar 10.0.3.2
+          : 'localhost'; // iOS simulator o web
+      // Si pruebas en un dispositivo físico, reemplaza host por la IP de tu PC, e.g. '192.168.1.42'
+      const backendUrl = `http://${host}:8082/api/usuarios/POST`;
+
       // Crear usuario en Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
       const user = userCredential.user;
       console.log('Cuenta creada en Firebase:', user.uid);
 
-      // Crear el bojeto usuario para el backend
-      //Enviar datos al backend
-      const resp = await axios.post('http://localhost:8082/api/usuarios', payload, {
+      // Enviar datos al backend
+      const resp = await axios.post(backendUrl, payload, {
         headers: { 'Content-Type': 'application/json' },
         timeout: 10000,
       });
-      //Verificar respuesta
+
+      // Verificar respuesta
       if (resp.status === 201 || resp.status === 200) {
         console.log('Datos guardados en la base de datos');
         setError('');
         navigation.navigate('Login');
       } else {
-        // Si la creación en el backend falla, eliminar el usuario de Firebase par ano dejar fuerfano 
+        // Si la creación en el backend falla, eliminar el usuario de Firebase para no dejar huérfano
         await user.delete();
-        throw new Error('No se pudo crear el usuario, porfabor vuelva a intentarlo.');
+        throw new Error('No se pudo crear el usuario en el backend, por favor vuelva a intentarlo.');
       }
       
-
-      
     } catch (error) {
-      // Manejar errores de Firebase o del backend
-      console.error('Error al registrar:', error.message);
-      Alert.alert('Error', error.message);
+      // Mejor logging para diagnosticar Network Error
+      console.error('Error al registrar:', error?.message || error);
+      console.error('Axios error details:', error?.toJSON ? error.toJSON() : error);
+      if (error?.response) {
+        console.error('Backend response:', error.response.status, error.response.data);
+      } else {
+        console.error('No response from backend (network/cors/firewall/host issue).');
+      }
 
-      // Si hubo un error, eliminar el usuario de Firebase para evitar inconsistencias
+      Alert.alert('Error', error?.message || 'Error al registrar');
+
+      // Rollback: intentar eliminar usuario de Firebase si existe
       const currentUser = auth.currentUser;
       if (currentUser) {
         try {
           await currentUser.delete();
           console.warn('Rollback: Usuario de Firebase eliminado debido a error en backend.');
-        }catch (e){
+        } catch (e) {
           console.warn('No se pudo eliminar el usuario de Firebase durante el rollback:', e?.message || e);
         }
-        
       }
     }
   };

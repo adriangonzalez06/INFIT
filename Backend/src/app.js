@@ -25,17 +25,17 @@ app.use((req, res, next) => {
   next();
 });
 
-//rutas
+//rutas 
 app.get("/", (req, res) => {
   res.json({ ok: true, message: "API backend" });
 });
 
-// importa rutas (asegúrate de que los archivos de rutas usan module.exports)
+// importa rutas
 try {
   const usersRouter = require('./routes/users.routes');
   app.use('/api/usuarios', usersRouter);
 } catch (e) {
-  // si no existen rutas todavía, no bloquear el arranque
+  console.error('Error cargando routes/users.routes:', e);
 }
 
 module.exports = app;

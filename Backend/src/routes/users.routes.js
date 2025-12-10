@@ -1,13 +1,13 @@
-import express from 'express';
-import usuarioCtl from '../controller/users.controller.js'; // ESM: incluye .js
+const express = require('express');
+const usuarioCtl = require('../controller/users.controller.js'); // asegúrate que users.controller exporta con module.exports
 
 const router = express.Router();
 
-router.get('/', usuarioCtl.getUsu);
+router.get('/GET', usuarioCtl.getUsu);
 router.get('/buscar/:id_user', usuarioCtl.getUsuByCustomId);
-router.post('/usuarios', usuarioCtl.createUsu);
+router.post('/POST', usuarioCtl.createUsu);
 router.get('/:id', usuarioCtl.getUsuById);
 router.delete('/:id', usuarioCtl.deleteUsu);
 router.put('/:id', usuarioCtl.updateUsu);
 
-export default router;
+module.exports = router;
