@@ -35,9 +35,9 @@ export default function Alimentacion() {
   let r5 = new Recipe(5, "Dieta Alta en Proteínas", "descripcion", "url5", [plato3]);
   let r6 = new Recipe(6, "Dieta Baja en Carbohidratos", "descripcion", "url6", [plato5]);
 
-  let g1 = new RecipeGroup(1, "Trending", [r1, r2]);
-  let g2 = new RecipeGroup(2, "Mis dietas", [r3, r4], true);
-  let g3 = new RecipeGroup(3, "Para ganar músculo", [r5, r6]);
+  let g1 = new RecipeGroup(1, "Trending", [r1, r2, r3, r4, r5, r6]);
+  let g2 = new RecipeGroup(2, "Mis dietas", [r3, r4, r2], true);
+  let g3 = new RecipeGroup(3, "Para ganar músculo", [r5, r6, r4, r2, r1]);
 
   const [recipesGroups] = useState({
     g1, g2, g3
@@ -52,7 +52,7 @@ export default function Alimentacion() {
       <View style={styles.recetasRow}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {/* map displays a list of the items that are inside the function */}
-          {grupo.recipes.map((receta) => (
+          {grupo.recipes.slice(0,3).map((receta) => (
             renderRecetaCard(receta)
           ))}
           
