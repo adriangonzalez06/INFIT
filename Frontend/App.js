@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -9,76 +9,121 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
-} from 'react-native';
-import { Image } from 'expo-image';
-import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
-import DailyChallenge from './views/DailyChallenge';
-import WelcomeScreen from './views/WelcomeScreen';
-import ProfileScreen from './views/profile';
-import SettingsScreen from './views/settings';
-import MainTabs from './views/MainTabs';
-import ForgotPassword from './views/forgot_password';
-import VerificationScreen from './views/verificacion';
-import RegisterScreen from './views/RegisterScreen';
-import AlimentacionScreen from './views/Alimentacion';
-import RutinasScreen from './views/Rutinas';
-import PantallaRutina from './views/PantallaRutina';
-import RuedaSettings from './views/RuedaSettings';
-import ChangingPassword from './views/changing_password';
+} from "react-native";
+import { Image } from "expo-image";
+import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
+import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { Ionicons } from "@expo/vector-icons";
+import DailyChallenge from "./views/DailyChallenge";
+import WelcomeScreen from "./views/WelcomeScreen";
+import ProfileScreen from "./views/profile";
+import SettingsScreen from "./views/settings";
+import MainTabs from "./views/MainTabs";
+import ForgotPassword from "./views/forgot_password";
+import VerificationScreen from "./views/verificacion";
+import RegisterScreen from "./views/RegisterScreen";
+import AlimentacionScreen from "./views/Alimentacion";
+import RutinasScreen from "./views/Rutinas";
+import PantallaRutina from "./views/PantallaRutina";
+import RuedaSettings from "./views/RuedaSettings";
+import ChangingPassword from "./views/changing_password";
 
-import { initializeApp, getApps } from 'firebase/app';
-import { firebaseConfig } from './firebaseConfig';
+import * as WebBrowser from "expo-web-browser";
+import * as Google from "expo-auth-session/providers/google";
+
+import { initializeApp, getApps } from "firebase/app";
+import { firebaseConfig } from "./firebaseConfig";
 import {
   getAuth,
   signInWithEmailAndPassword,
   getReactNativePersistence,
-} from 'firebase/auth';
-import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
+  GoogleAuthProvider,
+  signInWithCredential,
+} from "firebase/auth";
+import ReactNativeAsyncStorage from "@react-native-async-storage/async-storage";
+
+WebBrowser.maybeCompleteAuthSession();
 
 const Stack = createNativeStackNavigator();
 
 // Inicialización segura de Firebase
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+const app =
+  getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const auth = getAuth(app, {
   persistence: getReactNativePersistence(ReactNativeAsyncStorage),
 });
 
 function LoginScreen({ navigation }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  // Falta poner las IDs configurar Google Auth con Expo
+  const EXPO_CLIENT_ID = "<EXPO_CLIENT_ID.apps.googleusercontent.com>";
+  const IOS_CLIENT_ID = "<IOS_CLIENT_ID.apps.googleusercontent.com>";
+  const ANDROID_CLIENT_ID = "<ANDROID_CLIENT_ID.apps.googleusercontent.com>";
+
+  // Hook de autenticación con Google para obtener el ID token
+  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+    clientId: EXPO_CLIENT_ID,
+    iosClientId: IOS_CLIENT_ID,
+    androidClientId: ANDROID_CLIENT_ID,
+  });
+
+  useEffect(() => {
+    if (response?.type === "success") {
+      const { id_token } = response.params;
+      if (!id_token) {
+        Alert.alert("Error", "No se obtuvo token de Google.");
+        return;
+      }
+      const credential = GoogleAuthProvider.credential(id_token);
+      signInWithCredential(auth, credential)
+        .then((userCredential) => {
+          console.log("Google sign-in successful", userCredential.user);
+          navigation.navigate("MainTabs");
+        })
+        .catch((error) => {
+          console.error("Firebase signInWithCredential error", error);
+          Alert.alert(
+            "Error",
+            "No se pudo iniciar sesión con Google: " + error.message
+          );
+        });
+    } else if (response?.type === "error") {
+      console.error("Google auth error", response);
+    }
+  }, [response]);
 
   const handleLogin = () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Por favor, completa todos los campos.');
+      Alert.alert("Error", "Por favor, completa todos los campos.");
       return;
     }
 
     signInWithEmailAndPassword(auth, email.trim(), password)
       .then((userCredential) => {
-        console.log('Logged in!');
+        console.log("Logged in!");
         const user = userCredential.user;
         console.log(user);
-        navigation.navigate('MainTabs');
+        navigation.navigate("MainTabs");
       })
       .catch((error) => {
         console.error(error);
-        Alert.alert('Error', error.message);
+        Alert.alert("Error", error.message);
       });
   };
 
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <StatusBar style="auto" />
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <Image
           style={styles.logo}
-          source={require('./assets/logos/logo_white_bg.svg')} // Asegúrate que sea PNG o JPG
+          source={require("./assets/logos/logo_white_bg.svg")} // Asegúrate que sea PNG o JPG
         />
         <SafeAreaView>
           <TextInput
@@ -97,7 +142,9 @@ function LoginScreen({ navigation }) {
             onChangeText={setPassword}
           />
 
-          <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("ForgotPassword")}
+          >
             <Text style={styles.link}>¿Has olvidado tu contraseña?</Text>
           </TouchableOpacity>
 
@@ -105,11 +152,20 @@ function LoginScreen({ navigation }) {
             <Text style={styles.botonTexto}>Siguiente</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => navigation.navigate('Registro')}>
-            <Text style={styles.link}>¿No tienes cuenta todavía? Regístrate</Text>
+          <TouchableOpacity onPress={() => navigation.navigate("Registro")}>
+            <Text style={styles.link}>
+              ¿No tienes cuenta todavía? Regístrate
+            </Text>
           </TouchableOpacity>
 
           <Text style={styles.dividerText}>─── O inicia sesión con ───</Text>
+          <TouchableOpacity style={styles.google}>
+            <Image
+              source={require("./assets/logos/googleglogo.png")}
+              style={{ width: 24, height: 24 }}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
         </SafeAreaView>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -121,17 +177,36 @@ export default function App() {
     <SafeAreaProvider>
       <NavigationContainer>
         <Stack.Navigator initialRouteName="Login">
-          <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="Registro" component={RegisterScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="ForgotPassword" component={ForgotPassword} options={{ headerShown: false }} />
-          <Stack.Screen name="Verificacion" component={VerificationScreen} options={{ headerShown: false }} />
+          <Stack.Screen
+            name="Login"
+            component={LoginScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="Registro"
+            component={RegisterScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="ForgotPassword"
+            component={ForgotPassword}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="Verificacion"
+            component={VerificationScreen}
+            options={{ headerShown: false }}
+          />
           <Stack.Screen
             name="MainTabs"
             component={MainTabs}
             options={({ navigation }) => ({
               headerShown: false,
               headerRight: () => (
-                <TouchableOpacity onPress={() => navigation.navigate('Ajustes')} style={{ marginRight: 15 }}>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate("Ajustes")}
+                  style={{ marginRight: 15 }}
+                >
                   <Ionicons name="settings-outline" size={24} color="#333" />
                 </TouchableOpacity>
               ),
@@ -143,18 +218,45 @@ export default function App() {
             options={({ navigation }) => ({
               headerShown: false,
               headerRight: () => (
-                <TouchableOpacity onPress={() => navigation.navigate('Ajustes')} style={{ marginRight: 15 }}>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate("Ajustes")}
+                  style={{ marginRight: 15 }}
+                >
                   <Ionicons name="settings-outline" size={24} color="#333" />
                 </TouchableOpacity>
               ),
             })}
           />
-          <Stack.Screen name="Rutinas" component={RutinasScreen} options={{headerShown: false}} />
-          <Stack.Screen name="PantallaRutina" component={PantallaRutina}options={{headerShown: false}} />
-          <Stack.Screen name="Alimentacion" component={AlimentacionScreen} options={{headerShown: false}} />
-          <Stack.Screen name="RuedaSettings" component={RuedaSettings} options={{headerShown: false}} />
-          <Stack.Screen name="Ajustes" component={SettingsScreen} options={{headerShown: false}}/>
-          <Stack.Screen name="ChangingPassword" component={ChangingPassword} options={{headerShown: false}}/>
+          <Stack.Screen
+            name="Rutinas"
+            component={RutinasScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="PantallaRutina"
+            component={PantallaRutina}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="Alimentacion"
+            component={AlimentacionScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="RuedaSettings"
+            component={RuedaSettings}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="Ajustes"
+            component={SettingsScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="ChangingPassword"
+            component={ChangingPassword}
+            options={{ headerShown: false }}
+          />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
@@ -164,19 +266,19 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#dddbd1',
+    backgroundColor: "#dddbd1",
   },
   scrollContainer: {
     paddingTop: 60,
     paddingHorizontal: 20,
-    alignItems: 'center',
+    alignItems: "center",
     paddingBottom: 40,
   },
   logo: {
     width: 200,
     height: 200,
-    resizeMode: 'contain',
-    alignSelf: 'center',
+    resizeMode: "contain",
+    alignSelf: "center",
     marginBottom: 10,
   },
   input: {
@@ -185,33 +287,48 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     fontSize: 14,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderRadius: 10,
-    color: '#111114',
-    backgroundColor: '#fff',
+    color: "#111114",
+    backgroundColor: "#fff",
     width: 250,
-    alignSelf: 'center',
+    alignSelf: "center",
   },
   boton: {
-    backgroundColor: '#ef2b2d',
+    backgroundColor: "#ef2b2d",
     padding: 15,
     borderRadius: 8,
     marginTop: 20,
-    alignItems: 'center',
+    alignItems: "center",
   },
   botonTexto: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
   },
   link: {
     marginTop: 20,
-    color: '#007AFF',
-    textAlign: 'center',
+    color: "#007AFF",
+    textAlign: "center",
   },
   dividerText: {
     marginTop: 30,
     marginBottom: 40,
-    textAlign: 'center',
-    color: '#333',
+    textAlign: "center",
+    color: "#333",
+  },
+
+  google: {
+    width: 50,
+    height: 50,
+    borderRadius: 30, // hace el botón circular
+    backgroundColor: "#fff", // fondo blanco
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 2, // sombra en Android
+    shadowColor: "#000", // sombra en iOS
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    alignSelf: "center",
+    marginTop: -20,
   },
 });
