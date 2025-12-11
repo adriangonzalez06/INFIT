@@ -8,7 +8,7 @@ const swaggerDocument = YAML.load(path.join(__dirname, "../swagger.yaml"));
 
 //Configuracion
 
-app.set('port', process.env.PORT || 8082);
+app.set("port", process.env.PORT || 8082);
 
 //middlewares - CORS configurado explícitamente
 app.use(
@@ -27,6 +27,9 @@ app.use((req, res, next) => {
   next();
 });
 
+// Documentación Swagger
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
 //rutas
 app.get("/", (req, res) => {
   res.json({ ok: true, message: "API backend" });
@@ -34,10 +37,10 @@ app.get("/", (req, res) => {
 
 // importa rutas
 try {
-  const usersRouter = require('./routes/users.routes');
-  app.use('/api/usuarios', usersRouter);
+  const usersRouter = require("./routes/users.routes");
+  app.use("/api/usuarios", usersRouter);
 } catch (e) {
-  console.error('Error cargando routes/users.routes:', e);
+  console.error("Error cargando routes/users.routes:", e);
 }
 
 module.exports = app;

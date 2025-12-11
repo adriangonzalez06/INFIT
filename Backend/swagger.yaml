@@ -15,14 +15,14 @@ paths:
       tags:
         - Usuarios
       responses:
-        '200':
+        "200":
           description: Lista de todos los usuarios
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Usuario'
+                  $ref: "#/components/schemas/Usuario"
     post:
       summary: Crear un nuevo usuario
       tags:
@@ -60,9 +60,9 @@ paths:
                 - weight
                 - goal
       responses:
-        '200':
+        "200":
           description: Usuario creado exitosamente
-        '400':
+        "400":
           description: El email ya existe
 
   /api/usuarios/{id}:
@@ -78,13 +78,13 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Usuario encontrado
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Usuario'
-        '404':
+                $ref: "#/components/schemas/Usuario"
+        "404":
           description: Usuario no encontrado
     put:
       summary: Actualizar usuario
@@ -122,7 +122,7 @@ paths:
                 goal:
                   type: string
       responses:
-        '200':
+        "200":
           description: Usuario actualizado
     delete:
       summary: Eliminar usuario
@@ -136,7 +136,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Usuario eliminado
 
   /api/usuarios/buscar/{id_user}:
@@ -152,9 +152,9 @@ paths:
           schema:
             type: number
       responses:
-        '200':
+        "200":
           description: Usuario encontrado
-        '404':
+        "404":
           description: Usuario no encontrado
 
   # ==================== USUARIOS FREE ====================
@@ -164,14 +164,14 @@ paths:
       tags:
         - Usuarios Free
       responses:
-        '200':
+        "200":
           description: Lista de todos los usuarios free
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/FreeUser'
+                  $ref: "#/components/schemas/FreeUser"
     post:
       summary: Crear un nuevo usuario free
       tags:
@@ -191,9 +191,9 @@ paths:
               required:
                 - userID
       responses:
-        '200':
+        "200":
           description: Usuario free creado exitosamente
-        '400':
+        "400":
           description: userID es requerido
 
   /api/usersfree/{id}:
@@ -209,13 +209,13 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Usuario free encontrado
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FreeUser'
-        '404':
+                $ref: "#/components/schemas/FreeUser"
+        "404":
           description: Usuario free no encontrado
     put:
       summary: Actualizar usuario free
@@ -240,7 +240,7 @@ paths:
                 ads_per_hour_gone:
                   type: number
       responses:
-        '200':
+        "200":
           description: Usuario free actualizado
     delete:
       summary: Eliminar usuario free
@@ -254,7 +254,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Usuario free eliminado
 
   # ==================== USUARIOS PREMIUM ====================
@@ -264,14 +264,14 @@ paths:
       tags:
         - Premium Usuarios
       responses:
-        '200':
+        "200":
           description: Lista de todos los usuarios premium
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/PremiumUser'
+                  $ref: "#/components/schemas/PremiumUser"
     post:
       summary: Crear un nuevo usuario premium
       tags:
@@ -296,9 +296,9 @@ paths:
               required:
                 - userID
       responses:
-        '200':
+        "200":
           description: Usuario premium creado exitosamente
-        '400':
+        "400":
           description: userID es requerido
 
   /api/premiumusuarios/{id}:
@@ -314,13 +314,13 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Usuario premium encontrado
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PremiumUser'
-        '404':
+                $ref: "#/components/schemas/PremiumUser"
+        "404":
           description: Usuario premium no encontrado
     put:
       summary: Actualizar usuario premium
@@ -350,7 +350,7 @@ paths:
                 auto_renew:
                   type: boolean
       responses:
-        '200':
+        "200":
           description: Usuario premium actualizado
     delete:
       summary: Eliminar usuario premium
@@ -364,7 +364,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Usuario premium eliminado
 
   # ==================== EJERCICIOS ====================
@@ -374,14 +374,14 @@ paths:
       tags:
         - Ejercicios
       responses:
-        '200':
+        "200":
           description: Lista de todos los ejercicios
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Exercise'
+                  $ref: "#/components/schemas/Exercise"
     post:
       summary: Crear un nuevo ejercicio
       tags:
@@ -420,9 +420,9 @@ paths:
               required:
                 - name
       responses:
-        '200':
+        "200":
           description: Ejercicio creado exitosamente
-        '400':
+        "400":
           description: El nombre del ejercicio es requerido
 
   /api/ejercicios/{id}:
@@ -438,13 +438,13 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Ejercicio encontrado
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Exercise'
-        '404':
+                $ref: "#/components/schemas/Exercise"
+        "404":
           description: Ejercicio no encontrado
     put:
       summary: Actualizar ejercicio
@@ -481,7 +481,7 @@ paths:
                 weight:
                   type: number
       responses:
-        '200':
+        "200":
           description: Ejercicio actualizado
     delete:
       summary: Eliminar ejercicio
@@ -495,7 +495,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Ejercicio eliminado
 
   /api/ejercicios/buscar/grupo/{muscular_group}:
@@ -511,15 +511,15 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Lista de ejercicios encontrados
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Exercise'
-        '404':
+                  $ref: "#/components/schemas/Exercise"
+        "404":
           description: No se encontraron ejercicios para ese grupo muscular
 
   /api/ejercicios/buscar/dificultad/{difficulty}:
@@ -535,15 +535,15 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Lista de ejercicios encontrados
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Exercise'
-        '404':
+                  $ref: "#/components/schemas/Exercise"
+        "404":
           description: No se encontraron ejercicios con esa dificultad
 
   # ==================== ANSWERBOT ====================
@@ -553,7 +553,7 @@ paths:
       tags:
         - AnswerBot
       responses:
-        '200':
+        "200":
           description: Lista de registros
     post:
       summary: Crear registro de answerbot
@@ -580,7 +580,7 @@ paths:
                   type: string
                   description: ID de la consulta relacionada
       responses:
-        '200':
+        "200":
           description: Registro creado
 
   /api/answerbot/{id}:
@@ -595,7 +595,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Registro encontrado
     put:
       summary: Actualizar registro
@@ -624,7 +624,7 @@ paths:
                 id_query:
                   type: string
       responses:
-        '200':
+        "200":
           description: Registro actualizado
     delete:
       summary: Eliminar registro
@@ -637,7 +637,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Registro eliminado
 
   # ==================== CHATBOT ====================
@@ -647,7 +647,7 @@ paths:
       tags:
         - ChatBot
       responses:
-        '200':
+        "200":
           description: Lista de registros
     post:
       summary: Crear registro de chatbot
@@ -676,7 +676,7 @@ paths:
                   type: string
                   description: Versión del chatbot
       responses:
-        '200':
+        "200":
           description: Registro creado
 
   /api/chatbot/{id}:
@@ -691,7 +691,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Registro encontrado
     put:
       summary: Actualizar registro
@@ -721,7 +721,7 @@ paths:
                 version:
                   type: string
       responses:
-        '200':
+        "200":
           description: Registro actualizado
     delete:
       summary: Eliminar registro
@@ -734,7 +734,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Registro eliminado
 
   # ==================== INFO MEALS ====================
@@ -744,7 +744,7 @@ paths:
       tags:
         - InfoMeals
       responses:
-        '200':
+        "200":
           description: Lista de comidas
     post:
       summary: Crear registro de comida
@@ -782,7 +782,7 @@ paths:
                   type: string
                   description: URL de la foto
       responses:
-        '200':
+        "200":
           description: Comida creada
 
   /api/infomeals/{id}:
@@ -797,7 +797,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Comida encontrada
     put:
       summary: Actualizar comida
@@ -833,7 +833,7 @@ paths:
                 photo:
                   type: string
       responses:
-        '200':
+        "200":
           description: Comida actualizada
     delete:
       summary: Eliminar comida
@@ -846,7 +846,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Comida eliminada
 
   # ==================== DOCUMENTS PDF ====================
@@ -856,7 +856,7 @@ paths:
       tags:
         - DocumentsPDF
       responses:
-        '200':
+        "200":
           description: Lista de documentos
     post:
       summary: Crear documento PDF
@@ -879,7 +879,7 @@ paths:
                   type: string
                   description: Embedding vectorial
       responses:
-        '200':
+        "200":
           description: Documento creado
 
   /api/documentspdf/{id}:
@@ -894,7 +894,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Documento encontrado
     put:
       summary: Actualizar documento PDF
@@ -920,7 +920,7 @@ paths:
                 vectorial_embedding:
                   type: string
       responses:
-        '200':
+        "200":
           description: Documento actualizado
     delete:
       summary: Eliminar documento PDF
@@ -933,7 +933,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Documento eliminado
 
   # ==================== INFO GENERIC DIET ====================
@@ -943,7 +943,7 @@ paths:
       tags:
         - InfoGenericdiet
       responses:
-        '200':
+        "200":
           description: Lista de dietas genéricas
     post:
       summary: Crear registro de dieta genérica
@@ -984,7 +984,7 @@ paths:
                   type: boolean
                   description: Es vegetariana
       responses:
-        '200':
+        "200":
           description: Registro creado
 
   /api/infogenericdiet/{id}:
@@ -999,7 +999,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Registro encontrado
     put:
       summary: Actualizar registro de dieta genérica
@@ -1037,7 +1037,7 @@ paths:
                 vegetarian:
                   type: boolean
       responses:
-        '200':
+        "200":
           description: Registro actualizado
     delete:
       summary: Eliminar registro de dieta genérica
@@ -1050,7 +1050,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Registro eliminado
 
   # ==================== INFO PERSONALIZED DIET ====================
@@ -1060,7 +1060,7 @@ paths:
       tags:
         - InfoPersonalizedDiet
       responses:
-        '200':
+        "200":
           description: Lista de dietas personalizadas
     post:
       summary: Crear dieta personalizada
@@ -1110,7 +1110,7 @@ paths:
                   type: boolean
                   description: Es vegetariana
       responses:
-        '200':
+        "200":
           description: Dieta creada
 
   /api/infopersonalizeddiet/{id}:
@@ -1125,7 +1125,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Dieta encontrada
     put:
       summary: Actualizar dieta personalizada
@@ -1169,7 +1169,7 @@ paths:
                 vegetarian:
                   type: boolean
       responses:
-        '200':
+        "200":
           description: Dieta actualizada
     delete:
       summary: Eliminar dieta personalizada
@@ -1182,72 +1182,8 @@ paths:
           schema:
             type: string
       responses:
-        '200':
-              description: Dieta eliminada
-    get:
-      summary: Obtener registro por ID
-      tags:
-        - InfoGenericdiet
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Registro encontrado
-    put:
-      summary: Actualizar registro
-      tags:
-        - InfoGenericdiet
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                carbohydrates:
-                  type: number
-                diet_type:
-                  type: string
-                gluten:
-                  type: boolean
-                id_meal:
-                  type: number
-                kcal:
-                  type: number
-                micronutrients:
-                  type: number
-                number_meals:
-                  type: number
-                vegan:
-                  type: boolean
-                vegetarian:
-                  type: boolean
-      responses:
-        '200':
-          description: Registro actualizado
-    delete:
-      summary: Eliminar registro
-      tags:
-        - InfoGenericdiet
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Registro eliminado
+        "200":
+          description: Dieta eliminada
 
   # ==================== PROGRESS ====================
   /api/progress:
@@ -1256,7 +1192,7 @@ paths:
       tags:
         - Progress
       responses:
-        '200':
+        "200":
           description: Lista de progreso
     post:
       summary: Crear registro de progreso
@@ -1281,7 +1217,7 @@ paths:
                 notes:
                   type: string
       responses:
-        '200':
+        "200":
           description: Progreso registrado
 
   /api/progress/{id}:
@@ -1296,7 +1232,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Progreso encontrado
     put:
       summary: Actualizar progreso
@@ -1315,7 +1251,7 @@ paths:
             schema:
               type: object
       responses:
-        '200':
+        "200":
           description: Progreso actualizado
     delete:
       summary: Eliminar progreso
@@ -1328,7 +1264,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Progreso eliminado
 
 components:
