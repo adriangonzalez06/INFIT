@@ -12,6 +12,15 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
+import axios from 'axios';
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  getReactNativePersistence,
+  updateProfile,  
+} from 'firebase/auth';
+import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
+
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -34,12 +43,6 @@ import colors from './views/colors';
 
 import { initializeApp, getApps } from 'firebase/app';
 import { firebaseConfig } from './firebaseConfig';
-import {
-  getAuth,
-  signInWithEmailAndPassword,
-  getReactNativePersistence,
-} from 'firebase/auth';
-import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
 const Stack = createNativeStackNavigator();
 
@@ -53,24 +56,41 @@ function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Error', 'Por favor, completa todos los campos.');
       return;
     }
+    try{
+    const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
+    const user = userCredential.user;
 
-    signInWithEmailAndPassword(auth, email.trim(), password)
-      .then((userCredential) => {
-        console.log('Logged in!');
-        const user = userCredential.user;
-        console.log(user);
-        navigation.navigate('MainTabs');
-      })
-      .catch((error) => {
-        console.error(error);
-        Alert.alert('Error', error.message);
-      });
-  };
+    //Pedir nombre al backend y actualizar el displayName si exsiste
+    const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';  
+    try {
+      const resp = await axios.get(
+        `http://${host}:8082/api/usuarios/buscar/${encodeURIComponent(user.email)}`,  
+        { timeout: 5000 }
+      );
+      const nombreBackend = resp.data?.nombre;
+      if (nombreBackend && (!user.displayName || user.displayName !== nombreBackend)) {
+        try{
+          await updateProfile(user, { displayName: nombreBackend });
+          console.log('displayName actualizado desde backend', nombreBackend);
+        } catch(e){
+          console.warn('No se pudo actualizar el displayName desde backend:', e?.message || e);
+        }
+      }
+    } catch (e) {
+      console.warn('No se pudo obtener el nombre desde el backend:', e?.message || e);
+    }
+  } catch(error){
+      console.error(error);
+      Alert.alert('Error', error.message);
+  }
+    
+
+      };
 
   return (
     <KeyboardAvoidingView
@@ -115,20 +135,20 @@ function LoginScreen({ navigation }) {
           <Text style={styles.dividerText}>─── O inicia sesión con ───</Text>
 
 
-           <TouchableOpacity style={styles.google}>
-           <Image
-            source={require('./assets/logos/google.png')}
-                style={{ width: 24, height: 24 }}
-             resizeMode="contain"
-               />
-           </TouchableOpacity>
+          <TouchableOpacity style={styles.google}>
+            <Image
+              source={require('./assets/logos/google.png')}
+              style={{ width: 24, height: 24 }}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
 
         </SafeAreaView>
 
-           {/* Boton para ir al menu sin iniciar sesion para no perder tanto tiempo */}
-          <TouchableOpacity style={styles.boton} onPress = {() => navigation.navigate('MainTabs')}>
-            <Text style={styles.botonTexto}>Debug ir al menu</Text>
-            </TouchableOpacity>
+        {/* Boton para ir al menu sin iniciar sesion para no perder tanto tiempo */}
+        <TouchableOpacity style={styles.boton} onPress={() => navigation.navigate('MainTabs')}>
+          <Text style={styles.botonTexto}>Debug ir al menu</Text>
+        </TouchableOpacity>
 
       </ScrollView>
     </KeyboardAvoidingView>
@@ -168,15 +188,15 @@ export default function App() {
               ),
             })}
           />
-          <Stack.Screen name="Rutinas" component={RutinasScreen} options={{headerShown: false}} />
-          <Stack.Screen name="PantallaRutina" component={PantallaRutina}options={{headerShown: false}} />
-          <Stack.Screen name="Alimentacion" component={AlimentacionScreen} options={{headerShown: false}} />
-          <Stack.Screen name="RuedaSettings" component={RuedaSettings} options={{headerShown: false}} />
-          <Stack.Screen name="Ajustes" component={SettingsScreen} options={{headerShown: false}}/>
-          <Stack.Screen name="ChangingPassword" component={ChangingPassword} options={{headerShown: false}}/>
-          <Stack.Screen name="ListaGrupoRecetas" component={ListaGrupoRecetas} options={{headerShown: false}}/>
-          <Stack.Screen name="Recipe" component={RecipeView} options={{headerShown: false}}/>
-          <Stack.Screen name="Challenges" component={Challenges} options={{headerShown: false}}/>
+          <Stack.Screen name="Rutinas" component={RutinasScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="PantallaRutina" component={PantallaRutina} options={{ headerShown: false }} />
+          <Stack.Screen name="Alimentacion" component={AlimentacionScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="RuedaSettings" component={RuedaSettings} options={{ headerShown: false }} />
+          <Stack.Screen name="Ajustes" component={SettingsScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="ChangingPassword" component={ChangingPassword} options={{ headerShown: false }} />
+          <Stack.Screen name="ListaGrupoRecetas" component={ListaGrupoRecetas} options={{ headerShown: false }} />
+          <Stack.Screen name="Recipe" component={RecipeView} options={{ headerShown: false }} />
+          <Stack.Screen name="Challenges" component={Challenges} options={{ headerShown: false }} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
@@ -237,20 +257,20 @@ const styles = StyleSheet.create({
     color: colors.dark_gray,
   },
 
-google: {
-  width: 50,
-  height: 50,
-  borderRadius: 30,
-  backgroundColor: '#fff',
-  justifyContent: 'center',
-  alignItems: 'center',
-  elevation: 2,
-  shadowColor: '#000',
-  shadowOpacity: 0.2,
-  shadowRadius: 4,
-  alignSelf: 'center',
-  marginTop: -20,
+  google: {
+    width: 50,
+    height: 50,
+    borderRadius: 30,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    alignSelf: 'center',
+    marginTop: -20,
 
-},
+  },
 
 });

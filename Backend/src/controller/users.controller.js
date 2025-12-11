@@ -44,6 +44,7 @@ usuarioCtl.getUsu = async (req, res) => {
 
 /** Crear usuario */
 usuarioCtl.createUsu = async (req, res) => {
+    const { v4: uuidv4 } = require('uuid')
     try {
         const {
             nombre,
@@ -66,7 +67,9 @@ usuarioCtl.createUsu = async (req, res) => {
             return res.status(400).json({ message: 'La contraseña debe tener al menos 8 caracteres.' });
         }
 
-        const userId = emailNorm; // id determinístico basado en email
+
+
+        const userId = uuidv4(); // id determinístico basado en email
 
         // Obtener instancia de Firestore en runtime (prefiere servicio centralizado)
         let db = null;
@@ -126,7 +129,7 @@ usuarioCtl.createUsu = async (req, res) => {
         const freeRef = db.collection('usersfree').doc(userId);
         batch.set(freeRef, {
             userId,
-            ads_per_hour_gone: 0
+            ads_per_hour_gone: 10
         });
 
         console.log('[createUsu] Ejecutando batch.commit para userId=', userId);
@@ -144,9 +147,18 @@ usuarioCtl.createUsu = async (req, res) => {
 };
 
 /** Obtener usuario por ID de documento */
-usuarioCtl.getUsuById = async (req, res) => {
+usuarioCtl.getUsuByEmail = async (req, res) => {
     try {
-        const usuario = await firestoreService.getById('users', req.params.id);
+        const { email } = req.query
+        if(!email) {
+            return res.status(400).json({message: 'Falta el parametro email'});
+        }
+        const emailNorm = normalizEmail(email);
+        if(!emailNorm){
+            return res.status(400).json({message: 'Email invalido'});
+        }
+
+        const usuario = await firestoreService.getById('users', emailNorm);
         if (!usuario) {
             return res.status(404).json({ message: 'Usuario no encontrado' });
         }

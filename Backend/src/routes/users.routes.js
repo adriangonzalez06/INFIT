@@ -6,8 +6,8 @@ const router = express.Router();
 router.get('/GET', usuarioCtl.getUsu);
 router.get('/buscar/:id_user', usuarioCtl.getUsuByCustomId);
 router.post('/POST', usuarioCtl.createUsu);
-router.get('/:id', usuarioCtl.getUsuById);
-router.delete('/:id', usuarioCtl.deleteUsu);
-router.put('/:id', usuarioCtl.updateUsu);
+router.get('/by:id', usuarioCtl.getUsuByEmail);
+router.delete('/by:id', usuarioCtl.deleteUsu);
+router.put('/by:id', usuarioCtl.updateUsu);
 
 module.exports = router;

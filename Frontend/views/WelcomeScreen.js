@@ -13,6 +13,7 @@ import {
   FlatList,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 
 
 const PRIMARY = '#ef2b2d';
@@ -85,9 +86,18 @@ export default function WelcomeScreen() {
   const isDark = colorScheme === 'dark';
   const theme = isDark ? darkTheme : lightTheme;
 
-
-  const userName = 'Sergi';
   const streakDays = 12;
+  const [userName, setUserName] = useState(null);
+
+  useEffect(() => {
+    const auth = getAuth();
+    //Intenta obteenr el usuario actual
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (user) setUserName((user.displayName && user.displayName.trim()) || user.email || user.uid);
+      else setUserName(null);
+    });
+    return () => unsub();
+  }, []);
 
   const messages = useMemo(
     () => [
@@ -139,7 +149,7 @@ export default function WelcomeScreen() {
         ]}
       >
         <Image source={require('../assets/avatar.png')} style={styles.avatar} />
-        <Text style={[styles.greeting, { color: theme.primary }]}>¡Hola, {userName}!</Text>
+        <Text style={[styles.greeting, { color: theme.primary }]}>¡Hola, {userName ?? 'usuario'}!</Text>
         <Text style={[styles.subtitle, { color: theme.subtle }]}>{message}</Text>
 
         <View style={[styles.streakChip, { borderColor: theme.primary, backgroundColor: theme.card }]}>

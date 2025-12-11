@@ -74,6 +74,15 @@ function RegisterScreen({ navigation }) {
 
       // Crear usuario en Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
+
+
+      // Actualizar displayName en el perfil de Firebase
+      try {
+        await updateProfile(userCredential.user, { displayName: nombre });
+      }catch(e){
+        console.warn('No se pudo actualizar el perfil de Firebase:', e?.message || e);
+      }
+
       const user = userCredential.user;
       console.log('Cuenta creada en Firebase:', user.uid);
 
