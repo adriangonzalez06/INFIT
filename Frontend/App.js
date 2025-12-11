@@ -29,7 +29,8 @@ import PantallaRutina from './views/PantallaRutina';
 import RuedaSettings from './views/RuedaSettings';
 import ChangingPassword from './views/changing_password';
 import ListaGrupoRecetas from './views/ListaGrupoRecetas';
-import RecipeView from './views/RecipeView';
+import DietView from './views/DietView';
+import AddDietMenu from './views/AddDietMenu';
 import colors from './views/colors';
 
 import { initializeApp, getApps } from 'firebase/app';
@@ -175,8 +176,9 @@ export default function App() {
           <Stack.Screen name="Ajustes" component={SettingsScreen} options={{headerShown: false}}/>
           <Stack.Screen name="ChangingPassword" component={ChangingPassword} options={{headerShown: false}}/>
           <Stack.Screen name="ListaGrupoRecetas" component={ListaGrupoRecetas} options={{headerShown: false}}/>
-          <Stack.Screen name="Recipe" component={RecipeView} options={{headerShown: false}}/>
+          <Stack.Screen name="Diet" component={DietView} options={{headerShown: false}}/>
           <Stack.Screen name="Challenges" component={Challenges} options={{headerShown: false}}/>
+          <Stack.Screen name="AddDietMenu" component={AddDietMenu} options={{headerShown: false}}/>
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

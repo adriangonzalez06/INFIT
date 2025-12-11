@@ -18,17 +18,17 @@ export default function ListaGrupoRecetas({ route }) {
   console.log('grupo asignado: ', name);
 
     {/* render a card*/}
-    const renderRecetaCard = (receta) => {
+    const renderDietCard = (diet) => {
       return (
             <TouchableOpacity
-              key={receta.id}
+              key={diet.id}
               style={[styles.recipeCards, styles.recetaCardGroup]}
               onPress={() => {
-                handleEntrarReceta(receta);
+                handleEnterDiet(diet);
               }}>
   
               <ImageBackground source={require('../assets/images/images_diet/diet_01.jpg')} resizeMode="cover" style={{width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', zIndex: -1, borderRadius: 14, overflow: 'hidden'}}>
-                <Text style={styles.recetaTextoTitulo}>{receta.nombre}</Text>
+                <Text style={styles.recetaTextoTitulo}>{diet.name}</Text>
                 <Text style={styles.recetaTexto}>Subtítulo</Text>
               </ImageBackground>
 
@@ -36,13 +36,13 @@ export default function ListaGrupoRecetas({ route }) {
       );
     };
 
-  {/*Enter a recipe card handler*/}
-  const handleEntrarReceta = (receta) => {
-    if (!receta) {
-          console.warn('handleEntrarReceta: receta is undefined');
+  {/*Enter a diet card handler*/}
+  const handleEnterDiet = (diet) => {
+    if (!diet) {
+          console.warn('handleEnterDiet: diet is undefined');
           return;
         }
-        navigation.navigate('Recipe', { receta });
+        navigation.navigate('Diet', { diet });
   };
 
   return (
@@ -60,8 +60,8 @@ export default function ListaGrupoRecetas({ route }) {
       {/* render groups */}
       <ScrollView  contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
-          {recipes.map((receta) => (
-            renderRecetaCard(receta)
+          {recipes.map((diet) => (
+            renderDietCard(diet)
           ))}
 
       </ScrollView>

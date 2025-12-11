@@ -181,7 +181,7 @@ export default StyleSheet.create({
   },
 
 // Recipe Screen Styles
-  platoContainer: {
+  dishContainer: {
     borderWidth: 1,
     borderColor: colors.light_gray,
     borderRadius: 10,
@@ -192,7 +192,7 @@ export default StyleSheet.create({
     flexDirection: 'row',
   },
 
-  platoImage: {
+  dishImage: {
     width: '40%',
     height: '100%',
     borderRadius: 10,
@@ -230,6 +230,40 @@ export default StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+
+  //create diet screen
+
+  dayButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 30,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    alignSelf: 'center',
+    margin: 5,
+},
+
+daysContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+},
+
+addDishButton: {
+    borderWidth: 2,
+    borderColor: colors.light_gray,
+    borderRadius: 10,
+    borderStyle: 'dashed',
+    padding: 15,
+    marginBottom: 20,
+    textAlign: 'center',
+    justifyContent: 'center',
+},
 
 //pantalla rutina styles
   rutinaContainer: {

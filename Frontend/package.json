@@ -22,7 +22,6 @@
     "@react-navigation/native-stack": "^7.3.26",
     "adb": "^0.2.0",
     "axios": "^1.12.2",
-    "expo": "~53.0.22",
     "expo-blur": "~14.1.5",
     "expo-build-properties": "~0.14.8",
     "expo-image": "^2.4.1",
