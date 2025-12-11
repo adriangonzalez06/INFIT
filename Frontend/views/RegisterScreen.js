@@ -14,7 +14,8 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
 import colors from './colors';
-
+import MainTabs from './MainTabs';  
+import { NavigationContainer } from '@react-navigation/native';
 import {
   getAuth,
   getReactNativePersistence,
@@ -82,11 +83,12 @@ function RegisterScreen({ navigation }) {
         timeout: 10000,
       });
 
+
       // Verificar respuesta
       if (resp.status === 201 || resp.status === 200) {
         console.log('Datos guardados en la base de datos');
         setError('');
-        navigation.navigate('Login');
+        navigation.navigate('MainTabs')
       } else {
         // Si la creación en el backend falla, eliminar el usuario de Firebase para no dejar huérfano
         await user.delete();
@@ -165,13 +167,13 @@ function RegisterScreen({ navigation }) {
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
-          <TouchableOpacity style={styles.boton} onPress={handleRegister}>
+         <TouchableOpacity style={styles.boton} onPress = {(handleRegister)}>
             <Text style={styles.botonTexto}>Registrarse</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-            <Text style={styles.link}>¿Ya tienes cuenta? Inicia sesión</Text>
-          </TouchableOpacity>
+          <TouchableOpacity style={styles.boton} onPress = {() => navigation.navigate('Login')}>
+                      <Text style={styles.botonTexto}>¿Ya tienes cuenta? Inicia sesión</Text>
+                      </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

@@ -1,5 +1,7 @@
 const bcrypt = require('bcrypt');
+const admin = require('firebase-admin'); //Import para la fecha del servidor
 const firestoreService = require('../service/firestoreservice');
+
 
 // ✅ Config en nivel de módulo (no dentro de funciones)
 const BCRYPT_COST = Number(process.env.BCRYPT_COST ?? 12); // (15) ayuda a rehash futuro
@@ -43,7 +45,6 @@ usuarioCtl.getUsu = async (req, res) => {
 /** Crear usuario */
 usuarioCtl.createUsu = async (req, res) => {
     try {
-        // Extraer y normalizar (8, 14)
         const {
             nombre,
             username,
@@ -61,46 +62,84 @@ usuarioCtl.createUsu = async (req, res) => {
             return res.status(400).json({ message: 'Email inválido' });
         }
 
-        // (7) Unicidad: comprobación por campo → OJO ventana de carrera.
-        // Ideal: usar ID determinístico (users/{emailNorm}) o uid de Auth para evitar duplicados
-        const existingUsers = await firestoreService.findByField('users', 'email', emailNorm);
-        if (existingUsers.length > 0) {
-            return res.status(409).json({ message: 'El email ya existe' }); // (9) 409 Conflict
+        if (!password || typeof password !== 'string' || password.length < 8) {
+            return res.status(400).json({ message: 'La contraseña debe tener al menos 8 caracteres.' });
         }
 
-        // Hashear contraseña (3, 15)
+        const userId = emailNorm; // id determinístico basado en email
+
+        // Obtener instancia de Firestore en runtime (prefiere servicio centralizado)
+        let db = null;
+        try {
+            if (firestoreService && typeof firestoreService.getDb === 'function') {
+                db = firestoreService.getDb();
+            }
+        } catch (e) {
+            console.warn('[createUsu] firestoreService.getDb() falló:', e?.message || e);
+        }
+        if (!db || typeof db.batch !== 'function') {
+            if (admin.apps && admin.apps.length > 0) {
+                db = admin.firestore();
+            } else {
+                console.error('[createUsu] Firebase admin NO inicializado');
+                return res.status(500).json({ message: 'Servicio de base de datos no disponible' });
+            }
+        }
+
+        // Comprobación de unicidad: usa findByField si existe, si no, consulta directa
+        let existingUsers = [];
+        if (firestoreService && typeof firestoreService.findByField === 'function') {
+            existingUsers = await firestoreService.findByField('users', 'email', emailNorm) || [];
+        } else {
+            const qSnap = await db.collection('users').where('email', '==', emailNorm).limit(1).get();
+            if (!qSnap.empty) existingUsers = qSnap.docs.map(d => d.data());
+        }
+        if (existingUsers.length > 0) {
+            return res.status(409).json({ message: 'El email ya existe' });
+        }
+
         const password_hash = await hashPassword(password);
 
-        // Normalización de tipos (8)
         const birthdateISO = toISODate(birthdate);
         const heightNum = toNumberOrNull(height);
         const weightNum = toNumberOrNull(weight);
 
-        const nowISO = new Date().toISOString(); // (15) timestamps
         const newUsuario = {
             nombre: (nombre ?? '').trim(),
             username: (username ?? '').trim(),
             email: emailNorm,
-            password_hash,              // (4) nombre claro del campo
+            password_hash,
             photo: (photo ?? '').trim(),
-            birthdate: birthdateISO,    // (8) formato consistente
-            height: heightNum,          // (8) número o null
-            weight: weightNum,          // (8) número o null
-            goal: (goal ?? '').trim(),  // (8) podrías validar contra enum
-            bcryptCost: BCRYPT_COST,    // (15) para rehash futuro
-            createdAt: nowISO,          // (15)
-            updatedAt: nowISO,          // (15)
+            birthdate: birthdateISO,
+            height: heightNum,
+            weight: weightNum,
+            goal: (goal ?? '').trim(),
+            bcryptCost: BCRYPT_COST,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         };
 
-        // (7) Ideal: crear con ID determinístico para unicidad atómica (users/{emailNorm})
-        // Si tu servicio NO tiene "set" con ID, usa create (acepta ventana de carrera).
-        // 👉 Recomendado: implementar firestoreService.set(collection, id, data)
-        const docId = await firestoreService.create('users', newUsuario);
+        const batch = db.batch();
+        const userRef = db.collection('users').doc(userId);
+        batch.set(userRef, newUsuario);
 
-        return res.status(201).json({ message: 'Usuario creado', id: docId }); // (9) 201 Created
+        const freeRef = db.collection('usersfree').doc(userId);
+        batch.set(freeRef, {
+            userId,
+            ads_per_hour_gone: 0
+        });
+
+        console.log('[createUsu] Ejecutando batch.commit para userId=', userId);
+        await batch.commit();
+        console.log('[createUsu] batch.commit OK para userId=', userId);
+
+        return res.status(201).json({ message: 'Usuario creado', id: userId }); // <-- usar userId
     } catch (error) {
-        console.error('[createUsu] Error:', error); // (10) log interno
-        return res.status(500).json({ message: 'Error al crear usuario' }); // (10) respuesta genérica
+        console.error('[createUsu] Error creando usuario:', error && (error.stack || error));
+        if (error && (error.code === 'already-exists' || error.code === 6)) {
+            return res.status(409).json({ message: 'El usuario ya existe' });
+        }
+        return res.status(500).json({ message: 'Error al crear usuario' });
     }
 };
 
