@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,24 +6,77 @@ import {
   Image,
   TouchableOpacity,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const user = {
-    nombre: 'Sergi Velasco',
-    foto: require('../assets/avatar.png'),
-    peso: 80,
-    altura: 1.90,
-    registros: [
-      { tipo: 'Ejercicio', detalle: '30 min de cardio', fecha: '22/10/2025' },
-      { tipo: 'Alimentación', detalle: 'Desayuno saludable', fecha: '22/10/2025' },
-      { tipo: 'Sueño', detalle: 'Dormido 7h 45min', fecha: '21/10/2025' },
-    ],
-  };
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      try {
+        // Obtener datos del usuario de AsyncStorage
+        const nombreUser = await ReactNativeAsyncStorage.getItem('userName');
+        const emailUser = await ReactNativeAsyncStorage.getItem('userEmail');
+        
+        // Si no están en storage, usa valores por defecto
+        const userData = {
+          nombre: nombreUser || 'Usuario',
+          email: emailUser || 'email@example.com',
+          foto: require('../assets/avatar.png'),
+          peso: 80,
+          altura: 1.90,
+          registros: [
+            { tipo: 'Ejercicio', detalle: '30 min de cardio', fecha: '22/10/2025' },
+            { tipo: 'Alimentación', detalle: 'Desayuno saludable', fecha: '22/10/2025' },
+            { tipo: 'Sueño', detalle: 'Dormido 7h 45min', fecha: '21/10/2025' },
+          ],
+        };
+        
+        setUser(userData);
+      } catch (error) {
+        console.error('Error cargando perfil:', error);
+        // Usar datos por defecto si hay error
+        setUser({
+          nombre: 'Usuario',
+          email: 'email@example.com',
+          foto: require('../assets/avatar.png'),
+          peso: 80,
+          altura: 1.90,
+          registros: [
+            { tipo: 'Ejercicio', detalle: '30 min de cardio', fecha: '22/10/2025' },
+            { tipo: 'Alimentación', detalle: 'Desayuno saludable', fecha: '22/10/2025' },
+            { tipo: 'Sueño', detalle: 'Dormido 7h 45min', fecha: '21/10/2025' },
+          ],
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUserProfile();
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#ef2b2d" />
+      </View>
+    );
+  }
+
+  if (!user) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text>Error cargando perfil</Text>
+      </View>
+    );
+  }
 
   const imc = (user.peso / (user.altura * user.altura)).toFixed(1);
 

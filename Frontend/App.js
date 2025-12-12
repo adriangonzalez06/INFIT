@@ -53,23 +53,44 @@ function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Error', 'Por favor, completa todos los campos.');
       return;
     }
 
-    signInWithEmailAndPassword(auth, email.trim(), password)
-      .then((userCredential) => {
-        console.log('Logged in!');
-        const user = userCredential.user;
-        console.log(user);
-        navigation.navigate('MainTabs');
-      })
-      .catch((error) => {
-        console.error(error);
-        Alert.alert('Error', error.message);
-      });
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
+      const user = userCredential.user;
+      const uid = user.uid;
+
+      console.log('✅ Logged in! UID:', uid);
+
+      // Guardar datos en AsyncStorage
+      await ReactNativeAsyncStorage.setItem('userUID', uid);
+      await ReactNativeAsyncStorage.setItem('userEmail', email.trim());
+
+      // Obtener el nombre del usuario desde el backend
+      try {
+        const axios = require('axios');
+        const backendUrl = `http://10.0.2.2:8082/api/usuarios/${uid}`;
+        const response = await axios.get(backendUrl);
+        const userName = response.data.nombre || 'Usuario';
+        
+        // Guardar el nombre en AsyncStorage
+        await ReactNativeAsyncStorage.setItem('userName', userName);
+        console.log('✅ Nombre guardado:', userName);
+      } catch (err) {
+        console.warn('⚠️ No se pudo obtener el nombre del backend:', err.message);
+        // Si falla, usa un nombre por defecto
+        await ReactNativeAsyncStorage.setItem('userName', 'Usuario');
+      }
+
+      navigation.navigate('MainTabs');
+    } catch (error) {
+      console.error('❌ Error en login:', error);
+      Alert.alert('Error', error.message);
+    }
   };
 
   return (

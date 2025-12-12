@@ -1,4 +1,5 @@
 const bcrypt = require('bcrypt');
+const admin = require('firebase-admin');
 const firestoreService = require('../service/firestoreservice');
 
 // ✅ Config en nivel de módulo (no dentro de funciones)
@@ -41,6 +42,7 @@ usuarioCtl.getUsu = async (req, res) => {
 };
 
 /** Crear usuario */
+/** Crear usuario (sincroniza Firebase Auth + Firestore) */
 usuarioCtl.createUsu = async (req, res) => {
     try {
         // Extraer y normalizar (8, 14)
@@ -61,46 +63,60 @@ usuarioCtl.createUsu = async (req, res) => {
             return res.status(400).json({ message: 'Email inválido' });
         }
 
-        // (7) Unicidad: comprobación por campo → OJO ventana de carrera.
-        // Ideal: usar ID determinístico (users/{emailNorm}) o uid de Auth para evitar duplicados
-        const existingUsers = await firestoreService.findByField('users', 'email', emailNorm);
-        if (existingUsers.length > 0) {
-            return res.status(409).json({ message: 'El email ya existe' }); // (9) 409 Conflict
+        // Validar contraseña
+        if (typeof password !== 'string' || password.length < 8) {
+            return res.status(400).json({ message: 'La contraseña debe tener al menos 8 caracteres' });
         }
 
-        // Hashear contraseña (3, 15)
-        const password_hash = await hashPassword(password);
+        // PASO 1: Crear usuario en Firebase Authentication
+        // Firebase Auth verifica automáticamente si el email ya existe
+        let userRecord;
+        try {
+            userRecord = await admin.auth().createUser({
+                email: emailNorm,
+                password: password,
+                displayName: nombre,
+            });
+            console.log(`✅ Usuario creado en Firebase Auth con UID: ${userRecord.uid}`);
+        } catch (authError) {
+            if (authError.code === 'auth/email-already-exists') {
+                return res.status(409).json({ message: 'El email ya está registrado' });
+            }
+            throw authError;
+        }
 
-        // Normalización de tipos (8)
-        const birthdateISO = toISODate(birthdate);
-        const heightNum = toNumberOrNull(height);
-        const weightNum = toNumberOrNull(weight);
-
-        const nowISO = new Date().toISOString(); // (15) timestamps
-        const newUsuario = {
+        // PASO 2: Crear documento en Firestore con el UID como ID
+        const nowISO = new Date().toISOString();
+        const userData = {
+            uid: userRecord.uid,                // 🔑 El UID de Firebase Auth
             nombre: (nombre ?? '').trim(),
             username: (username ?? '').trim(),
             email: emailNorm,
-            password_hash,              // (4) nombre claro del campo
             photo: (photo ?? '').trim(),
-            birthdate: birthdateISO,    // (8) formato consistente
-            height: heightNum,          // (8) número o null
-            weight: weightNum,          // (8) número o null
-            goal: (goal ?? '').trim(),  // (8) podrías validar contra enum
-            bcryptCost: BCRYPT_COST,    // (15) para rehash futuro
-            createdAt: nowISO,          // (15)
-            updatedAt: nowISO,          // (15)
+            birthdate: toISODate(birthdate),
+            height: toNumberOrNull(height),
+            weight: toNumberOrNull(weight),
+            goal: (goal ?? '').trim(),
+            createdAt: nowISO,
+            updatedAt: nowISO,
         };
 
-        // (7) Ideal: crear con ID determinístico para unicidad atómica (users/{emailNorm})
-        // Si tu servicio NO tiene "set" con ID, usa create (acepta ventana de carrera).
-        // 👉 Recomendado: implementar firestoreService.set(collection, id, data)
-        const docId = await firestoreService.create('users', newUsuario);
+        // Crear documento en Firestore con el UID como ID del documento
+        await firestoreService.getDb()
+            .collection('users')
+            .doc(userRecord.uid)  // 🔑 Usar el UID como ID del documento
+            .set(userData);
 
-        return res.status(201).json({ message: 'Usuario creado', id: docId }); // (9) 201 Created
+        console.log(`✅ Documento de usuario creado en Firestore con ID: ${userRecord.uid}`);
+
+        return res.status(201).json({
+            message: 'Usuario creado exitosamente',
+            uid: userRecord.uid,
+            user: userData
+        });
     } catch (error) {
-        console.error('[createUsu] Error:', error); // (10) log interno
-        return res.status(500).json({ message: 'Error al crear usuario' }); // (10) respuesta genérica
+        console.error('[createUsu] Error:', error);
+        return res.status(500).json({ message: 'Error al crear usuario: ' + error.message });
     }
 };
 
@@ -199,6 +215,47 @@ usuarioCtl.getUsuByCustomId = async (req, res) => {
     } catch (error) {
         console.error('[getUsuByCustomId] Error:', error);
         return res.status(500).json({ message: 'Error al buscar el usuario' });
+    }
+};
+
+/** Login: autentica con Firebase Auth y retorna el token */
+usuarioCtl.login = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        const emailNorm = normalizeEmail(email);
+        if (!emailNorm) {
+            return res.status(400).json({ message: 'Email inválido' });
+        }
+
+        // Aquí necesitarías usar Firebase SDK de cliente para obtener un token
+        // O usar un servicio REST de Firebase (REST API)
+        // Por ahora, solo verificamos que el usuario existe en Firestore con ese email
+
+        const usuarios = await firestoreService.findByField('users', 'email', emailNorm);
+        if (!usuarios || usuarios.length === 0) {
+            return res.status(401).json({ message: 'Email o contraseña incorrectos' });
+        }
+
+        const usuario = usuarios[0];
+        const uid = usuario.uid;
+
+        // ⚠️  NOTA: Para autenticación real, deberías usar Firebase SDK en el cliente
+        // El cliente obtiene un JWT de Firebase, y tú lo verificas en tu middleware
+
+        return res.status(200).json({
+            message: 'Login exitoso',
+            uid: uid,
+            usuario: {
+                id: usuario.id,
+                nombre: usuario.nombre,
+                email: usuario.email,
+                photo: usuario.photo
+            }
+        });
+    } catch (error) {
+        console.error('[login] Error:', error);
+        return res.status(500).json({ message: 'Error en login' });
     }
 };
 

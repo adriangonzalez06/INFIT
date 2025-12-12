@@ -3,11 +3,17 @@ const usuarioCtl = require('../controller/users.controller.js'); // asegúrate q
 
 const router = express.Router();
 
-router.get('/GET', usuarioCtl.getUsu);
-router.get('/buscar/:id_user', usuarioCtl.getUsuByCustomId);
-router.post('/POST', usuarioCtl.createUsu);
-router.get('/:id', usuarioCtl.getUsuById);
-router.delete('/:id', usuarioCtl.deleteUsu);
-router.put('/:id', usuarioCtl.updateUsu);
+// Registro y Login (sin autenticación)
+router.post('/register', usuarioCtl.createUsu);
+router.post('/login', usuarioCtl.login);
+
+// Obtener usuarios
+router.get('/', usuarioCtl.getUsu);                    // GET /api/usuarios/
+router.get('/:id', usuarioCtl.getUsuById);              // GET /api/usuarios/{uid}
+router.get('/buscar/:id_user', usuarioCtl.getUsuByCustomId);  // GET /api/usuarios/buscar/{id_user}
+
+// Actualizar y eliminar
+router.put('/:id', usuarioCtl.updateUsu);              // PUT /api/usuarios/{uid}
+router.delete('/:id', usuarioCtl.deleteUsu);           // DELETE /api/usuarios/{uid}
 
 module.exports = router;
