@@ -12,6 +12,8 @@ import Diet from '../objects/Diet';
 import Dish from '../objects/Dish';
 import { SearchMenu } from './SearchMenu';
 
+import style from './stylesheet';
+
 export default function DietView({ }) {
 
   const navigation = useNavigation();
@@ -24,12 +26,17 @@ export default function DietView({ }) {
   
   {/*array de todos los platos*/}
   const allAvailableDishes = [dish1, dish2, dish3];
+
+  const newDietRef = useRef(new Diet());
+  const newDiet = newDietRef.current;
   
-  const [dishes, setDishes] = useState([dish1, dish2, dish3]);
+  // selectedDay: 0 = Lunes, 1 = Martes, ... 6 = Domingo
+  const [selectedDay, setSelectedDay] = useState(0);
+  const [dishes, setDishes] = useState(newDiet.getDishesForDay(0));
 
     {/*Totales de la diet*/}
-  const totalCalories = ( ([dish1, dish2, dish3]) .reduce((sum,p) => sum + (p?.calories || 0), 0) );
-  const totalMacronutrients = ( ([dish1, dish2, dish3]) .reduce((sum,p) => sum + (p?.macronutrients || 0), 0) );
+  const totalCalories = ( dishes.reduce((sum,p) => sum + (p?.calories || 0), 0) );
+  const totalMacronutrients = ( dishes.reduce((sum,p) => sum + (p?.macronutrients || 0), 0) );
 
  {/*variables para list de caracteristicas (vegan, vegetarian, gluten)*/}
   let nextId = 0;
@@ -45,8 +52,32 @@ export default function DietView({ }) {
   
   {/*funcion para agregar un plato a la dieta*/}
   const handleAddDish = (selectedDish) => {
-    setDishes([...dishes, selectedDish]);
+    // Añade el plato al día seleccionado dentro de newDiet
+    newDiet.addDishToDay(selectedDay, selectedDish);
+    // Actualiza el estado local para re-renderizar la lista del día
+    setDishes([...newDiet.getDishesForDay(selectedDay)]);
   };
+
+  {/*componente personalizado para renderizar items en el SearchMenu*/}
+  const renderDishItemMenu = ({ item }) => (
+    <TouchableOpacity onPress={() => { handleAddDish(item); searchMenuRef.current?.cerrarMenu?.(); }}>
+      <View style={[styles.dishContainer, { marginHorizontal: 10, marginVertical: 8 }]}>
+        <Image
+          style={[styles.dishImage, { width: 80, height: 80, borderRadius: 8 }]}
+          source={typeof item.imgUrl === 'number' ? item.imgUrl : { uri: item.imgUrl }}
+        />
+        <View style={{ marginLeft: 10, flex: 1 }}>
+          <Text style={[styles.dishTitle, { fontSize: 14 }]}>{item.name}</Text>
+          <Text style={styles.dishText}>{item.calories} kcal</Text>
+          <View style={{ flexDirection: 'row', gap: 5, marginTop: 3 }}>
+            {item.vegetarian && <Text style={[style.label, style.labelVegetarian]}>Vegetariano</Text>}
+            {item.vegan && <Text style={[style.label, style.labelVegan]}>Vegano</Text>}
+            {item.gluten_free && <Text style={[style.label, style.labelGlutenFree]}>Sin Gluten</Text>}
+          </View>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
   {/*-------------------------------------------*/}
 
     {/*funciones para mostrar/ocultar modal ingredients*/}
@@ -63,7 +94,7 @@ export default function DietView({ }) {
   {/*funcion para renderizar cada dish de la diet*/}
   const renderPlato = (dish) => {
     return (
-          <TouchableOpacity key={dish.id_dish} onPress={() => showModal(dish.ingredients)}>
+          <TouchableOpacity key={dish.id} onPress={() => showModal(dish.ingredients)} onLongPress={() => newDiet.deleteDishFromDay}>
             <View style={styles.dishContainer}>
               <Image
                 style={styles.dishImage}
@@ -98,8 +129,8 @@ export default function DietView({ }) {
 
   {/*funcion para renderizar la list de dishes*/}
   const renderDishList = () => {
-    return dishes.map((dish) => renderPlato(dish))
-    };
+    return (dishes || []).map((dish) => renderPlato(dish));
+  };
 
   const renderIngredientsModal = () => (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={hideModal}>
@@ -137,23 +168,23 @@ export default function DietView({ }) {
             <View style={styles.grupoContainer}>
 
                 <View style={styles.daysContainer}>
-                    <TouchableOpacity style={styles.dayButton}><Text>LUN</Text></TouchableOpacity>
-                    <TouchableOpacity style={styles.dayButton}><Text>MAR</Text></TouchableOpacity>
-                    <TouchableOpacity style={styles.dayButton}><Text>MIE</Text></TouchableOpacity>
-                    <TouchableOpacity style={styles.dayButton}><Text>JUE</Text></TouchableOpacity>
-                    <TouchableOpacity style={styles.dayButton}><Text>VIE</Text></TouchableOpacity>
+                  <TouchableOpacity style={styles.dayButton} onPress={() => { setSelectedDay(0); setDishes(newDiet.getDishesForDay(0)); }}><Text>LUN</Text></TouchableOpacity>
+                  <TouchableOpacity style={styles.dayButton} onPress={() => { setSelectedDay(1); setDishes(newDiet.getDishesForDay(1)); }}><Text>MAR</Text></TouchableOpacity>
+                  <TouchableOpacity style={styles.dayButton} onPress={() => { setSelectedDay(2); setDishes(newDiet.getDishesForDay(2)); }}><Text>MIE</Text></TouchableOpacity>
+                  <TouchableOpacity style={styles.dayButton} onPress={() => { setSelectedDay(3); setDishes(newDiet.getDishesForDay(3)); }}><Text>JUE</Text></TouchableOpacity>
+                  <TouchableOpacity style={styles.dayButton} onPress={() => { setSelectedDay(4); setDishes(newDiet.getDishesForDay(4)); }}><Text>VIE</Text></TouchableOpacity>
                 </View>
                 <View style={[styles.daysContainer, { justifyContent: 'center' }]}>
-                    <TouchableOpacity style={styles.dayButton}><Text>SAB</Text></TouchableOpacity>
-                    <TouchableOpacity style={styles.dayButton}><Text>DOM</Text></TouchableOpacity>
+                  <TouchableOpacity style={styles.dayButton} onPress={() => { setSelectedDay(5); setDishes(newDiet.getDishesForDay(5)); }}><Text>SAB</Text></TouchableOpacity>
+                  <TouchableOpacity style={styles.dayButton} onPress={() => { setSelectedDay(6); setDishes(newDiet.getDishesForDay(6)); }}><Text>DOM</Text></TouchableOpacity>
                 </View>
 
-                {/*renderizar todos los dishes que haya en la diet*/}
+                {/*renderizar todos los dishes que haya en el día seleccionado*/}
                 {renderDishList()}
 
                 <TouchableOpacity 
                 style={styles.addDishButton}
-                onPress={() => searchMenuRef.current?.openMenu()}
+                onPress={() => searchMenuRef.current?.abrirMenu()}
                 >
                 <Text>+ Añadir plato</Text>
                 </TouchableOpacity>
@@ -185,20 +216,21 @@ export default function DietView({ }) {
 
                 <TouchableOpacity style={styles.saveButton}><Text style={styles.button}>Guardar Dieta</Text></TouchableOpacity>
 
-                <SearchMenu 
-                    ref={searchMenuRef}
-                    data={allAvailableDishes}
-                    title="Agregar Plato a la Dieta"
-                    searchFields={["name"]}
-                    onSelectItem={handleAddDish}
-                    searchPlaceholder="Buscar plato..."
-                    height={height}
-                />
-
             </View>
       </ScrollView>
 
       {renderIngredientsModal()}
+
+      <SearchMenu 
+                    ref={searchMenuRef}
+                    data={allAvailableDishes}
+                    title="Agregar Plato a la Dieta"
+                    searchFields={["name"]}
+                    renderCustomItem={renderDishItemMenu}
+                    onSelectItem={handleAddDish}
+                    searchPlaceholder="Buscar plato..."
+                    height={height}
+                />
 
     </View>
 

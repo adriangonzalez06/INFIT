@@ -231,6 +231,25 @@ export default StyleSheet.create({
     justifyContent: 'space-between',
   },
 
+  label: {
+    fontSize: 10, 
+    paddingHorizontal: 6, 
+    paddingVertical: 2, 
+    borderRadius: 4
+  },
+
+  labelVegetarian: {
+    backgroundColor: '#e8f5e9', 
+  },
+
+  labelVegan: {
+    backgroundColor: '#feffa8ff',
+  },
+
+  labelGlutenFree: {
+    backgroundColor: '#f3e5f5',
+  },
+
   //create diet screen
 
   dayButton: {

@@ -37,13 +37,12 @@ export default class Diet {
     this.weeklyDishes[dayIndex].push(dish);
   }
 
-  // Agregar plato a un día por nombre
-  addDishToDayName(dayName, dish) {
-    const dayIndex = DAYS_OF_WEEK.findIndex(day => day.toLowerCase() === dayName.toLowerCase());
-    if (dayIndex === -1) {
-      throw new Error(`Día no válido: ${dayName}`);
+  //eliminar plato
+  deleteDishFromDay(dayIndex, deletingDish) {
+    if (dayIndex < 0 || dayIndex > 6) {
+      throw new Error('El índice del día debe estar entre 0 y 6');
     }
-    this.weeklyDishes[dayIndex].push(dish);
+    this.weeklyDishes[dayIndex].filter((dish) => dish !== deletingDish);
   }
 
 }
