@@ -19,7 +19,7 @@ import {
   getReactNativePersistence,
   updateProfile,  
 } from 'firebase/auth';
-import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // { changed code }
 
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -49,7 +49,7 @@ const Stack = createNativeStackNavigator();
 // Inicialización segura de Firebase
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const auth = getAuth(app, {
-  persistence: getReactNativePersistence(ReactNativeAsyncStorage),
+  persistence: getReactNativePersistence(AsyncStorage),
 });
 
 function LoginScreen({ navigation }) {
@@ -61,36 +61,63 @@ function LoginScreen({ navigation }) {
       Alert.alert('Error', 'Por favor, completa todos los campos.');
       return;
     }
-    try{
-    const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
-    const user = userCredential.user;
-
-    //Pedir nombre al backend y actualizar el displayName si exsiste
-    const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';  
     try {
-      const resp = await axios.get(
-        `http://${host}:8082/api/usuarios/buscar/${encodeURIComponent(user.email)}`,  
-        { timeout: 5000 }
-      );
-      const nombreBackend = resp.data?.nombre;
+      // Autenticar en Firebase
+      const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
+      const user = userCredential.user;
+
+      const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+
+      // { changed code }} Declarar variables antes del try
+      let userId = null;
+      let streak = null;
+      let nombreBackend = null;
+
+      try {
+        const resp = await axios.get(
+          `http://${host}:8082/api/usuarios/buscar/email/${encodeURIComponent(user.email.trim())}`,
+          { timeout: 5000 }
+        );
+        userId = resp.data?.id;
+        streak = resp.data?.streak;
+        nombreBackend = resp.data?.nombre;
+
+        // { changed code }} Si no viene userId, error obligatorio
+        if (!userId) {
+          Alert.alert('Error', 'No se encontró el usuario en la base de datos');
+          return;
+        }
+
+        // Guardar userId y streak en AsyncStorage
+        await AsyncStorage.setItem('userId', userId);
+        await AsyncStorage.setItem('streak', (streak || 0).toString());
+        console.log('userId guardado en AsyncStorage:', userId);
+        console.log('streak guardado en AsyncStorage:', streak || 0);
+
+      } catch (e) {
+        // { changed code }} Si falla la consulta, NO navegar
+        console.error('Error obteniendo usuario del backend:', e?.message || e);
+        Alert.alert('Error', 'No se pudo obtener los datos del usuario. Verifica tu conexión.');
+        return; // STOP: no navega
+      }
+
+      // Actualizar displayName si viene del backend
       if (nombreBackend && (!user.displayName || user.displayName !== nombreBackend)) {
-        try{
+        try {
           await updateProfile(user, { displayName: nombreBackend });
-          console.log('displayName actualizado desde backend', nombreBackend);
-        } catch(e){
-          console.warn('No se pudo actualizar el displayName desde backend:', e?.message || e);
+          console.log('displayName actualizado desde backend:', nombreBackend);
+        } catch (e) {
+          console.warn('No se pudo actualizar displayName:', e?.message || e);
         }
       }
-    } catch (e) {
-      console.warn('No se pudo obtener el nombre desde el backend:', e?.message || e);
-    }
-  } catch(error){
-      console.error(error);
-      Alert.alert('Error', error.message);
-  }
-    
 
-      };
+      // { changed code }} Solo navega si userId fue obtenido correctamente
+      navigation.navigate('MainTabs');
+    } catch (error) {
+      console.error('Error en login:', error);
+      Alert.alert('Error', error.message || 'Error al iniciar sesión');
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -134,7 +161,6 @@ function LoginScreen({ navigation }) {
 
           <Text style={styles.dividerText}>─── O inicia sesión con ───</Text>
 
-
           <TouchableOpacity style={styles.google}>
             <Image
               source={require('./assets/logos/google.png')}
@@ -142,14 +168,11 @@ function LoginScreen({ navigation }) {
               resizeMode="contain"
             />
           </TouchableOpacity>
-
         </SafeAreaView>
 
-        {/* Boton para ir al menu sin iniciar sesion para no perder tanto tiempo */}
         <TouchableOpacity style={styles.boton} onPress={() => navigation.navigate('MainTabs')}>
           <Text style={styles.botonTexto}>Debug ir al menu</Text>
         </TouchableOpacity>
-
       </ScrollView>
     </KeyboardAvoidingView>
   );

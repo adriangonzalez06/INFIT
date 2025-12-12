@@ -56,6 +56,7 @@ usuarioCtl.createUsu = async (req, res) => {
             height,
             weight,
             goal,
+            streak,
         } = req.body;
 
         const emailNorm = normalizeEmail(email);
@@ -117,6 +118,7 @@ usuarioCtl.createUsu = async (req, res) => {
             height: heightNum,
             weight: weightNum,
             goal: (goal ?? '').trim(),
+            streak: (streak ?? 0),
             bcryptCost: BCRYPT_COST,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -143,29 +145,6 @@ usuarioCtl.createUsu = async (req, res) => {
             return res.status(409).json({ message: 'El usuario ya existe' });
         }
         return res.status(500).json({ message: 'Error al crear usuario' });
-    }
-};
-
-/** Obtener usuario por ID de documento */
-usuarioCtl.getUsuByEmail = async (req, res) => {
-    try {
-        const { email } = req.query
-        if(!email) {
-            return res.status(400).json({message: 'Falta el parametro email'});
-        }
-        const emailNorm = normalizEmail(email);
-        if(!emailNorm){
-            return res.status(400).json({message: 'Email invalido'});
-        }
-
-        const usuario = await firestoreService.getById('users', emailNorm);
-        if (!usuario) {
-            return res.status(404).json({ message: 'Usuario no encontrado' });
-        }
-        return res.status(200).json(usuario);
-    } catch (error) {
-        console.error('[getUsuById] Error:', error);
-        return res.status(500).json({ message: 'Error al obtener usuario' });
     }
 };
 
@@ -250,6 +229,52 @@ usuarioCtl.getUsuByCustomId = async (req, res) => {
     } catch (error) {
         console.error('[getUsuByCustomId] Error:', error);
         return res.status(500).json({ message: 'Error al buscar el usuario' });
+    }
+};
+
+/** Obtener usuario por ID de documento */
+usuarioCtl.getUsuById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        let db = null;
+        try { if (firestoreService && typeof firestoreService.getDb === 'function') db = firestoreService.getDb(); } catch (e) { }
+        if (!db || typeof db.collection !== 'function') {
+            if (admin.apps && admin.apps.length > 0) db = admin.firestore();
+            else return res.status(500).json({ message: 'DB no disponible' });
+        }
+        const doc = await db.collection('users').doc(id).get();
+        if (!doc.exists) return res.status(404).json({ message: 'No encontrado' });
+        return res.status(200).json({ id: doc.id, ...doc.data() });
+    } catch (error) {
+        console.error('[getUsuById] Error:', error && (error.stack || error));
+        return res.status(500).json({ message: 'Error al obtener usuario' });
+    }
+};
+
+/** Buscar usuario por email */
+usuarioCtl.getUsuByEmail = async (req, res) => {
+    try {
+        const { email } = req.params;
+        const emailNorm = normalizeEmail(email);
+        if (!emailNorm) {
+            return res.status(400).json({ message: 'Email inválido' });
+        }
+
+        let db = null;
+        try { if (firestoreService && typeof firestoreService.getDb === 'function') db = firestoreService.getDb(); } catch (e) { }
+        if (!db || typeof db.collection !== 'function') {
+            if (admin.apps && admin.apps.length > 0) db = admin.firestore();
+            else return res.status(500).json({ message: 'DB no disponible' });
+        }
+
+        const qSnap = await db.collection('users').where('email', '==', emailNorm).limit(1).get();
+        if (qSnap.empty) return res.status(404).json({ message: 'Usuario no encontrado' });
+
+        const doc = qSnap.docs[0];
+        return res.status(200).json({ id: doc.id, ...doc.data() });
+    } catch (error) {
+        console.error('[getUsuByEmail] Error:', error && (error.stack || error));
+        return res.status(500).json({ message: 'Error al obtener usuario por email' });
     }
 };
 

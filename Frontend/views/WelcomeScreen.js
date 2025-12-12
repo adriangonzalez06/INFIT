@@ -14,6 +14,9 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import { Platform } from 'react-native';
 
 
 const PRIMARY = '#ef2b2d';
@@ -86,18 +89,56 @@ export default function WelcomeScreen() {
   const isDark = colorScheme === 'dark';
   const theme = isDark ? darkTheme : lightTheme;
 
-  const streakDays = 12;
   const [userName, setUserName] = useState(null);
+  const [streak, setStreak] = useState(0);
 
   useEffect(() => {
     const auth = getAuth();
-    //Intenta obteenr el usuario actual
-    const unsub = onAuthStateChanged(auth, (user) => {
-      if (user) setUserName((user.displayName && user.displayName.trim()) || user.email || user.uid);
-      else setUserName(null);
-    });
-    return () => unsub();
-  }, []);
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        let name = (user.displayName && user.displayName.trim()) || null;
+        let streakVal = 0;
+
+        // { changed code }} Cargar desde AsyncStorage primero (rápido)
+        try {
+          const savedStreak = await AsyncStorage.getItem('streak');
+          if (savedStreak) {
+            streakVal = Number(savedStreak);
+          }
+        } catch (e) {
+          console.warn('Error cargando streak de AsyncStorage:', e?.message);
+        }
+
+        // Si no hay displayName en Firebase, intentar obtener del backend
+        if (!name) {
+          try {
+            const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+            const resp = await axios.get(
+              `http://${host}:8082/api/usuarios/buscar/email/${encodeURIComponent(user.email)}`,
+              { timeout: 5000 }
+            );
+            const nombreBackend = resp?.data?.nombre;
+            streakVal = resp?.data?.streak || streakVal; // { changed code }} usa backend si existe, sino usa AsyncStorage
+            if (nombreBackend) {
+               name = nombreBackend;
+               await AsyncStorage.setItem('userName', nombreBackend);
+               await AsyncStorage.setItem('streak', streakVal.toString());
+             }
+           } catch (e) {
+             console.warn('No se pudo obtener nombre del backend:', e?.message || e);
+             // Aquí streakVal sigue siendo el valor de AsyncStorage
+           }
+         }
+
+         setUserName(name || user.email || user.uid);
+         setStreak(streakVal);
+       } else {
+         setUserName(null);
+         setStreak(0);
+       }
+     });
+     return () => unsub();
+   }, []);
 
   const messages = useMemo(
     () => [
@@ -153,7 +194,7 @@ export default function WelcomeScreen() {
         <Text style={[styles.subtitle, { color: theme.subtle }]}>{message}</Text>
 
         <View style={[styles.streakChip, { borderColor: theme.primary, backgroundColor: theme.card }]}>
-          <Text style={[styles.streakChipText, { color: theme.primary }]}>  Racha: {streakDays} días seguidos</Text>
+          <Text style={[styles.streakChipText, { color: theme.primary }]}>  Racha: {streak} días seguidos</Text>
         </View>
 
 

@@ -22,12 +22,12 @@ import {
   createUserWithEmailAndPassword,
 } from 'firebase/auth';
 import { initializeApp, getApps } from 'firebase/app';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { firebaseConfig } from '../firebaseConfig';
-import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const auth = getAuth(app, {
-  persistence: getReactNativePersistence(ReactNativeAsyncStorage),
+  persistence: getReactNativePersistence(AsyncStorage),
 });
 
 
@@ -75,14 +75,6 @@ function RegisterScreen({ navigation }) {
       // Crear usuario en Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
 
-
-      // Actualizar displayName en el perfil de Firebase
-      try {
-        await updateProfile(userCredential.user, { displayName: nombre });
-      }catch(e){
-        console.warn('No se pudo actualizar el perfil de Firebase:', e?.message || e);
-      }
-
       const user = userCredential.user;
       console.log('Cuenta creada en Firebase:', user.uid);
 
@@ -97,6 +89,18 @@ function RegisterScreen({ navigation }) {
       if (resp.status === 201 || resp.status === 200) {
         console.log('Datos guardados en la base de datos');
         setError('');
+        //Recibimos la respuesta del servidor (id del usuario para despues sacara el nombre)
+        const idUser = resp.data?.id;
+        const streakVal = resp.data?.streak;
+        if(idUser && streak){
+          if(idUser){
+          //Y la guardamos en el local de la aplicacion
+          await AsyncStorage.setItem('userId', idUser);
+          await AsyncStorage.setItem('streak', (streakVal || 0).toString());
+          console.log('userId guardado en AsyncStorage:', idUser, streakVal);
+          }
+
+        }
         navigation.navigate('MainTabs')
       } else {
         // Si la creación en el backend falla, eliminar el usuario de Firebase para no dejar huérfano
