@@ -11,6 +11,7 @@ import {
   useColorScheme,
   StatusBar,
   FlatList,
+  ImageBackground,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
@@ -30,13 +31,13 @@ const lightTheme = {
 
 
 const ROUTINE_CARD_TEXT = {
-  title: 'RUTINAS DE HOY',
-  last: 'Última rutina: Piernas y abdomen',
+  title: 'RUTINA PARA HOY',
+  last: 'Próxima rutina: Piernas y abdomen',
 };
 
 const MEAL_CARD_TEXT = {
   title: 'ALIMENTACIÓN RECOMENDADA',
-  last: 'Última comida: Pollo frito',
+  last: 'Próxima comida: Pollo frito',
 };
 
 const CHALLENGES = [
@@ -131,13 +132,14 @@ export default function WelcomeScreen() {
     >
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
-
+       <ImageBackground source={require('../assets/images/headerimg.png')} style={styles.headerImage}>
       <Animated.View
         style={[
           styles.header,
           { borderBottomColor: theme.hairline, transform: [{ translateY: mountTranslate }], opacity: mountOpacity },
         ]}
       >
+        
         <Image source={require('../assets/avatar.png')} style={styles.avatar} />
         <Text style={[styles.greeting, { color: theme.primary }]}>¡Hola, {userName}!</Text>
         <Text style={[styles.subtitle, { color: theme.subtle }]}>{message}</Text>
@@ -146,7 +148,7 @@ export default function WelcomeScreen() {
           <Text style={[styles.streakChipText, { color: theme.primary }]}>  Racha: {streakDays} días seguidos</Text>
         </View>
 
-
+       
         <Pressable
           onPressIn={() => animateIn(scaleHeaderCTA)}
           onPressOut={() => animateOut(scaleHeaderCTA)}
@@ -168,8 +170,8 @@ export default function WelcomeScreen() {
           </Animated.View>
         </Pressable>
       </Animated.View>
-
-
+            
+</ImageBackground>
       <Pressable onPress={() => navigation.navigate('Rutinas')}>
         <Animated.View
           style={[
@@ -239,6 +241,10 @@ export default function WelcomeScreen() {
 }
 
 const styles = StyleSheet.create({
+
+  header: {
+    imageBackground: '#fff',
+  },
   container: {
     paddingVertical: 32,
     paddingHorizontal: 0,

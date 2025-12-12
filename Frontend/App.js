@@ -118,11 +118,27 @@ function LoginScreen({ navigation }) {
            <TouchableOpacity style={styles.google}>
            <Image
             source={require('./assets/logos/google.png')}
-                style={{ width: 24, height: 24 }}
+                style={{ width: 60, height: 30}}
              resizeMode="contain"
                />
            </TouchableOpacity>
 
+           <TouchableOpacity style={styles.google2}>
+           <Image
+            source={require('./assets/logos/google2.png')}
+                style={{ width: 50, height: 25, justifyContent: 'center', alignSelf: 'center',marginLeft: -20 }}
+             resizeMode="contain"
+               />
+               <Text style={styles.googletext}>Google</Text>
+           </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.google3}>
+          <Image
+          source={require('./assets/logos/google2.png')}
+              style={{ width: 24, height: 24 }}
+            resizeMode="contain"
+              />
+</TouchableOpacity>
         </SafeAreaView>
 
            {/* Boton para ir al menu sin iniciar sesion para no perder tanto tiempo */}
@@ -238,9 +254,9 @@ const styles = StyleSheet.create({
   },
 
 google: {
-  width: 50,
-  height: 50,
-  borderRadius: 30,
+  width: 280,
+  height: 40,
+  borderRadius: 22,
   backgroundColor: '#fff',
   justifyContent: 'center',
   alignItems: 'center',
@@ -253,4 +269,42 @@ google: {
 
 },
 
-});
+google2: {
+ width: 280,
+  height: 40,
+  borderRadius: 22,
+  backgroundColor: '#fff',
+  justifyContent: 'center',
+  flexDirection: 'row',
+  elevation: 2,
+  shadowColor: '#000',
+  shadowOpacity: 0.2,
+  shadowRadius: 4,
+  alignSelf: 'center',
+  marginTop: 10,
+
+
+},
+
+google3: {
+ width: 50,
+  height: 50,
+  borderRadius: 30, // hace el botón circular
+  backgroundColor: '#fff', // fondo blanco
+  justifyContent: 'center',
+  alignItems: 'center',
+  elevation: 2, // sombra en Android
+  shadowColor: '#000', // sombra en iOS
+  shadowOpacity: 0.2,
+  shadowRadius: 4,
+  alignSelf: 'center',
+  marginTop: 10,
+
+},
+
+googletext: {  
+  fontSize: 16,
+  color: colors.dark_gray,
+  alignSelf: 'center',
+
+}});

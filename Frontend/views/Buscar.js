@@ -1,236 +1,305 @@
 
-import React, { useState, useRef } from "react";
+// Feed.js
+import React, { useState } from "react";
 import {
   View,
   Text,
-  TouchableOpacity,
-  FlatList,
-  StyleSheet,
-  SafeAreaView,
-  Animated,
-  Dimensions,
   TextInput,
-  PanResponder
+  Button,
+  FlatList,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  Modal,
 } from "react-native";
+import * as ImagePicker from "expo-image-picker";
+import colors from "./colors";
 
-const { height } = Dimensions.get("window");
+const { primary } = colors;
+const { white } = colors;
 
-const BuscarScreen = () => {
-  const [mostrarMenu, setMostrarMenu] = useState(false);
-  const [tipoMenu, setTipoMenu] = useState(null);
-  const [searchText, setSearchText] = useState("");
-  const slideAnim = useRef(new Animated.Value(height)).current;
+export default function Feed() {
+  const [posts, setPosts] = useState([
+    {
+      id: "1",
+      title: "Bienvenido al feed $username!",
+      content: "Esta es una publicación ejemplo",
+      createdAt: Date.now() - 1000 * 60 * 60,
+      imageUri: undefined,
+    },
+  ]);
 
-  const ejercicios = [
-    { id: "1", nombre: "Correr", calorias: 300, tiempo: 30 },
-    { id: "2", nombre: "Bicicleta", calorias: 250, tiempo: 30 },
-    { id: "3", nombre: "Flexiones", calorias: 130, tiempo: 15 },
-    { id: "4", nombre: "Sentadillas", calorias: 150, tiempo: 20 },
-    { id: "5", nombre: "Burpees", calorias: 200, tiempo: 15 }
-  ];
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [imageUri, setImageUri] = useState(undefined);
+  const [submitting, setSubmitting] = useState(false);
+  const [visible, setVisible] = useState(false);
 
-  const alimentos = [
-    { id: "1", nombre: "Manzana", calorias: 52, cantidad: 100 },
-    { id: "2", nombre: "Pollo", calorias: 239, cantidad: 100 },
-    { id: "3", nombre: "Arroz", calorias: 130, cantidad: 100 },
-    { id: "4", nombre: "Avena", calorias: 389, cantidad: 100 },
-    { id: "5", nombre: "Huevo", calorias: 155, cantidad: 100 }
-  ];
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permiso requerido",
+        "Necesitamos acceso a tus fotos para adjuntar una imagen."
+      );
+      return;
+    }
 
-  const abrirMenu = (tipo) => {
-    setTipoMenu(tipo);
-    setMostrarMenu(true);
-    setSearchText("");
-    Animated.timing(slideAnim, {
-      toValue: height * 0.2, // posición inicial del bottom sheet
-      duration: 300,
-      useNativeDriver: false
-    }).start();
-  };
-
-  const cerrarMenu = () => {
-    Animated.timing(slideAnim, {
-      toValue: height,
-      duration: 300,
-      useNativeDriver: false
-    }).start(() => {
-      setMostrarMenu(false);
-      setTipoMenu(null);
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images, 
+      quality: 0.8,
+      allowsEditing: true,
     });
+
+    if (!result.canceled) {
+      setImageUri(result.assets[0].uri);
+    }
   };
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, gestureState) => gestureState.dy > 10,
-      onPanResponderMove: (_, gestureState) => {
-        if (gestureState.dy > 0) {
-          slideAnim.setValue(height * 0.2 + gestureState.dy);
-        }
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dy > 100) {
-          cerrarMenu();
-        } else {
-          Animated.timing(slideAnim, {
-            toValue: height * 0.2,
-            duration: 200,
-            useNativeDriver: false
-          }).start();
-        }
-      }
-    })
-  ).current;
+  const onPublish = () => {
+    if (!title.trim()) {
+      Alert.alert("Falta el título", "Por favor, escribe un título.");
+      return;
+    }
+    setSubmitting(true);
 
-  const data = tipoMenu === "ejercicios" ? ejercicios : alimentos;
-  const filteredData = data.filter(item =>
-    item.nombre.toLowerCase().includes(searchText.toLowerCase())
-  );
+    const newPost = {
+      id: Math.random().toString(36).slice(2),
+      title: title.trim(),
+      content: content.trim(),
+      imageUri,
+      createdAt: Date.now(),
+    };
+
+    setPosts((prev) => [newPost, ...prev]);
+
+    // Reset formulario
+    setTitle("");
+    setContent("");
+    setImageUri(undefined);
+    setSubmitting(false);
+    setVisible(false);
+    
+  };
+
+  const removeImage = () => setImageUri(undefined);
 
   const renderItem = ({ item }) => (
-    <View style={styles.cardContainer}>
-      {/* Imagen arriba */}
-      <View style={styles.imageContainer}>
-        <Text style={styles.imagePlaceholder}>📷</Text>
-      </View>
-
-      {/* Info abajo */}
-      <View style={styles.infoContainer}>
-        <Text style={styles.publisher}>Publicado por: Juan Pérez</Text>
-        <Text style={styles.routineName}>{item.nombre}</Text>
-        <Text style={styles.description}>
-          {tipoMenu === "ejercicios"
-            ? `Rutina para quemar ${item.calorias} kcal en ${item.tiempo} min`
-            : `Plato con ${item.calorias} kcal por 100g`}
-        </Text>
-      </View>
+    <View style={styles.card}>
+      <Text style={styles.cardTitle}>{item.title}</Text>
+      {!!item.content && <Text style={styles.cardContent}>{item.content}</Text>}
+      {!!item.imageUri && (
+        <Image source={{ uri: item.imageUri }} style={styles.cardImage} resizeMode="cover" />
+      )}
+      <Text style={styles.cardMeta}>{new Date(item.createdAt).toLocaleString()}</Text>
     </View>
   );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <Text style={styles.header}>Explora y Añade</Text>
-        <Text style={styles.subHeader}>Selecciona una opción para buscar</Text>
+    <View style={styles.container}>
+      {/* Botón que abre el modal de nueva publicación */}
+      <TouchableOpacity style={styles.primaryBtn} onPress={() => setVisible(true)}>
+        <Text style={styles.primaryBtnText}>+</Text>
+      </TouchableOpacity>
 
-        <TouchableOpacity style={styles.mainButton} onPress={() => abrirMenu("ejercicios")}>
-          <Text style={styles.buttonText}> Buscar Ejercicios</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.mainButton} onPress={() => abrirMenu("alimentos")}>
-          <Text style={styles.buttonText}> Buscar Alimentos</Text>
-        </TouchableOpacity>
-      </View>
-
-      {mostrarMenu && (
-        <Animated.View
-          style={[styles.bottomSheet, { top: slideAnim }]}
-          {...panResponder.panHandlers}
+      {/* Modal con el formulario */}
+      <Modal
+        visible={visible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setVisible(false)}
+      >
+        {/* Overlay para cerrar tocando fuera */}
+        <TouchableOpacity
+          activeOpacity={1}
+          style={styles.overlay}
+          onPress={() => setVisible(false)}
         >
-          <View style={styles.dragIndicator} />
-          <Text style={styles.sheetTitle}>
-            {tipoMenu === "ejercicios" ? "Ejercicios Disponibles" : "Alimentos Disponibles"}
-          </Text>
+          {/* Evita que el toque del contenido cierre el modal */}
+          <TouchableOpacity activeOpacity={1} style={styles.modalContent} onPress={() => {}}>
+            <Text style={styles.modalTitle}>Crear publicación</Text>
 
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Buscar..."
-            value={searchText}
-            onChangeText={setSearchText}
-          />
+            <TextInput
+              placeholder="Título"
+              value={title}
+              onChangeText={setTitle}
+              style={styles.input}
+            />
+            <TextInput
+              placeholder="Contenido (opcional)"
+              value={content}
+              onChangeText={setContent}
+              style={[styles.input, styles.inputMultiline]}
+              multiline
+            />
 
-          <FlatList
-            data={filteredData}
-            keyExtractor={(item) => item.id}
-            renderItem={renderItem}
-          />
-        </Animated.View>
-      )}
-    </SafeAreaView>
+            <View style={styles.imageRow}>
+              <TouchableOpacity style={styles.botonimg} onPress={pickImage}>
+                <Text style={styles.botonimoText}>
+                  {imageUri ? "Cambiar imagen" : "Adjuntar imagen"}
+                </Text>
+              </TouchableOpacity>
+
+              {imageUri && (
+                <TouchableOpacity onPress={removeImage} style={styles.removeBtn}>
+                  <Text style={styles.removeBtnText}>Quitar</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {imageUri && (
+              <Image source={{ uri: imageUri }} style={styles.previewImage} resizeMode="cover" />
+            )}
+
+            <TouchableOpacity
+              style={[styles.publicarbtn, submitting && { opacity: 0.6, pointerEvents: "none" }]}
+              onPress={onPublish}
+              disabled={submitting}
+            >
+              <Text style={styles.publicar}>
+                {submitting ? "Publicando..." : "Publicar"}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.cancelBtn} onPress={() => setVisible(false)}>
+              <Text style={styles.cancelBtnText}>Cancelar</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Lista de publicaciones (fuera del modal) */}
+      <Text style={[styles.sectionTitle, { marginTop: 16 }]}>Publicaciones</Text>
+
+      <FlatList
+        data={posts}
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+        ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+        contentContainerStyle={{ paddingBottom: 24 }}
+      />
+    </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#f9f9f9" },
-  container: { flex: 1, paddingHorizontal: 16, paddingTop: 20 },
-  header: { fontSize: 28, fontWeight: "bold", color: "#333" },
-  subHeader: { fontSize: 16, color: "#666", marginBottom: 20 },
-  mainButton: {
-    backgroundColor: "#4CAF50",
-    paddingVertical: 18,
-    borderRadius: 16,
-    marginBottom: 16,
-    alignItems: "center"
-  },
-  buttonText: { color: "#fff", fontSize: 18, fontWeight: "bold" },
-  bottomSheet: {
+  container: { flex: 1, padding: 16, backgroundColor: "#fff" },
+
+  // Botón principal
+  primaryBtn: {
+    backgroundColor: primary,
+    borderRadius: 45,
+    paddingVertical: 12,
+    height: 65,
+    width: 65,
     position: "absolute",
-    left: 0,
-    right: 0,
-    height: height * 0.8, // más grande
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    right: 20,
+    bottom: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "flex-start",
+    marginTop:45,
+    zIndex: 10,
+  },
+  primaryBtnText: { 
+    color: "#fff", 
+    fontWeight: "700", 
+    fontSize: 24, 
+      
+  },
+
+  // Modal
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
     padding: 16,
-    elevation: 10
   },
-  dragIndicator: {
-    width: 50,
-    height: 5,
-    backgroundColor: "#ccc",
-    borderRadius: 3,
-    alignSelf: "center",
-    marginBottom: 10
-  },
-  sheetTitle: { fontSize: 22, fontWeight: "bold", marginBottom: 16 },
-  searchInput: {
-    borderWidth: 1,
-    borderColor: "#ccc",
+  modalContent: {
+    backgroundColor: "#fff",
     borderRadius: 12,
+    padding: 16,
+  },
+  modalTitle: { fontSize: 20, fontWeight: "700", marginBottom: 12, color: primary },
+
+  // Inputs y acciones del formulario
+  input: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    marginBottom: 16,
-    fontSize: 16
+    marginBottom: 10,
+    backgroundColor: "#fafafa",
   },
-  cardContainer: {
-    width: "100%",
-    aspectRatio: 1,
-    borderRadius: 16,
-    overflow: "hidden",
-    marginBottom: 16,
-    backgroundColor: "#fff",
-    elevation: 4
-  },
-  imageContainer: {
-    flex: 1,
-    backgroundColor: "#ddd",
+  inputMultiline: { minHeight: 80, textAlignVertical: "top" },
+  imageRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 10 },
+  botonimg: {
+    backgroundColor: primary,
+    borderRadius: 6,
+    paddingVertical: 8,
+    width: 140,
+    height: 45,
+    paddingHorizontal: 12,
     justifyContent: "center",
-    alignItems: "center"
+    alignItems: "center",
   },
-  imagePlaceholder: {
-    fontSize: 40,
-    color: "#999"
+  botonimoText: { color: "#fff", fontWeight: "600" },
+  removeBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: "#eee",
+    marginLeft: 8,
   },
-  infoContainer: {
-    flex: 1,
-    backgroundColor: "#fff",
+  removeBtnText: { color: "#333" },
+  previewImage: { width: "100%", height: 180, borderRadius: 12, marginBottom: 12 },
+
+  // Lista
+  sectionTitle: { fontSize: 25, fontWeight: "600", marginBottom: 12, marginTop: 14, color: primary },
+  card: {
+    borderWidth: 1,
+    borderColor: "#eee",
+    borderRadius: 12,
     padding: 12,
-    justifyContent: "center"
+    backgroundColor: "#fff",
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  publisher: {
-    fontSize: 12,
+  cardTitle: { fontSize: 16, fontWeight: "700", marginBottom: 6 },
+  cardContent: { fontSize: 14, color: "#444", marginBottom: 8 },
+  cardImage: { width: "100%", height: 200, borderRadius: 8, marginBottom: 8 },
+  cardMeta: { fontSize: 12, color: "#666" },
+
+  // Cancel
+  cancelBtn: {
+    marginTop: 10,
+    alignSelf: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  cancelBtnText: {
     color: "#666",
-    marginBottom: 4
+    fontWeight: "600",
   },
-  routineName: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 6
+
+  publicar: {
+    color: white,
+    fontWeight: "600",
   },
-  description: {
-    fontSize: 14,
-    color: "#555"
+
+  publicarbtn: {
+    backgroundColor: primary,
+    borderRadius: 8,
+    paddingVertical: 12,
+    height: 45,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "flex-start",
+
   }
 });
-
-export default BuscarScreen;
