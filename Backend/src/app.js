@@ -35,6 +35,9 @@ app.get("/", (req, res) => {
   res.json({ ok: true, message: "API backend" });
 });
 
+// Swagger documentation
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
 // importa rutas
 try {
   const usersRouter = require("./routes/users.routes");

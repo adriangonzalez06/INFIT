@@ -69,7 +69,7 @@ function RegisterScreen({ navigation }) {
           ? '10.0.2.2' // Android emulator (AVD). Genymotion usar 10.0.3.2
           : 'localhost'; // iOS simulator o web
       // Si pruebas en un dispositivo físico, reemplaza host por la IP de tu PC, e.g. '192.168.1.42'
-      const backendUrl = `http://${host}:8082/api/usuarios/POST`;
+      const backendUrl = `http://${host}:8082/api/usuarios/register`;
 
       // Crear usuario en Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
@@ -85,6 +85,12 @@ function RegisterScreen({ navigation }) {
       // Verificar respuesta
       if (resp.status === 201 || resp.status === 200) {
         console.log('Datos guardados en la base de datos');
+        
+        // Guardar datos del usuario en AsyncStorage para acceder en perfil
+        await ReactNativeAsyncStorage.setItem('userUID', user.uid);
+        await ReactNativeAsyncStorage.setItem('userName', nombre);
+        await ReactNativeAsyncStorage.setItem('userEmail', email.trim());
+        
         setError('');
         navigation.navigate('Login');
       } else {

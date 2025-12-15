@@ -11,6 +11,13 @@ import {
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { getAuth, signOut } from 'firebase/auth';
+import { initializeApp, getApps } from 'firebase/app';
+import { firebaseConfig } from '../firebaseConfig';
+import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
+
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+const auth = getAuth(app);
 
 export default function SettingsScreen({ navigation }) {
   const [darkMode, setDarkMode] = useState(false);
@@ -22,6 +29,29 @@ export default function SettingsScreen({ navigation }) {
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Aceptar', onPress: action },
     ]);
+  };
+
+  const handleLogout = async () => {
+    try {
+      // 1. Cerrar sesión en Firebase
+      await signOut(auth);
+      console.log('✅ Sesión cerrada en Firebase');
+
+      // 2. Eliminar datos guardados en AsyncStorage
+      await ReactNativeAsyncStorage.removeItem('userUID');
+      await ReactNativeAsyncStorage.removeItem('userName');
+      await ReactNativeAsyncStorage.removeItem('userEmail');
+      await ReactNativeAsyncStorage.removeItem('idToken');
+      console.log('✅ Datos locales eliminados');
+
+      // 3. Redirigir a la pantalla de Welcome/Login
+      Alert.alert('Éxito', 'Sesión cerrada correctamente');
+      navigation.navigate('Login'); // Navegar a la pantalla Login
+      
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+      Alert.alert('Error', 'Error al cerrar sesión: ' + error.message);
+    }
   };
 
   return (
@@ -45,7 +75,7 @@ export default function SettingsScreen({ navigation }) {
           <Ionicons name="mail-outline" size={20} color="#333" />
           <Text style={styles.optionText}>Cambiar correo electrónico</Text>
         </Pressable>
-        <Pressable style={styles.option} onPress={() => confirmAction('¿Deseas cerrar sesión?', () => {/* cerrar sesión */})}>
+        <Pressable style={styles.option} onPress={() => confirmAction('¿Deseas cerrar sesión?', handleLogout)}>
           <Ionicons name="log-out-outline" size={20} color="#333" />
           <Text style={styles.optionText}>Cerrar sesión</Text>
         </Pressable>
