@@ -16,6 +16,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 
 
+
 const PRIMARY = '#ef2b2d';
 
 const lightTheme = {
@@ -31,12 +32,12 @@ const lightTheme = {
 
 
 const ROUTINE_CARD_TEXT = {
-  title: 'RUTINA PARA HOY',
+  title: 'RUTINAS DISPOSIBLES',
   last: 'Próxima rutina: Piernas y abdomen',
 };
 
 const MEAL_CARD_TEXT = {
-  title: 'ALIMENTACIÓN RECOMENDADA',
+  title: 'MI ALIMENTACIÓN',
   last: 'Próxima comida: Pollo frito',
 };
 
@@ -132,7 +133,7 @@ export default function WelcomeScreen() {
     >
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
-       <ImageBackground source={require('../assets/images/headerimg.png')} style={styles.headerImage}>
+      
       <Animated.View
         style={[
           styles.header,
@@ -140,13 +141,10 @@ export default function WelcomeScreen() {
         ]}
       >
         
-        <Image source={require('../assets/avatar.png')} style={styles.avatar} />
-        <Text style={[styles.greeting, { color: theme.primary }]}>¡Hola, {userName}!</Text>
+        
+        <Text style={[styles.greeting, { color: theme.primary, marginTop: 15}]}>¡Hola, {userName}!</Text>
         <Text style={[styles.subtitle, { color: theme.subtle }]}>{message}</Text>
 
-        <View style={[styles.streakChip, { borderColor: theme.primary, backgroundColor: theme.card }]}>
-          <Text style={[styles.streakChipText, { color: theme.primary }]}>  Racha: {streakDays} días seguidos</Text>
-        </View>
 
        
         <Pressable
@@ -171,7 +169,7 @@ export default function WelcomeScreen() {
         </Pressable>
       </Animated.View>
             
-</ImageBackground>
+
       <Pressable onPress={() => navigation.navigate('Rutinas')}>
         <Animated.View
           style={[
@@ -211,7 +209,7 @@ export default function WelcomeScreen() {
       <View style={{ marginTop: 16 }}>
         <View style={styles.sectionHeaderRow}>
           <Text style={[styles.sectionTitle, { color: theme.title }]}>Retos diarios</Text>
-          <Pressable onPress={() => navigation.navigate('Challenges')} ><Text style={[styles.sectionLink, { color: theme.primary }]}>Desliza para ver más ➔</Text></Pressable>
+            <Pressable onPress={() => navigation.navigate('Challenges')} ><Text style={[styles.sectionLink, { color: theme.primary }]}> Ver más ➔</Text></Pressable>
         </View>
 
         <FlatList
@@ -277,8 +275,7 @@ const styles = StyleSheet.create({
   streakChip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 2,
+    borderRadius: 10,
     marginBottom: 12,
   },
   streakChipText: {
@@ -326,7 +323,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   sectionTitle: { fontSize: 20, fontWeight: '800' },
-  sectionLink: { fontSize: 12, fontWeight: '800' },
+  sectionLink: { fontSize: 12, fontWeight: '800', paddingRight: 8 },
 
 
   challengeCard: {

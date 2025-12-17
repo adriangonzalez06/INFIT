@@ -289,12 +289,12 @@ google2: {
 google3: {
  width: 50,
   height: 50,
-  borderRadius: 30, // hace el botón circular
-  backgroundColor: '#fff', // fondo blanco
+  borderRadius: 30, 
+  backgroundColor: '#fff',
   justifyContent: 'center',
   alignItems: 'center',
-  elevation: 2, // sombra en Android
-  shadowColor: '#000', // sombra en iOS
+  elevation: 2, 
+  shadowColor: '#000', 
   shadowOpacity: 0.2,
   shadowRadius: 4,
   alignSelf: 'center',

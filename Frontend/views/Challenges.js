@@ -398,22 +398,6 @@ export default function ChallengesScreen() {
           </Text>
         </View>
 
-        {/* Filtros */}
-        <View style={styles.filters}>
-          {FILTERS.map((f) => (
-            <Pressable
-              key={f}
-              onPress={() => {
-                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                setFilter(f);
-              }}
-              style={[styles.filterPill, filter === f && styles.filterPillActive]}
-            >
-              <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>{f}</Text>
-            </Pressable>
-          ))}
-        </View>
-
         {/* Listado */}
         <FlatList
           data={activeTab === 'Diarios' ? filteredDaily : filteredWeekly}

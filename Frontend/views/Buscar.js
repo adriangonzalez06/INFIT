@@ -20,10 +20,15 @@ const { primary } = colors;
 const { white } = colors;
 
 export default function Feed() {
+ 
+  const username = "Sergi"; 
+  
+
   const [posts, setPosts] = useState([
     {
       id: "1",
-      title: "Bienvenido al feed $username!",
+      username, 
+      title: `Bienvenido al feed ${username}!`,
       content: "Esta es una publicación ejemplo",
       createdAt: Date.now() - 1000 * 60 * 60,
       imageUri: undefined,
@@ -47,7 +52,7 @@ export default function Feed() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images, 
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 0.8,
       allowsEditing: true,
     });
@@ -66,6 +71,7 @@ export default function Feed() {
 
     const newPost = {
       id: Math.random().toString(36).slice(2),
+      username, 
       title: title.trim(),
       content: content.trim(),
       imageUri,
@@ -74,19 +80,20 @@ export default function Feed() {
 
     setPosts((prev) => [newPost, ...prev]);
 
-    // Reset formulario
+    
     setTitle("");
     setContent("");
     setImageUri(undefined);
     setSubmitting(false);
     setVisible(false);
-    
   };
 
   const removeImage = () => setImageUri(undefined);
 
   const renderItem = ({ item }) => (
     <View style={styles.card}>
+      {/* Mostramos el nombre del usuario */}
+      <Text>{item.username}</Text>
       <Text style={styles.cardTitle}>{item.title}</Text>
       {!!item.content && <Text style={styles.cardContent}>{item.content}</Text>}
       {!!item.imageUri && (
@@ -110,13 +117,13 @@ export default function Feed() {
         transparent
         onRequestClose={() => setVisible(false)}
       >
-        {/* Overlay para cerrar tocando fuera */}
+        
         <TouchableOpacity
           activeOpacity={1}
           style={styles.overlay}
           onPress={() => setVisible(false)}
         >
-          {/* Evita que el toque del contenido cierre el modal */}
+         
           <TouchableOpacity activeOpacity={1} style={styles.modalContent} onPress={() => {}}>
             <Text style={styles.modalTitle}>Crear publicación</Text>
 
