@@ -14,7 +14,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
 import colors from './colors';
-import MainTabs from './MainTabs';  
+import MainTabs from './MainTabs';
 import { NavigationContainer } from '@react-navigation/native';
 import {
   getAuth,
@@ -91,15 +91,12 @@ function RegisterScreen({ navigation }) {
         setError('');
         //Recibimos la respuesta del servidor (id del usuario para despues sacara el nombre)
         const idUser = resp.data?.id;
-        const streakVal = resp.data?.streak;
-        if(idUser && streak){
-          if(idUser){
+        const streakVal = 0;
+        if (idUser) {
           //Y la guardamos en el local de la aplicacion
           await AsyncStorage.setItem('userId', idUser);
-          await AsyncStorage.setItem('streak', (streakVal || 0).toString());
+          await AsyncStorage.setItem('streak', streakVal.toString());
           console.log('userId guardado en AsyncStorage:', idUser, streakVal);
-          }
-
         }
         navigation.navigate('MainTabs')
       } else {
@@ -107,7 +104,7 @@ function RegisterScreen({ navigation }) {
         await user.delete();
         throw new Error('No se pudo crear el usuario en el backend, por favor vuelva a intentarlo.');
       }
-      
+
     } catch (error) {
       // Mejor logging para diagnosticar Network Error
       console.error('Error al registrar:', error?.message || error);
@@ -180,13 +177,13 @@ function RegisterScreen({ navigation }) {
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
-         <TouchableOpacity style={styles.boton} onPress = {(handleRegister)}>
+          <TouchableOpacity style={styles.boton} onPress={(handleRegister)}>
             <Text style={styles.botonTexto}>Registrarse</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.boton} onPress = {() => navigation.navigate('Login')}>
-                      <Text style={styles.botonTexto}>¿Ya tienes cuenta? Inicia sesión</Text>
-                      </TouchableOpacity>
+          <TouchableOpacity style={styles.boton} onPress={() => navigation.navigate('Login')}>
+            <Text style={styles.botonTexto}>¿Ya tienes cuenta? Inicia sesión</Text>
+          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
