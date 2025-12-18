@@ -7,60 +7,62 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import styles from './stylesheet';
+import styles from './stylesheet.js';
 import colors from './colors.js';
-import Dish from '../objects/Dish'; 
-import Recipe from '../objects/Recipe';
-import RecpieView from './RecipeView';
-import RecipeGroup from '../objects/RecipeGroup';
+import Dish from '../src/objects/Dish.js'; 
+import Diet from '../src/objects/Diet.js';
+import DietView from './DietView.js';
+import DietGroup from '../src/objects/DietGroup.js';
 
 export default function Alimentacion() {
 
   const navigation = useNavigation();
 
   {/*platos placeholder, leer los datos de la base de datos*/}
-  console.log('debug', Dish, Recipe);
   let plato1 = new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, true, true, false);
-  let plato2 = new Dish(2, "Carne", "url2", 550, ["ingrediente1", "ingrediente2"], 550, false, false, true);
-  let plato3 = new Dish(3, "Postre", "url3", 550, ["ingrediente1", "ingrediente2"], 550, true, false, false);
-  let plato4 = new Dish(4, "Pescado", "url4", 600, ["ingrediente1", "ingrediente2"], 600, false, false, false);
-  let plato5 = new Dish(5, "Sopa", "url5", 300, ["ingrediente1", "ingrediente2"], 300, true, true, true);
-  let plato6 = new Dish(6, "Pasta", "url6", 700, ["ingrediente1", "ingrediente2"], 700, false, true, false);
+  let plato2 = new Dish(2, "Carne", require('../assets/images/images_dish/dish_02.jpg'), 550, ["ingrediente1", "ingrediente2"], 550, false, false, true);
+  let plato3 = new Dish(3, "Postre", require('../assets/images/images_dish/dish_03.jpg'), 550, ["ingrediente1", "ingrediente2"], 550, true, false, false);
+  let plato4 = new Dish(4, "Pescado", require('../assets/images/images_dish/dish_04.jpg'), 600, ["ingrediente1", "ingrediente2"], 600, false, false, false);
+  let plato5 = new Dish(5, "Sopa", require('../assets/images/images_dish/dish_05.jpg'), 300, ["ingrediente1", "ingrediente2"], 300, true, true, true);
+  let plato6 = new Dish(6, "Pasta", require('../assets/images/images_dish/dish_06.jpg'), 700, ["ingrediente1", "ingrediente2"], 700, false, true, false);
 
-  {/* recetas de prueba*/}
-  let r1 = new Recipe(1, "Dieta Balanceada", "descrtyddtdrthdtjdftdyjtfhfipcion", "url1", [plato1, plato2, plato3]);
-  let r2 = new Recipe(2, "Dieta Vegana", "descripcion", "url2", [plato2, plato3, plato6],);
-  let r3 = new Recipe(3, "Dieta Cetogénica", "descripcion", "url3", [plato4, plato5]);
-  let r4 = new Recipe(4, "Dieta Mediterránea", "descripcion", "url4", [plato5, plato1, plato6]);
-  let r5 = new Recipe(5, "Dieta Alta en Proteínas", "descripcion", "url5", [plato3]);
-  let r6 = new Recipe(6, "Dieta Baja en Carbohidratos", "descripcion", "url6", [plato5]);
+  {/* diets de prueba*/}
+  let r1 = new Diet(1, "Dieta Balanceada", "descripcion", require('../assets/images/images_diet/diet_02.jpg'), [[plato2, plato3, plato6], [plato6, plato4, plato5], [plato5, plato4, plato6], [plato2, plato3], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato3]]);
+  let r2 = new Diet(2, "Dieta Vegana", "descripcion", require('../assets/images/images_diet/diet_02.jpg'), [[plato2, plato3, plato6], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato2, plato3], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato3]]);
+  let r3 = new Diet(3, "Dieta Cetogénica", "descripcion", require('../assets/images/images_diet/diet_01.jpg'), [[plato2, plato3, plato6], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato2, plato3], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato3]]);
+  let r4 = new Diet(4, "Dieta Mediterránea", "descripcion", require('../assets/images/images_diet/diet_01.jpg'), [[plato2, plato3, plato6], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato2, plato3], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato3]]);
+  let r5 = new Diet(5, "Dieta Alta en Proteínas", "descripcion", require('../assets/images/images_diet/diet_01.jpg'), [[plato2, plato3, plato6], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato2, plato3], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato3]]);
+  let r6 = new Diet(6, "Dieta Baja en Carbohidratos", "descripcion", require('../assets/images/images_diet/diet_01.jpg'), [[plato2, plato3, plato6], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato2, plato3], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato3]]);
 
-  let g1 = new RecipeGroup(1, "Trending", [r1, r2, r3, r4, r5, r6]);
-  let g2 = new RecipeGroup(2, "Mis dietas", [r3, r4, r2], true);
-  let g3 = new RecipeGroup(3, "Para ganar músculo", [r5, r6, r4, r2, r1]);
+  let g1 = new DietGroup(1, "Trending", [r1, r2, r3, r4, r5, r6]);
+  let g2 = new DietGroup(2, "Mis dietas", [r3, r4, r2], true);
+  let g3 = new DietGroup(3, "Para ganar músculo", [r5, r6, r4, r2, r1]);
 
   const [recipesGroups] = useState({
     g1, g2, g3
   });
 
-  const renderGrupo = (grupo) => (
+  const [diets, setDiet] = useState([]);
+
+  const renderGrupo = (group) => (
+    
     
     <View style={styles.grupoContainer}>
       {/* group title */}
-      <Text style={styles.grupoTitulo}>{grupo.name}</Text>
+      <Text style={styles.grupoTitulo}>{group.name}</Text>
       {/* recipes row */}
       <View style={styles.recetasRow}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {/* map displays a list of the items that are inside the function */}
-          {grupo.recipes.slice(0,3).map((receta) => (
-            renderRecetaCard(receta)
+          {group.recipes.slice(0,3).map((diet) => (
+            renderRecetaCard(diet)
           ))}
           
-          {showAddCard(grupo.canEdit)}
+          {showAddCard(group.canEdit, group)}
 
           <TouchableOpacity 
           style={styles.seeMoreCard}
-          onPress={() => handleEntrarGrupoCompleto(grupo)}>
+          onPress={() => handleEnterGrupoCompleto(group)}>
             <Ionicons name="arrow-forward" size={24} color="#111114" />
             <Text style={{ color: '##111114', fontWeight: '600' }}>Ver más</Text>
           </TouchableOpacity>
@@ -72,18 +74,17 @@ export default function Alimentacion() {
   );
 
   {/* render a card*/}
-  const renderRecetaCard = (receta) => {
+  const renderRecetaCard = (diet) => {
     return (
           <TouchableOpacity
-            key={receta.id}
+            key={diet.id}
             style={[styles.recipeCards, styles.recetaCard]}
             onPress={() => {
-              console.log('receeta: ', receta),
-              handleEntrarReceta(receta);
+              handleEnterDiet(diet);
             }}>
 
-            <ImageBackground source={require('../assets/images/images_diet/diet_01.jpg')} resizeMode="cover" style={{width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', zIndex: -1, borderRadius: 14, overflow: 'hidden'}}>
-            <Text style={styles.recetaTextoTitulo}>{receta.nombre}</Text>
+            <ImageBackground source={typeof diet.imgUrl === 'number' ? diet.imgUrl : { uri: diet.imgUrl }} resizeMode="cover" style={{width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', zIndex: -1, borderRadius: 14, overflow: 'hidden'}}>
+            <Text style={styles.recetaTextoTitulo}>{diet.name}</Text>
             <Text style={styles.recetaTexto}>Subtítulo</Text>
             </ImageBackground>
           </TouchableOpacity>
@@ -91,10 +92,11 @@ export default function Alimentacion() {
   };
 
   {/* ahow add more card if true */}
-  const showAddCard = (show) => {
+  const showAddCard = (show, group) => {
+    console.log("showAddCard: ", group)
       if (show) {
         return (
-        <TouchableOpacity style={[styles.addCard]}>
+        <TouchableOpacity style={[styles.addCard]} onPress={() => handleCreateNewDiet(group)}>
           <Ionicons name="add" size={32} color="#ef2b2d" />
         </TouchableOpacity>
       );
@@ -103,22 +105,28 @@ export default function Alimentacion() {
   }
 
   {/*Enter a recipe card handler*/}
-  const handleEntrarReceta = (receta) => {
-    if (!receta) {
-          console.warn('handleEntrarReceta: receta is undefined');
+  const handleEnterDiet = (diet) => {
+    if (!diet) {
+          console.warn('handleEntrarDiet: diet is undefined');
           return;
         }
-        navigation.navigate('Recipe', { receta });
+        // Pass diet inside the params object so AddDietMenu receives it as route.params.diet
+        navigation.navigate('AddDietMenu', { diet });
   };
 
   {/*See More button handler*/}
-  const handleEntrarGrupoCompleto = (grupo) => {
+  const handleEnterGrupoCompleto = (group) => {
     navigation.navigate('ListaGrupoRecetas', { 
-      name: grupo.name,
-      recipes: grupo.recipes
+      name: group.name,
+      recipes: group.recipes
     });
   };
 
+  {/*enter the create a new diet menu*/}
+  const handleCreateNewDiet = (group) => {
+    // Send group recipes in params so AddDietMenu can read route.params.recipes
+    navigation.navigate('AddDietMenu', { recipes: group.recipes ?? group });
+  }
 
   return (
 

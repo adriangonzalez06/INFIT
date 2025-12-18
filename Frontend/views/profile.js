@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,18 +7,21 @@ import {
   Image,
   TouchableOpacity,
   ScrollView,
+  TextInput,
+  Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import colors from './colors';
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
 
   const user = {
     nombre: 'Sergi Velasco',
-    foto: require('../assets/avatar.png'),
+    avatar: require('../assets/avatar.png'),
     peso: 80,
-    altura: 1.90,
+    altura: 1.9,
     registros: [
       { tipo: 'Ejercicio', detalle: '30 min de cardio', fecha: '22/10/2025' },
       { tipo: 'Alimentación', detalle: 'Desayuno saludable', fecha: '22/10/2025' },
@@ -25,11 +29,17 @@ export default function ProfileScreen() {
     ],
   };
 
-  const imc = (user.peso / (user.altura * user.altura)).toFixed(1);
+  const [peso, setPeso] = useState(user.peso.toString());
+  const [altura, setAltura] = useState(user.altura.toString());
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const imc =
+    parseFloat(altura) > 0
+      ? (parseFloat(peso) / (parseFloat(altura) * parseFloat(altura))).toFixed(1)
+      : '—';
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* Cabecera normal (no sticky) */}
       <View style={styles.headerContent}>
         <View style={{ flex: 1 }} />
         <TouchableOpacity onPress={() => navigation.navigate('Ajustes')}>
@@ -38,15 +48,57 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.profileSection}>
-        <Image source={user.foto} style={styles.fotoPerfil} />
+        <Image source={user.avatar} style={styles.avatarPerfil} />
         <Text style={styles.nombre}>{user.nombre}</Text>
       </View>
 
       <View style={styles.statsContainer}>
-        <Stat label="Peso" value={`${user.peso} kg`} />
-        <Stat label="Altura" value={`${user.altura} m`} />
+        <Stat label="Peso" value={`${peso} kg`} />
+        <Stat label="Altura" value={`${altura} m`} />
         <Stat label="IMC" value={imc} />
       </View>
+
+      {/* Botón para abrir modal */}
+      <TouchableOpacity
+        style={styles.editButton}
+        onPress={() => setModalVisible(true)}
+      >
+        <Text style={styles.editButtonText}>Editar</Text>
+      </TouchableOpacity>
+
+      {/* Modal para editar peso y altura */}
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Editar datos</Text>
+            <TextInput
+              style={styles.input}
+              value={peso}
+              onChangeText={setPeso}
+              keyboardType="numeric"
+              placeholder="Peso (kg)"
+            />
+            <TextInput
+              style={styles.input}
+              value={altura}
+              onChangeText={setAltura}
+              keyboardType="numeric"
+              placeholder="Altura (m)"
+            />
+            <TouchableOpacity
+              style={styles.saveButton}
+              onPress={() => setModalVisible(false)}
+            >
+              <Text style={styles.saveButtonText}>Guardar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       <Text style={styles.sectionTitle}>Últimos registros</Text>
       {user.registros.map((registro, index) => (
@@ -91,13 +143,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#f9f9f9',
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
-    marginBottom: 30, // Espacio entre la rueda y la foto
+    marginBottom: 30,
+    top:'-3%',
   },
   profileSection: {
     alignItems: 'center',
     marginBottom: 25,
   },
-  fotoPerfil: {
+  avatarPerfil: {
     width: 120,
     height: 120,
     borderRadius: 60,
@@ -115,7 +168,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    marginBottom: 30,
+    marginBottom: 10,
   },
   statBox: {
     alignItems: 'center',
@@ -130,6 +183,60 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#111',
+  },
+  editButton: {
+    backgroundColor: '#ef2b2d',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    alignSelf: 'center',
+    justifyContent: 'center',
+    marginBottom: 20, 
+    
+  },
+  editButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 10,
+    width: '80%',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  input: {
+    backgroundColor: '#f9f9f9',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    height: 40,
+    marginBottom: 10,
+  },
+  saveButton: {
+    backgroundColor: '#ef2b2d',
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginTop: 10,
+    alignItems: 'center',
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
   sectionTitle: {
     fontSize: 18,
@@ -179,3 +286,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
+  //

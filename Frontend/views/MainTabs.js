@@ -30,10 +30,10 @@ export default function MainTabs() {
             case 'Bienvenida':
               iconName = 'home-outline';
               break;
-            case 'Chatbot':
-              iconName = 'hardware-chip-outline';
+            case 'ChatBot':
+              iconName = 'chatbubble-ellipses-outline';
               break;
-            case 'Buscar':
+            case 'Descubre':
               iconName = 'search-outline';
               break;
             case 'Perfil':
@@ -49,7 +49,7 @@ export default function MainTabs() {
     >
       <Tab.Screen name="Bienvenida" component={WelcomeScreen} />
       <Tab.Screen name="ChatBot" component={ChatBot}/>
-      <Tab.Screen name="Buscar" component={Buscar}/>
+      <Tab.Screen name="Descubre" component={Buscar}/>
       <Tab.Screen name="Perfil" component={ProfileScreen} />
     </Tab.Navigator>
   );

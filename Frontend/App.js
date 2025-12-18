@@ -17,7 +17,7 @@ import {
   getAuth,
   signInWithEmailAndPassword,
   getReactNativePersistence,
-  updateProfile,  
+  updateProfile,
 } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage'; // { changed code }
 
@@ -38,7 +38,8 @@ import PantallaRutina from './views/PantallaRutina';
 import RuedaSettings from './views/RuedaSettings';
 import ChangingPassword from './views/changing_password';
 import ListaGrupoRecetas from './views/ListaGrupoRecetas';
-import RecipeView from './views/RecipeView';
+import DietView from './views/DietView';
+import AddDietMenu from './views/AddDietMenu';
 import colors from './views/colors';
 
 import { initializeApp, getApps } from 'firebase/app';
@@ -124,7 +125,7 @@ function LoginScreen({ navigation }) {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <StatusBar style="auto" />
+        <StatusBar hidden={true} />
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <Image
           style={styles.logo}
@@ -161,18 +162,38 @@ function LoginScreen({ navigation }) {
 
           <Text style={styles.dividerText}>─── O inicia sesión con ───</Text>
 
-          <TouchableOpacity style={styles.google}>
-            <Image
-              source={require('./assets/logos/google.png')}
+
+           <TouchableOpacity style={styles.google}>
+           <Image
+            source={require('./assets/logos/google.png')}
+                style={{ width: 60, height: 30}}
+             resizeMode="contain"
+               />
+           </TouchableOpacity>
+
+           <TouchableOpacity style={styles.google2}>
+           <Image
+            source={require('./assets/logos/google2.png')}
+                style={{ width: 50, height: 25, justifyContent: 'center', alignSelf: 'center',marginLeft: -20 }}
+             resizeMode="contain"
+               />
+               <Text style={styles.googletext}>Google</Text>
+           </TouchableOpacity>
+
+          <TouchableOpacity style={styles.google3}>
+          <Image
+          source={require('./assets/logos/google2.png')}
               style={{ width: 24, height: 24 }}
-              resizeMode="contain"
-            />
-          </TouchableOpacity>
+            resizeMode="contain"
+              />
+</TouchableOpacity>
         </SafeAreaView>
 
-        <TouchableOpacity style={styles.boton} onPress={() => navigation.navigate('MainTabs')}>
-          <Text style={styles.botonTexto}>Debug ir al menu</Text>
-        </TouchableOpacity>
+           {/* Boton para ir al menu sin iniciar sesion para no perder tanto tiempo */}
+          <TouchableOpacity style={styles.boton} onPress = {() => navigation.navigate('MainTabs')}>
+            <Text style={styles.botonTexto}>Debug ir al menu</Text>
+            </TouchableOpacity>
+
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -211,15 +232,16 @@ export default function App() {
               ),
             })}
           />
-          <Stack.Screen name="Rutinas" component={RutinasScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="PantallaRutina" component={PantallaRutina} options={{ headerShown: false }} />
-          <Stack.Screen name="Alimentacion" component={AlimentacionScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="RuedaSettings" component={RuedaSettings} options={{ headerShown: false }} />
-          <Stack.Screen name="Ajustes" component={SettingsScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="ChangingPassword" component={ChangingPassword} options={{ headerShown: false }} />
-          <Stack.Screen name="ListaGrupoRecetas" component={ListaGrupoRecetas} options={{ headerShown: false }} />
-          <Stack.Screen name="Recipe" component={RecipeView} options={{ headerShown: false }} />
-          <Stack.Screen name="Challenges" component={Challenges} options={{ headerShown: false }} />
+          <Stack.Screen name="Rutinas" component={RutinasScreen} options={{headerShown: false}} />
+          <Stack.Screen name="PantallaRutina" component={PantallaRutina}options={{headerShown: false}} />
+          <Stack.Screen name="Alimentacion" component={AlimentacionScreen} options={{headerShown: false}} />
+          <Stack.Screen name="RuedaSettings" component={RuedaSettings} options={{headerShown: false}} />
+          <Stack.Screen name="Ajustes" component={SettingsScreen} options={{headerShown: false}}/>
+          <Stack.Screen name="ChangingPassword" component={ChangingPassword} options={{headerShown: false}}/>
+          <Stack.Screen name="ListaGrupoRecetas" component={ListaGrupoRecetas} options={{headerShown: false}}/>
+          <Stack.Screen name="Diet" component={DietView} options={{headerShown: false}}/>
+          <Stack.Screen name="Challenges" component={Challenges} options={{headerShown: false}}/>
+          <Stack.Screen name="AddDietMenu" component={AddDietMenu} options={{headerShown: false}}/>
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
@@ -280,20 +302,60 @@ const styles = StyleSheet.create({
     color: colors.dark_gray,
   },
 
-  google: {
-    width: 50,
-    height: 50,
-    borderRadius: 30,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    alignSelf: 'center',
-    marginTop: -20,
+google: {
+  width: 280,
+  height: 40,
+  borderRadius: 22,
+  backgroundColor: '#fff',
+  justifyContent: 'center',
+  alignItems: 'center',
+  elevation: 2,
+  shadowColor: '#000',
+  shadowOpacity: 0.2,
+  shadowRadius: 4,
+  alignSelf: 'center',
+  marginTop: -20,
 
-  },
+},
+
+google2: {
+ width: 280,
+  height: 40,
+  borderRadius: 22,
+  backgroundColor: '#fff',
+  justifyContent: 'center',
+  flexDirection: 'row',
+  elevation: 2,
+  shadowColor: '#000',
+  shadowOpacity: 0.2,
+  shadowRadius: 4,
+  alignSelf: 'center',
+  marginTop: 10,
+
+
+},
+
+google3: {
+ width: 50,
+  height: 50,
+  borderRadius: 30,
+  backgroundColor: '#fff',
+  justifyContent: 'center',
+  alignItems: 'center',
+  elevation: 2,
+  shadowColor: '#000',
+  shadowOpacity: 0.2,
+  shadowRadius: 4,
+  alignSelf: 'center',
+  marginTop: 10,
+
+},
+
+googletext: {
+  fontSize: 16,
+  color: colors.dark_gray,
+  alignSelf: 'center',
+
+},
 
 });

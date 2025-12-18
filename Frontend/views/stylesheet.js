@@ -43,13 +43,31 @@ export default StyleSheet.create({
     marginBottom: 30,
     width: width - 50,
   },
-  grupoTitulo: {
-    fontSize: 20,
+  title: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: colors.primary,
+    marginBottom: 10,
+    textAlign: 'center',
+    width: '100%',
+  },
+  title_2: {
+    fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 10,
     color: colors.medium_gray,
   },
-
+  title_3: {
+    fontSize: 16,
+    marginBottom: 10,
+    color: colors.medium_gray,
+  },
+  grupoTitulo: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: colors.medium_gray,
+  },
 
   modalOverlay: {
     flex: 1,
@@ -181,7 +199,7 @@ export default StyleSheet.create({
   },
 
 // Recipe Screen Styles
-  platoContainer: {
+  dishContainer: {
     borderWidth: 1,
     borderColor: colors.light_gray,
     borderRadius: 10,
@@ -192,7 +210,7 @@ export default StyleSheet.create({
     flexDirection: 'row',
   },
 
-  platoImage: {
+  dishImage: {
     width: '40%',
     height: '100%',
     borderRadius: 10,
@@ -213,23 +231,65 @@ export default StyleSheet.create({
     marginBottom: 5,
   },
 
-  totalsTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: colors.dark_gray,
-  },
-  totalsText: {
-    fontSize: 16,
-    color: colors.dark_gray,
-    marginBottom: 5,
-  },
-
   totalsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+
+  label: {
+    fontSize: 10, 
+    paddingHorizontal: 6, 
+    paddingVertical: 2, 
+    borderRadius: 4
+  },
+
+  labelVegetarian: {
+    backgroundColor: '#e8f5e9', 
+  },
+
+  labelVegan: {
+    backgroundColor: '#feffa8ff',
+  },
+
+  labelGlutenFree: {
+    backgroundColor: '#f3e5f5',
+  },
+
+  //create diet screen
+
+  dayButton: {
+    width: 60,
+    height: 60,
+    borderRadius: 50,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    alignSelf: 'center',
+    margin: 2,
+},
+
+daysContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+},
+
+addDishButton: {
+    borderWidth: 2,
+    borderColor: colors.light_gray,
+    borderRadius: 10,
+    borderStyle: 'dashed',
+    padding: 15,
+    marginBottom: 20,
+    textAlign: 'center',
+    justifyContent: 'center',
+},
+
 
 //pantalla rutina styles
   rutinaContainer: {
@@ -333,14 +393,7 @@ export default StyleSheet.create({
   cardDark: {
     backgroundColor: colors.dark_gray,
   },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: colors.primary,
-    marginBottom: 10,
-    textAlign: 'center',
-    width: '100%',
-  },
+
   challengeTitle: {
     fontSize: 18,
     fontWeight: '600',
@@ -355,6 +408,8 @@ export default StyleSheet.create({
     resizeMode: 'contain',
   },
   button: {
+    textAlign: 'center',
+    color: colors.white,
     backgroundColor: colors.primary,
     paddingVertical: 10,
     paddingHorizontal: 20,

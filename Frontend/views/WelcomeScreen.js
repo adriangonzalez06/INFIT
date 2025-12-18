@@ -11,12 +11,14 @@ import {
   useColorScheme,
   StatusBar,
   FlatList,
+  ImageBackground,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { Platform } from 'react-native';
+
 
 
 const PRIMARY = '#ef2b2d';
@@ -34,13 +36,13 @@ const lightTheme = {
 
 
 const ROUTINE_CARD_TEXT = {
-  title: 'RUTINAS DE HOY',
-  last: 'Última rutina: Piernas y abdomen',
+  title: 'RUTINAS DISPOSIBLES',
+  last: 'Próxima rutina: Piernas y abdomen',
 };
 
 const MEAL_CARD_TEXT = {
-  title: 'ALIMENTACIÓN RECOMENDADA',
-  last: 'Última comida: Pollo frito',
+  title: 'MI ALIMENTACIÓN',
+  last: 'Próxima comida: Pollo frito',
 };
 
 const CHALLENGES = [
@@ -74,7 +76,7 @@ function ChallengeCard({ item, theme, onPress }) {
           {item.subtitle}
         </Text>
 
-        <View style={[styles.cta, { backgroundColor: theme.primary }]}>
+        <View style={[styles.cta, { }]}>
           <Text style={styles.ctaText}>Empezar</Text>
         </View>
       </Animated.View>
@@ -180,47 +182,48 @@ export default function WelcomeScreen() {
       overScrollMode="never"
       showsVerticalScrollIndicator={false}
     >
-      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+      <StatusBar hidden={true} />
 
+  <ImageBackground source={require('../assets/images/Blur_mancuernas.jpg')} style={styles.headerImage}>
+       <Animated.View
+         style={[
+           styles.header,
+           { borderBottomColor: theme.hairline, transform: [{ translateY: mountTranslate }], opacity: mountOpacity },
+         ]}
+       >
 
-      <Animated.View
-        style={[
-          styles.header,
-          { borderBottomColor: theme.hairline, transform: [{ translateY: mountTranslate }], opacity: mountOpacity },
-        ]}
-      >
-        <Image source={require('../assets/avatar.png')} style={styles.avatar} />
-        <Text style={[styles.greeting, { color: theme.primary }]}>¡Hola, {userName ?? 'usuario'}!</Text>
-        <Text style={[styles.subtitle, { color: theme.subtle }]}>{message}</Text>
+         <Image source={require('../assets/avatar.png')} style={styles.avatar} />
+         <Text style={[styles.greeting, { color: theme.primary }]}>¡Hola, {userName ?? 'usuario'}!</Text>
+         <Text style={[styles.subtitle, { color: theme.card }]}>{message}</Text>
 
         <View style={[styles.streakChip, { borderColor: theme.primary, backgroundColor: theme.card }]}>
           <Text style={[styles.streakChipText, { color: theme.primary }]}>  Racha: {streak} días seguidos</Text>
         </View>
 
 
-        <Pressable
-          onPressIn={() => animateIn(scaleHeaderCTA)}
-          onPressOut={() => animateOut(scaleHeaderCTA)}
-          onPress={() => navigation.navigate('Rutinas')}
-          accessibilityRole="button"
-          accessibilityLabel="Empezar rutina"
-        >
-          <Animated.View
-            style={[
-              styles.startButton,
-              {
-                backgroundColor: theme.primary,
-                shadowColor: '#000',
-                transform: [{ scale: scaleHeaderCTA }],
-              },
-            ]}
-          >
-            <Text style={styles.startButtonText}>Empezar rutina</Text>
-          </Animated.View>
-        </Pressable>
-      </Animated.View>
+         <Pressable
+           onPressIn={() => animateIn(scaleHeaderCTA)}
+           onPressOut={() => animateOut(scaleHeaderCTA)}
+           onPress={() => navigation.navigate('Rutinas')}
+           accessibilityRole="button"
+           accessibilityLabel="Empezar rutina"
+         >
+           <Animated.View
+             style={[
+               styles.startButton,
+               {
+                 backgroundColor: theme.primary,
+                 shadowColor: '#000',
+                 transform: [{ scale: scaleHeaderCTA }],
+               },
+             ]}
+           >
+             <Text style={styles.startButtonText}>Empezar rutina</Text>
+           </Animated.View>
+         </Pressable>
+       </Animated.View>
 
-
+ </ImageBackground>
       <Pressable onPress={() => navigation.navigate('Rutinas')}>
         <Animated.View
           style={[
@@ -260,7 +263,7 @@ export default function WelcomeScreen() {
       <View style={{ marginTop: 16 }}>
         <View style={styles.sectionHeaderRow}>
           <Text style={[styles.sectionTitle, { color: theme.title }]}>Retos diarios</Text>
-          <Pressable onPress={() => navigation.navigate('Challenges')} ><Text style={[styles.sectionLink, { color: theme.primary }]}>Desliza para ver más ➔</Text></Pressable>
+            <Pressable onPress={() => navigation.navigate('Challenges')} ><Text style={[styles.sectionLink, { color: theme.primary }]}> Ver más ➔</Text></Pressable>
         </View>
 
         <FlatList
@@ -290,6 +293,10 @@ export default function WelcomeScreen() {
 }
 
 const styles = StyleSheet.create({
+
+  header: {
+    imageBackground: '#fff',
+  },
   container: {
     paddingVertical: 32,
     paddingHorizontal: 0,
@@ -308,6 +315,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     marginTop: 20,
   },
+
   greeting: {
     fontSize: 28,
     fontWeight: '800',
@@ -318,12 +326,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 14,
     textAlign: 'center',
+    fontWeight: '700',
   },
   streakChip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 2,
+    borderRadius: 10,
     marginBottom: 12,
   },
   streakChipText: {
@@ -371,7 +379,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   sectionTitle: { fontSize: 20, fontWeight: '800' },
-  sectionLink: { fontSize: 12, fontWeight: '800' },
+  sectionLink: { fontSize: 12, fontWeight: '800', paddingRight: 8 },
 
 
   challengeCard: {
@@ -388,5 +396,10 @@ const styles = StyleSheet.create({
   challengeTitle: { fontSize: 18, fontWeight: '800' },
   challengeSubtitle: { fontSize: 14, fontWeight: '600', marginBottom: 14 },
   cta: { alignSelf: 'flex-start', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 8 },
-  ctaText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  ctaText: { color: '#ef2b2d', fontWeight: '800', fontSize: 14 },
+
+
+  headerImage: {
+  top: '-5%',
+  }
 });
