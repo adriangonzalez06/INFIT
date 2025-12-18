@@ -87,4 +87,8 @@ export default class Diet {
     this.description = desc;
   }
 
+  getUrl() {
+    return this.imgUrl;
+  }
+
 }

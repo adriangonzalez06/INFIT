@@ -290,6 +290,7 @@ addDishButton: {
     justifyContent: 'center',
 },
 
+
 //pantalla rutina styles
   rutinaContainer: {
     flex: 1,
@@ -407,6 +408,8 @@ addDishButton: {
     resizeMode: 'contain',
   },
   button: {
+    textAlign: 'center',
+    color: colors.white,
     backgroundColor: colors.primary,
     paddingVertical: 10,
     paddingHorizontal: 20,

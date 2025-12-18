@@ -20,19 +20,19 @@ export default function Alimentacion() {
 
   {/*platos placeholder, leer los datos de la base de datos*/}
   let plato1 = new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, true, true, false);
-  let plato2 = new Dish(2, "Carne", "url2", 550, ["ingrediente1", "ingrediente2"], 550, false, false, true);
-  let plato3 = new Dish(3, "Postre", "url3", 550, ["ingrediente1", "ingrediente2"], 550, true, false, false);
-  let plato4 = new Dish(4, "Pescado", "url4", 600, ["ingrediente1", "ingrediente2"], 600, false, false, false);
-  let plato5 = new Dish(5, "Sopa", "url5", 300, ["ingrediente1", "ingrediente2"], 300, true, true, true);
-  let plato6 = new Dish(6, "Pasta", "url6", 700, ["ingrediente1", "ingrediente2"], 700, false, true, false);
+  let plato2 = new Dish(2, "Carne", require('../assets/images/images_dish/dish_02.jpg'), 550, ["ingrediente1", "ingrediente2"], 550, false, false, true);
+  let plato3 = new Dish(3, "Postre", require('../assets/images/images_dish/dish_03.jpg'), 550, ["ingrediente1", "ingrediente2"], 550, true, false, false);
+  let plato4 = new Dish(4, "Pescado", require('../assets/images/images_dish/dish_04.jpg'), 600, ["ingrediente1", "ingrediente2"], 600, false, false, false);
+  let plato5 = new Dish(5, "Sopa", require('../assets/images/images_dish/dish_05.jpg'), 300, ["ingrediente1", "ingrediente2"], 300, true, true, true);
+  let plato6 = new Dish(6, "Pasta", require('../assets/images/images_dish/dish_06.jpg'), 700, ["ingrediente1", "ingrediente2"], 700, false, true, false);
 
   {/* diets de prueba*/}
-  let r1 = new Diet(1, "Dieta Balanceada", "descrtyddtdrthdtjdftdyjtfhfipcion", "url1", [plato1, plato2, plato3]);
-  let r2 = new Diet(2, "Dieta Vegana", "descripcion", "url2", [plato2, plato3, plato6],);
-  let r3 = new Diet(3, "Dieta Cetogénica", "descripcion", "url3", [plato4, plato5]);
-  let r4 = new Diet(4, "Dieta Mediterránea", "descripcion", "url4", [plato5, plato1, plato6]);
-  let r5 = new Diet(5, "Dieta Alta en Proteínas", "descripcion", "url5", [plato3]);
-  let r6 = new Diet(6, "Dieta Baja en Carbohidratos", "descripcion", "url6", [plato5]);
+  let r1 = new Diet(1, "Dieta Balanceada", "descripcion", require('../assets/images/images_diet/diet_02.jpg'), [[plato2, plato3, plato6], [plato6, plato4, plato5], [plato5, plato4, plato6], [plato2, plato3], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato3]]);
+  let r2 = new Diet(2, "Dieta Vegana", "descripcion", require('../assets/images/images_diet/diet_02.jpg'), [[plato2, plato3, plato6], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato2, plato3], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato3]]);
+  let r3 = new Diet(3, "Dieta Cetogénica", "descripcion", require('../assets/images/images_diet/diet_01.jpg'), [[plato2, plato3, plato6], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato2, plato3], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato3]]);
+  let r4 = new Diet(4, "Dieta Mediterránea", "descripcion", require('../assets/images/images_diet/diet_01.jpg'), [[plato2, plato3, plato6], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato2, plato3], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato3]]);
+  let r5 = new Diet(5, "Dieta Alta en Proteínas", "descripcion", require('../assets/images/images_diet/diet_01.jpg'), [[plato2, plato3, plato6], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato2, plato3], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato3]]);
+  let r6 = new Diet(6, "Dieta Baja en Carbohidratos", "descripcion", require('../assets/images/images_diet/diet_01.jpg'), [[plato2, plato3, plato6], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato2, plato3], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato3]]);
 
   let g1 = new DietGroup(1, "Trending", [r1, r2, r3, r4, r5, r6]);
   let g2 = new DietGroup(2, "Mis dietas", [r3, r4, r2], true);
@@ -83,7 +83,7 @@ export default function Alimentacion() {
               handleEnterDiet(diet);
             }}>
 
-            <ImageBackground source={require('../assets/images/images_diet/diet_01.jpg')} resizeMode="cover" style={{width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', zIndex: -1, borderRadius: 14, overflow: 'hidden'}}>
+            <ImageBackground source={typeof diet.imgUrl === 'number' ? diet.imgUrl : { uri: diet.imgUrl }} resizeMode="cover" style={{width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', zIndex: -1, borderRadius: 14, overflow: 'hidden'}}>
             <Text style={styles.recetaTextoTitulo}>{diet.name}</Text>
             <Text style={styles.recetaTexto}>Subtítulo</Text>
             </ImageBackground>
@@ -110,7 +110,8 @@ export default function Alimentacion() {
           console.warn('handleEntrarDiet: diet is undefined');
           return;
         }
-        navigation.navigate('Diet', { diet });
+        // Pass diet inside the params object so AddDietMenu receives it as route.params.diet
+        navigation.navigate('AddDietMenu', { diet });
   };
 
   {/*See More button handler*/}
@@ -123,11 +124,9 @@ export default function Alimentacion() {
 
   {/*enter the create a new diet menu*/}
   const handleCreateNewDiet = (group) => {
-    navigation.navigate('AddDietMenu', group);
+    // Send group recipes in params so AddDietMenu can read route.params.recipes
+    navigation.navigate('AddDietMenu', { recipes: group.recipes ?? group });
   }
-
-
-
 
   return (
 

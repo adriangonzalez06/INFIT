@@ -27,7 +27,7 @@ export default function ListaGrupoRecetas({ route }) {
                 handleEnterDiet(diet);
               }}>
   
-              <ImageBackground source={require('../assets/images/images_diet/diet_01.jpg')} resizeMode="cover" style={{width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', zIndex: -1, borderRadius: 14, overflow: 'hidden'}}>
+              <ImageBackground source={typeof diet.imgUrl === 'number' ? diet.imgUrl : { uri: diet.imgUrl }} resizeMode="cover" style={{width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', zIndex: -1, borderRadius: 14, overflow: 'hidden'}}>
                 <Text style={styles.recetaTextoTitulo}>{diet.name}</Text>
                 <Text style={styles.recetaTexto}>Subtítulo</Text>
               </ImageBackground>
@@ -39,10 +39,11 @@ export default function ListaGrupoRecetas({ route }) {
   {/*Enter a diet card handler*/}
   const handleEnterDiet = (diet) => {
     if (!diet) {
-          console.warn('handleEnterDiet: diet is undefined');
+          console.warn('handleEntrarDiet: diet is undefined');
           return;
         }
-        navigation.navigate('Diet', { diet });
+        // Pass diet inside the params object so AddDietMenu receives it as route.params.diet
+        navigation.navigate('AddDietMenu', { diet });
   };
 
   return (

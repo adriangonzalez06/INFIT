@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput,
   SafeAreaView, Image, ImageBackground, Animated, Dimensions, FlatList, Alert
@@ -13,40 +13,52 @@ import Dish from '../src/objects/Dish';
 import { SearchMenu } from '../src/components/SearchMenu';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Alimentacion from './Alimentacion';
-import DataInput from '../src/components/DataInput';
 
 import style from './stylesheet';
+import colors from './colors';
 
 export default function AddDietMenu({ route }) {
+
+  {/*route: group, diet*/ }
 
   const navigation = useNavigation();
   const { height } = Dimensions.get('window');
 
-  {/*dishes placeholder, leer los datos de la base de datos*/ }
-  var dish1 = new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, true, true, false);
-  var dish2 = new Dish(2, "Carne", "url2", 550, ["ingrediente1", "ingrediente2"], 550, false, false, true);
-  var dish3 = new Dish(3, "Postre", "url3", 550, ["ingrediente1", "ingrediente2"], 550, true, false, false);
+  {/*platos placeholder, leer los datos de la base de datos*/ }
+  let dish1 = new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, true, true, false);
+  let dish2 = new Dish(2, "Carne", require('../assets/images/images_dish/dish_02.jpg'), 550, ["ingrediente1", "ingrediente2"], 550, false, false, true);
+  let dish3 = new Dish(3, "Postre", require('../assets/images/images_dish/dish_03.jpg'), 550, ["ingrediente1", "ingrediente2"], 550, true, false, false);
+  let dish4 = new Dish(4, "Pescado", require('../assets/images/images_dish/dish_04.jpg'), 600, ["ingrediente1", "ingrediente2"], 600, false, false, true);
+  let dish5 = new Dish(5, "Sopa", require('../assets/images/images_dish/dish_05.jpg'), 300, ["ingrediente1", "ingrediente2"], 300, true, true, false);
+  let dish6 = new Dish(6, "Pasta", require('../assets/images/images_dish/dish_06.jpg'), 700, ["ingrediente1", "ingrediente2"], 700, false, true, false);
+
 
   //console.log("test get name: ", dish1.getName());
 
   {/*array de dietas al que añadir la dieta*/ }
-  let addingGroup = route.params.recipes;
-  //console.log("grupo en AddDiet: " + addingGroup);
+  // Asegurarse de que addingGroup sea siempre un array (maneja route.params undefined/null y valores no array)
+  const addingGroup = Array.isArray(route?.params?.recipes) ? route.params.recipes : [];
+
+
+  // Rehydrate route.params.diet into a Diet instance so instance methods work
+  const diet = useMemo(() => Diet.from(route?.params?.diet), [route?.params?.diet]);
+  console.log('diet:', diet.getName ? diet.getName() : diet);
+
+  {/* If getName is null it means that we are creating a recipe*/ }
+  let creatingRecipe = false;
+  if (diet.getName() == null) creatingRecipe = true;
 
   {/*array de todos los platos*/ }
-  const allAvailableDishes = [dish1, dish2, dish3];
-
-  const newDietRef = useRef(new Diet());
-  const newDiet = newDietRef.current;
+  const allAvailableDishes = [dish1, dish2, dish3, dish4, dish5, dish6];
 
   {/*datos de la dieta*/ }
   // selectedDay: 0 = Lunes, 1 = Martes, ... 6 = Domingo
   const [selectedDay, setSelectedDay] = useState(0);
-  const [dishes, setDishes] = useState(newDiet.getDishesForDay(0));
+  const [dishes, setDishes] = useState(diet.getDishesForDay(0));
   const [dietName, setDietName] = useState('');
   const [dietDescription, setDietDescription] = useState('');
   {/*all dishes of all days*/ }
-  const [allDishes, setAllDishes] = useState(newDiet.getAllDishes());
+  const [allDishes, setAllDishes] = useState(diet.getAllDishes());
 
   {/*Totales de la diet*/ }
   const totalCalories = (dishes.reduce((sum, p) => sum + (p?.calories || 0), 0));
@@ -56,6 +68,10 @@ export default function AddDietMenu({ route }) {
   const [visible, setModalVisible] = useState(false);
   const [selectedIngredients, setSelectedIngredients] = useState([]);
 
+  {/*button color*/ }
+  const [bttId, setBttId] = useState(0);
+
+
   {/*-------CONSTANTES MENU DESPLEGABLE--------*/ }
   {/*SearchMenu ref para abrirlo desde el boton*/ }
   const searchMenuRef = useRef(null);
@@ -63,10 +79,10 @@ export default function AddDietMenu({ route }) {
   {/*funcion para agregar un plato a la dieta*/ }
   const handleAddDish = (selectedDish) => {
     // Añade el plato al día seleccionado dentro de newDiet
-    newDiet.addDishToDay(selectedDay, selectedDish);
+    diet.addDishToDay(selectedDay, selectedDish);
     // Actualiza el estado local para re-renderizar la lista del día
-    setDishes([...newDiet.getDishesForDay(selectedDay)]);
-    setAllDishes([...newDiet.getAllDishes()]);
+    setDishes([...diet.getDishesForDay(selectedDay)]);
+    setAllDishes([...diet.getAllDishes()]);
   };
 
   {/*componente personalizado para renderizar items en el SearchMenu*/ }
@@ -139,7 +155,7 @@ export default function AddDietMenu({ route }) {
   const calculateWeeklyTotals = () => {
     let totalCalories = 0;
     let totalMacronutrients = 0;
-    newDiet.getAllDishes().forEach((dayDishes) => {
+    diet.getAllDishes().forEach((dayDishes) => {
       (dayDishes || []).forEach((dish) => {
         totalCalories += (dish?.calories || 0);
         totalMacronutrients += (dish?.macronutrients || 0);
@@ -156,9 +172,9 @@ export default function AddDietMenu({ route }) {
 
   const handleDeleteDish = (index) => {
     // borra por índice del día seleccionado
-    newDiet.weeklyDishes[selectedDay].splice(index, 1);
-    setDishes([...newDiet.getDishesForDay(selectedDay)]);
-    setAllDishes([...newDiet.getAllDishes()]);
+    diet.weeklyDishes[selectedDay].splice(index, 1);
+    setDishes([...diet.getDishesForDay(selectedDay)]);
+    setAllDishes([...diet.getAllDishes()]);
   };
 
   const renderIngredientsModal = () => (
@@ -182,25 +198,25 @@ export default function AddDietMenu({ route }) {
   // Guarda la dieta  (para probar)
   const saveDiet = async () => {
     try {
-      // Actualizar propiedades de newDiet
-      newDiet.id = Date.now();
-      newDiet.name = dietName || `Dieta ${new Date().toLocaleDateString()}`;
-      newDiet.description = dietDescription || '';
+      // Actualizar propiedades de diet
+      diet.id = Date.now();
+      diet.name = dietName || `Dieta ${new Date().toLocaleDateString()}`;
+      diet.description = dietDescription || '';
 
-      // Serializar newDiet (convertir a objeto plano)
+      // Serializar diet (convertir a objeto plano)
       const dietToSave = {
-        id: newDiet.id,
-        name: newDiet.name,
-        description: newDiet.description,
-        imgUrl: newDiet.imgUrl,
-        weeklyDishes: newDiet.weeklyDishes
+        id: diet.id,
+        name: diet.name,
+        description: diet.description,
+        imgUrl: require('../assets/images/images_dish/dish_02.jpg'),
+        weeklyDishes: diet.weeklyDishes
       };
 
       addingGroup.push(dietToSave);
 
       setDietName('');
       setDietDescription('');
-      setAllDishes([...newDiet.getAllDishes()]);
+      setAllDishes([...diet.getAllDishes()]);
 
       Alert.alert('Guardado', 'La dieta se ha guardado correctamente.');
     } catch (err) {
@@ -209,7 +225,44 @@ export default function AddDietMenu({ route }) {
     }
   };
 
+  const renderNameInput = (creatingRecipe) => {
+    if (creatingRecipe) {
+      return (
+        <View style={{ marginVertical: 8 }}>
+          <TextInput
+            style={styles.input}
+            placeholder="Nombre de la dieta"
+            value={dietName}
+            onChangeText={setDietName}
+          />
+        </View>
+      )
+    }
+    return null;
+  };
 
+  const renderAddDishButton = (creatingRecipe) => {
+    if (creatingRecipe) {
+      return (
+        <TouchableOpacity
+          style={styles.addDishButton}
+          onPress={() => searchMenuRef.current?.abrirMenu()}
+        >
+          <Text>+ Añadir plato</Text>
+        </TouchableOpacity>
+      )
+    }
+    return null;
+  };
+
+  const renderSaveChangesButton = (creatingRecipe) => {
+    if (creatingRecipe) {
+      return (
+        <TouchableOpacity style={styles.saveButton} onPress={saveDiet}><Text style={styles.button}>{creatingRecipe ? "Guardar Dieta" : "Guardar Cambios"}</Text></TouchableOpacity>
+
+      )
+    }
+  }
 
 
   return (
@@ -221,86 +274,75 @@ export default function AddDietMenu({ route }) {
         <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
       </TouchableOpacity>
 
-      {/* title */}
-      <Text style={styles.title}>Crear una dieta</Text>
+      {/* title   Array.isArray(route?.params?.recipes) ? route.params.recipes : [];    */}
+      <Text style={styles.title}>{diet.getName() || "Crear una dieta"}</Text>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.grupoContainer}>
 
-          <View style={{ marginVertical: 8 }}>
-            <TextInput
-              style={styles.input}
-              placeholder="Nombre de la dieta"
-              value={dietName}
-              onChangeText={setDietName}
-            />
-          </View>
+          {renderNameInput(creatingRecipe)}
 
-          <View style={styles.daysContainer}>
-            <TouchableOpacity style={styles.dayButton} onPress={() => { setSelectedDay(0); setDishes(newDiet.getDishesForDay(0)); }}><Text>LUN</Text></TouchableOpacity>
-            <TouchableOpacity style={styles.dayButton} onPress={() => { setSelectedDay(1); setDishes(newDiet.getDishesForDay(1)); }}><Text>MAR</Text></TouchableOpacity>
-            <TouchableOpacity style={styles.dayButton} onPress={() => { setSelectedDay(2); setDishes(newDiet.getDishesForDay(2)); }}><Text>MIE</Text></TouchableOpacity>
-            <TouchableOpacity style={styles.dayButton} onPress={() => { setSelectedDay(3); setDishes(newDiet.getDishesForDay(3)); }}><Text>JUE</Text></TouchableOpacity>
-            <TouchableOpacity style={styles.dayButton} onPress={() => { setSelectedDay(4); setDishes(newDiet.getDishesForDay(4)); }}><Text>VIE</Text></TouchableOpacity>
-          </View>
-          <View style={[styles.daysContainer, { justifyContent: 'center' }]}>
-            <TouchableOpacity style={styles.dayButton} onPress={() => { setSelectedDay(5); setDishes(newDiet.getDishesForDay(5)); }}><Text>SAB</Text></TouchableOpacity>
-            <TouchableOpacity style={styles.dayButton} onPress={() => { setSelectedDay(6); setDishes(newDiet.getDishesForDay(6)); }}><Text>DOM</Text></TouchableOpacity>
-          </View>
+        <View style={styles.daysContainer}>
+          <TouchableOpacity style={styles.dayButton} onPress={() => { setSelectedDay(0); setDishes(diet.getDishesForDay(0)); }}><Text>LUN</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.dayButton} onPress={() => { setSelectedDay(1); setDishes(diet.getDishesForDay(1)); }}><Text>MAR</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.dayButton} onPress={() => { setSelectedDay(2); setDishes(diet.getDishesForDay(2)); }}><Text>MIE</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.dayButton} onPress={() => { setSelectedDay(3); setDishes(diet.getDishesForDay(3)); }}><Text>JUE</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.dayButton} onPress={() => { setSelectedDay(4); setDishes(diet.getDishesForDay(4)); }}><Text>VIE</Text></TouchableOpacity>
+        </View>
+        <View style={[styles.daysContainer, { justifyContent: 'center' }]}>
+          <TouchableOpacity style={styles.dayButton} onPress={() => { setSelectedDay(5); setDishes(diet.getDishesForDay(5)); }}><Text>SAB</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.dayButton} onPress={() => { setSelectedDay(6); setDishes(diet.getDishesForDay(6)); }}><Text>DOM</Text></TouchableOpacity>
+        </View>
 
-          {/*renderizar todos los dishes que haya en el día seleccionado*/}
-          {renderDishList()}
+        {renderAddDishButton(creatingRecipe)}
 
-          <TouchableOpacity
-            style={styles.addDishButton}
-            onPress={() => searchMenuRef.current?.abrirMenu()}
-          >
-            <Text>+ Añadir plato</Text>
-          </TouchableOpacity>
 
-          <Text style={styles.grupoTitulo}>Totales</Text>
+        {/*renderizar todos los dishes que haya en el día seleccionado*/}
+        {renderDishList()}
 
-          <Text style={styles.title_2}>Diario</Text>
-          <View style={styles.totalsContainer}>
-            <Text style={styles.title_3}>Calorías</Text>
-            <Text style={styles.text}>{totalCalories} kcal</Text>
-          </View>
+        <Text style={styles.grupoTitulo}>Totales</Text>
 
-          <View style={styles.totalsContainer}>
-            <Text style={styles.title_3}>Macronutrientes</Text>
-            <Text style={styles.text}>{totalMacronutrients} g</Text>
-          </View>
+        <Text style={styles.title_2}>Diario</Text>
+        <View style={styles.totalsContainer}>
+          <Text style={styles.title_3}>Calorías</Text>
+          <Text style={styles.text}>{totalCalories} kcal</Text>
+        </View>
 
-          <Text style={styles.title_2}>Semanal</Text>
-          <View style={styles.totalsContainer}>
-            <Text style={styles.title_3}>Calorías</Text>
-            <Text style={styles.text}>{calculateWeeklyTotals().totalCalories} kcal</Text>
-          </View>
+        <View style={styles.totalsContainer}>
+          <Text style={styles.title_3}>Macronutrientes</Text>
+          <Text style={styles.text}>{totalMacronutrients} g</Text>
+        </View>
 
-          <View style={styles.totalsContainer}>
-            <Text style={styles.title_3}>Macronutrientes</Text>
-            <Text style={styles.text}>{calculateWeeklyTotals().totalMacronutrients} g</Text>
-          </View>
+        <Text style={styles.title_2}>Semanal</Text>
+        <View style={styles.totalsContainer}>
+          <Text style={styles.title_3}>Calorías</Text>
+          <Text style={styles.text}>{calculateWeeklyTotals().totalCalories} kcal</Text>
+        </View>
 
-          <TouchableOpacity style={styles.saveButton} onPress={saveDiet}><Text style={styles.button}>Guardar Dieta</Text></TouchableOpacity>
+        <View style={styles.totalsContainer}>
+          <Text style={styles.title_3}>Macronutrientes</Text>
+          <Text style={styles.text}>{calculateWeeklyTotals().totalMacronutrients} g</Text>
+        </View>
+
+        {renderSaveChangesButton(creatingRecipe)}
 
         </View>
-      </ScrollView>
+      </ScrollView >
 
-      {renderIngredientsModal()}
+    { renderIngredientsModal() }
 
-      <SearchMenu
-        ref={searchMenuRef}
-        data={allAvailableDishes}
-        title="Agregar plato a la dieta"
-        searchFields={["name"]}
-        renderCustomItem={renderDishItemMenu}
-        onSelectItem={handleAddDish}
-        searchPlaceholder="Buscar plato..."
-        height={height}
-      />
+    < SearchMenu
+  ref = { searchMenuRef }
+  data = { allAvailableDishes }
+  title = "Agregar plato a la dieta"
+  searchFields = { ["name"]}
+  renderCustomItem = { renderDishItemMenu }
+  onSelectItem = { handleAddDish }
+  searchPlaceholder = "Buscar plato..."
+  height = { height }
+    />
 
-    </View>
+    </View >
 
   );
 }
