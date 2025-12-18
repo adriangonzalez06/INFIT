@@ -10,6 +10,7 @@ import {
   PanResponder,
   StyleSheet
 } from 'react-native';
+import style from '../../views/stylesheet'
 
   const { height } = Dimensions.get("window");
 
@@ -106,6 +107,7 @@ export const SearchMenu = forwardRef(({
       </View>
     </TouchableOpacity>
   );
+
 
   return (
     <>

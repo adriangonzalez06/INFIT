@@ -7,19 +7,18 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import styles from './stylesheet';
+import styles from './stylesheet.js';
 import colors from './colors.js';
-import Dish from '../objects/Dish'; 
-import Diet from '../objects/Diet';
-import DietView from './DietView';
-import DietGroup from '../objects/DietGroup';
+import Dish from '../src/objects/Dish.js'; 
+import Diet from '../src/objects/Diet.js';
+import DietView from './DietView.js';
+import DietGroup from '../src/objects/DietGroup.js';
 
 export default function Alimentacion() {
 
   const navigation = useNavigation();
 
   {/*platos placeholder, leer los datos de la base de datos*/}
-  console.log('debug', Dish, Diet);
   let plato1 = new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, true, true, false);
   let plato2 = new Dish(2, "Carne", "url2", 550, ["ingrediente1", "ingrediente2"], 550, false, false, true);
   let plato3 = new Dish(3, "Postre", "url3", 550, ["ingrediente1", "ingrediente2"], 550, true, false, false);
@@ -43,7 +42,10 @@ export default function Alimentacion() {
     g1, g2, g3
   });
 
+  const [diets, setDiet] = useState([]);
+
   const renderGrupo = (group) => (
+    
     
     <View style={styles.grupoContainer}>
       {/* group title */}
@@ -56,7 +58,7 @@ export default function Alimentacion() {
             renderRecetaCard(diet)
           ))}
           
-          {showAddCard(group.canEdit)}
+          {showAddCard(group.canEdit, group)}
 
           <TouchableOpacity 
           style={styles.seeMoreCard}
@@ -78,7 +80,6 @@ export default function Alimentacion() {
             key={diet.id}
             style={[styles.recipeCards, styles.recetaCard]}
             onPress={() => {
-              console.log('receeta: ', diet),
               handleEnterDiet(diet);
             }}>
 
@@ -91,10 +92,11 @@ export default function Alimentacion() {
   };
 
   {/* ahow add more card if true */}
-  const showAddCard = (show) => {
+  const showAddCard = (show, group) => {
+    console.log("showAddCard: ", group)
       if (show) {
         return (
-        <TouchableOpacity style={[styles.addCard]} onPress={() => handleCreateNewDiet()}>
+        <TouchableOpacity style={[styles.addCard]} onPress={() => handleCreateNewDiet(group)}>
           <Ionicons name="add" size={32} color="#ef2b2d" />
         </TouchableOpacity>
       );
@@ -119,10 +121,12 @@ export default function Alimentacion() {
     });
   };
 
-  {/*create a new diet*/}
-  const handleCreateNewDiet = () => {
-    navigation.navigate('AddDietMenu');
+  {/*enter the create a new diet menu*/}
+  const handleCreateNewDiet = (group) => {
+    navigation.navigate('AddDietMenu', group);
   }
+
+
 
 
   return (

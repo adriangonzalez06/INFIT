@@ -11,11 +11,11 @@ import styles from './stylesheet';
 export default function ListaGrupoRecetas({ route }) {
   const navigation = useNavigation();
 
-  console.log('route: ', route.params);
+  //console.log('route: ', route.params);
 
   const { name, recipes } = route?.params || { name: '', recipes: [] };
 
-  console.log('grupo asignado: ', name);
+  //console.log('grupo asignado: ', name);
 
     {/* render a card*/}
     const renderDietCard = (diet) => {

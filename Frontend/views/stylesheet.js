@@ -43,13 +43,31 @@ export default StyleSheet.create({
     marginBottom: 30,
     width: width - 50,
   },
-  grupoTitulo: {
-    fontSize: 20,
+  title: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: colors.primary,
+    marginBottom: 10,
+    textAlign: 'center',
+    width: '100%',
+  },
+  title_2: {
+    fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 10,
     color: colors.medium_gray,
   },
-
+  title_3: {
+    fontSize: 16,
+    marginBottom: 10,
+    color: colors.medium_gray,
+  },
+  grupoTitulo: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: colors.medium_gray,
+  },
 
   modalOverlay: {
     flex: 1,
@@ -213,18 +231,6 @@ export default StyleSheet.create({
     marginBottom: 5,
   },
 
-  totalsTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: colors.dark_gray,
-  },
-  totalsText: {
-    fontSize: 16,
-    color: colors.dark_gray,
-    marginBottom: 5,
-  },
-
   totalsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -253,9 +259,9 @@ export default StyleSheet.create({
   //create diet screen
 
   dayButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 30,
+    width: 60,
+    height: 60,
+    borderRadius: 50,
     backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
@@ -264,7 +270,7 @@ export default StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     alignSelf: 'center',
-    margin: 5,
+    margin: 2,
 },
 
 daysContainer: {
@@ -386,14 +392,7 @@ addDishButton: {
   cardDark: {
     backgroundColor: colors.dark_gray,
   },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: colors.primary,
-    marginBottom: 10,
-    textAlign: 'center',
-    width: '100%',
-  },
+
   challengeTitle: {
     fontSize: 18,
     fontWeight: '600',
