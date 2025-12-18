@@ -22,7 +22,6 @@
     "@react-navigation/native-stack": "^7.3.26",
     "adb": "^0.2.0",
     "axios": "^1.12.2",
-    "expo": "~53.0.22",
     "expo-blur": "~14.1.5",
     "expo-build-properties": "~0.14.8",
     "expo-image": "^2.4.1",
@@ -41,7 +40,8 @@
     "react-native-svg": "15.11.2",
     "react-native-svg-transformer": "^1.5.1",
     "react-native-vector-icons": "^10.3.0",
-    "react-native-web": "^0.20.0"
+    "react-native-web": "^0.20.0",
+    "styled-components": "^6.1.19"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
