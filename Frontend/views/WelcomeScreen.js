@@ -261,6 +261,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     marginTop: 20,
   },
+  
   greeting: {
     fontSize: 28,
     fontWeight: '800',

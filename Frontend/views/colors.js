@@ -9,4 +9,5 @@ export default {
   black: '#000000',
   medium_green: '#28a745',
   black_translucent: 'rgba(0, 0, 0, 0.5)'
+  
 };

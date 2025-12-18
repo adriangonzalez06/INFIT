@@ -22,6 +22,7 @@ export default function SettingsScreen({ navigation }) {
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Aceptar', onPress: action },
     ]);
+    
   };
 
   return (

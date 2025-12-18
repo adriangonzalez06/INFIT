@@ -217,6 +217,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginBottom: 10,
   },
+  
   input: {
     marginVertical: 8,
     paddingHorizontal: 16,
@@ -308,3 +309,4 @@ googletext: {
   alignSelf: 'center',
 
 }});
+//
