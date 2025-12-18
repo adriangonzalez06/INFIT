@@ -144,6 +144,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
     marginBottom: 30,
+    top:'-3%',
   },
   profileSection: {
     alignItems: 'center',

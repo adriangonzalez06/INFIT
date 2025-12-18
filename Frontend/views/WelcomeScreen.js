@@ -89,7 +89,7 @@ export default function WelcomeScreen() {
 
 
   const userName = 'Sergi';
-  const streakDays = 12;
+
 
   const messages = useMemo(
     () => [
@@ -131,45 +131,45 @@ export default function WelcomeScreen() {
       overScrollMode="never"
       showsVerticalScrollIndicator={false}
     >
-      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+      <StatusBar hidden={true} />
 
-      
-      <Animated.View
-        style={[
-          styles.header,
-          { borderBottomColor: theme.hairline, transform: [{ translateY: mountTranslate }], opacity: mountOpacity },
-        ]}
-      >
-        
-        
-        <Text style={[styles.greeting, { color: theme.primary, marginTop: 15}]}>¡Hola, {userName}!</Text>
-        <Text style={[styles.subtitle, { color: theme.subtle }]}>{message}</Text>
+  <ImageBackground source={require('../assets/images/Blur_mancuernas.jpg')} style={styles.headerImage}>
+       <Animated.View
+         style={[
+           styles.header,
+           { borderBottomColor: theme.hairline, transform: [{ translateY: mountTranslate }], opacity: mountOpacity },
+         ]}
+       >
+
+         <Image source={require('../assets/avatar.png')} style={styles.avatar} />
+         <Text style={[styles.greeting, { color: theme.primary }]}>¡Hola, {userName ?? 'usuario'}!</Text>
+         <Text style={[styles.subtitle, { color: theme.card }]}>{message}</Text>
 
 
-       
-        <Pressable
-          onPressIn={() => animateIn(scaleHeaderCTA)}
-          onPressOut={() => animateOut(scaleHeaderCTA)}
-          onPress={() => navigation.navigate('Rutinas')}
-          accessibilityRole="button"
-          accessibilityLabel="Empezar rutina"
-        >
-          <Animated.View
-            style={[
-              styles.startButton,
-              {
-                backgroundColor: theme.primary,
-                shadowColor: '#000',
-                transform: [{ scale: scaleHeaderCTA }],
-              },
-            ]}
-          >
-            <Text style={styles.startButtonText}>Empezar rutina</Text>
-          </Animated.View>
-        </Pressable>
-      </Animated.View>
-            
 
+         <Pressable
+           onPressIn={() => animateIn(scaleHeaderCTA)}
+           onPressOut={() => animateOut(scaleHeaderCTA)}
+           onPress={() => navigation.navigate('Rutinas')}
+           accessibilityRole="button"
+           accessibilityLabel="Empezar rutina"
+         >
+           <Animated.View
+             style={[
+               styles.startButton,
+               {
+                 backgroundColor: theme.primary,
+                 shadowColor: '#000',
+                 transform: [{ scale: scaleHeaderCTA }],
+               },
+             ]}
+           >
+             <Text style={styles.startButtonText}>Empezar rutina</Text>
+           </Animated.View>
+         </Pressable>
+       </Animated.View>
+
+ </ImageBackground>
       <Pressable onPress={() => navigation.navigate('Rutinas')}>
         <Animated.View
           style={[
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     marginTop: 20,
   },
-  
+
   greeting: {
     fontSize: 28,
     fontWeight: '800',
@@ -272,6 +272,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 14,
     textAlign: 'center',
+    fontWeight: '700',
   },
   streakChip: {
     paddingHorizontal: 14,
@@ -342,4 +343,9 @@ const styles = StyleSheet.create({
   challengeSubtitle: { fontSize: 14, fontWeight: '600', marginBottom: 14 },
   cta: { alignSelf: 'flex-start', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 8 },
   ctaText: { color: '#ef2b2d', fontWeight: '800', fontSize: 14 },
+
+
+  headerImage: {
+  top: '-5%',
+  }
 });
