@@ -72,7 +72,7 @@ function ChallengeCard({ item, theme, onPress }) {
           {item.subtitle}
         </Text>
 
-        <View style={[styles.cta, { backgroundColor: theme.primary }]}>
+        <View style={[styles.cta, { }]}>
           <Text style={styles.ctaText}>Empezar</Text>
         </View>
       </Animated.View>
@@ -341,5 +341,5 @@ const styles = StyleSheet.create({
   challengeTitle: { fontSize: 18, fontWeight: '800' },
   challengeSubtitle: { fontSize: 14, fontWeight: '600', marginBottom: 14 },
   cta: { alignSelf: 'flex-start', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 8 },
-  ctaText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  ctaText: { color: '#ef2b2d', fontWeight: '800', fontSize: 14 },
 });
