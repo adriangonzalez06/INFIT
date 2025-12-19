@@ -1,45 +1,210 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   Image,
   TouchableOpacity,
   ScrollView,
+  ActivityIndicator,
   TextInput,
   Modal,
+  StyleSheet,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import axios from 'axios';
+
 import colors from './colors';
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
 
-  const user = {
-    nombre: 'Sergi Velasco',
-    avatar: require('../assets/avatar.png'),
-    peso: 80,
-    altura: 1.9,
-    registros: [
-      { tipo: 'Ejercicio', detalle: '30 min de cardio', fecha: '22/10/2025' },
-      { tipo: 'Alimentación', detalle: 'Desayuno saludable', fecha: '22/10/2025' },
-      { tipo: 'Sueño', detalle: 'Dormido 7h 45min', fecha: '21/10/2025' },
-    ],
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Estados para modal y campos de edición
+  const [modalVisible, setModalVisible] = useState(false);
+  const [pesoInput, setPesoInput] = useState('');
+  const [alturaInput, setAlturaInput] = useState('');
+
+  useEffect(() => {
+    const auth = getAuth();
+    const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          let nombreUser = 'Usuario';
+          let emailUser = firebaseUser.email || 'email@example.com';
+          let pesoGuardado = '80';
+          let alturaGuardada = '1.9';
+          let documentId = null;  // ID real del documento en Firestore
+
+          // Obtener datos del backend buscando por email (como WelcomeScreen)
+          try {
+            const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+            const resp = await axios.get(
+              `http://${host}:8082/api/usuarios/buscar/email/${encodeURIComponent(firebaseUser.email)}`,
+              { timeout: 5000 }
+            );
+
+            if (resp.data) {
+              nombreUser = resp.data.nombre || nombreUser;
+              emailUser = resp.data.email || emailUser;
+              pesoGuardado = resp.data.weight || resp.data.peso || pesoGuardado;
+              alturaGuardada = resp.data.height || resp.data.altura || alturaGuardada;
+              documentId = resp.data.id || firebaseUser.uid;  // Obtener el ID real del documento
+
+              // Guardar datos en localStorage
+              await ReactNativeAsyncStorage.setItem('userName', nombreUser);
+              await ReactNativeAsyncStorage.setItem('userEmail', emailUser);
+              await ReactNativeAsyncStorage.setItem('userWeight', String(pesoGuardado));
+              await ReactNativeAsyncStorage.setItem('userHeight', String(alturaGuardada));
+              await ReactNativeAsyncStorage.setItem('userDocId', documentId);  // Guardar el ID real
+            }
+          } catch (e) {
+            console.warn('No se pudo obtener datos del backend:', e?.message);
+            documentId = firebaseUser.uid;
+          }
+
+          // Usar el ID real del documento
+          setUserId(documentId || firebaseUser.uid);
+
+          const userData = {
+            nombre: nombreUser,
+            email: emailUser,
+            avatar: require('../assets/avatar.png'),
+            peso: pesoGuardado ? parseFloat(String(pesoGuardado)) : 80,
+            altura: alturaGuardada ? parseFloat(String(alturaGuardada)) : 1.9,
+            registros: [
+              { tipo: 'Ejercicio', detalle: '30 min de cardio', fecha: '22/10/2025' },
+              { tipo: 'Alimentación', detalle: 'Desayuno saludable', fecha: '22/10/2025' },
+              { tipo: 'Sueño', detalle: 'Dormido 7h 45min', fecha: '21/10/2025' },
+            ],
+          };
+
+          setUser(userData);
+        } catch (error) {
+          console.error('Error cargando perfil:', error);
+          setUser({
+            nombre: 'Usuario',
+            email: 'email@example.com',
+            avatar: require('../assets/avatar.png'),
+            peso: 80,
+            altura: 1.9,
+            registros: [
+              { tipo: 'Ejercicio', detalle: '30 min de cardio', fecha: '22/10/2025' },
+              { tipo: 'Alimentación', detalle: 'Desayuno saludable', fecha: '22/10/2025' },
+              { tipo: 'Sueño', detalle: 'Dormido 7h 45min', fecha: '21/10/2025' },
+            ],
+          });
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setUser(null);
+        setLoading(false);
+      }
+    });
+
+    return () => unsub();
+  }, []);
+
+  const openEditModal = () => {
+    if (!user) return;
+    setPesoInput(String(user.peso));
+    setAlturaInput(String(user.altura));
+    setModalVisible(true);
   };
 
-  const [peso, setPeso] = useState(user.peso.toString());
-  const [altura, setAltura] = useState(user.altura.toString());
-  const [modalVisible, setModalVisible] = useState(false);
+  const saveEdits = async () => {
+    const newPeso = parseFloat(pesoInput.replace(',', '.'));
+    const newAltura = parseFloat(alturaInput.replace(',', '.'));
 
-  const imc =
-    parseFloat(altura) > 0
-      ? (parseFloat(peso) / (parseFloat(altura) * parseFloat(altura))).toFixed(1)
-      : '—';
+    if (isNaN(newPeso) || isNaN(newAltura) || newPeso <= 0 || newAltura <= 0) {
+      console.warn('Valores inválidos');
+      alert('Por favor ingresa números válidos para peso y altura');
+      return;
+    }
+
+    if (!userId) {
+      alert('Error: No se pudo obtener tu ID de usuario');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // Actualizar en el backend
+      const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+      const url = `http://${host}:8082/api/usuarios/${userId}`;
+
+      console.log('Enviando petición a:', url);
+      console.log('Datos:', { weight: newPeso, height: newAltura });
+
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          weight: newPeso,
+          height: newAltura,
+        }),
+      });
+
+      console.log('Respuesta del servidor:', response.status);
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('Error del backend:', errorData);
+        throw new Error(`Error ${response.status}: ${errorData}`);
+      }
+
+      // Actualizar en el estado local
+      setUser((prev) =>
+        prev ? { ...prev, peso: newPeso, altura: newAltura } : prev
+      );
+
+      // Guardar en AsyncStorage
+      await ReactNativeAsyncStorage.setItem('userWeight', String(newPeso));
+      await ReactNativeAsyncStorage.setItem('userHeight', String(newAltura));
+
+      console.log('Peso y altura actualizados exitosamente');
+      alert('¡Cambios guardados correctamente!');
+    } catch (e) {
+      console.error('Error guardando peso/altura:', e);
+      alert(`Error al guardar los cambios: ${e.message}`);
+    } finally {
+      setIsSaving(false);
+      setModalVisible(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#ef2b2d" />
+      </View>
+    );
+  }
+
+  if (!user) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text>Error cargando perfil</Text>
+      </View>
+    );
+  }
+
+  const imc = (user.peso / (user.altura * user.altura)).toFixed(1);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      {/* Cabecera normal (no sticky) */}
       <View style={styles.headerContent}>
         <View style={{ flex: 1 }} />
         <TouchableOpacity onPress={() => navigation.navigate('Ajustes')}>
@@ -53,15 +218,15 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.statsContainer}>
-        <Stat label="Peso" value={`${peso} kg`} />
-        <Stat label="Altura" value={`${altura} m`} />
+        <Stat label="Peso" value={`${user.peso} kg`} />
+        <Stat label="Altura" value={`${user.altura} m`} />
         <Stat label="IMC" value={imc} />
       </View>
 
       {/* Botón para abrir modal */}
       <TouchableOpacity
         style={styles.editButton}
-        onPress={() => setModalVisible(true)}
+        onPress={openEditModal}
       >
         <Text style={styles.editButtonText}>Editar</Text>
       </TouchableOpacity>
@@ -76,25 +241,35 @@ export default function ProfileScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Editar datos</Text>
+
             <TextInput
               style={styles.input}
-              value={peso}
-              onChangeText={setPeso}
+              value={pesoInput}
+              onChangeText={setPesoInput}
               keyboardType="numeric"
               placeholder="Peso (kg)"
             />
             <TextInput
               style={styles.input}
-              value={altura}
-              onChangeText={setAltura}
+              value={alturaInput}
+              onChangeText={setAlturaInput}
               keyboardType="numeric"
               placeholder="Altura (m)"
             />
+
             <TouchableOpacity
-              style={styles.saveButton}
+              style={[styles.saveButton, isSaving && { opacity: 0.6 }]}
+              onPress={saveEdits}
+              disabled={isSaving}
+            >
+              <Text style={styles.saveButtonText}>{isSaving ? 'Guardando...' : 'Guardar'}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.saveButton, { backgroundColor: '#ddd', marginTop: 8 }]}
               onPress={() => setModalVisible(false)}
             >
-              <Text style={styles.saveButtonText}>Guardar</Text>
+              <Text style={[styles.saveButtonText, { color: '#333' }]}>Cancelar</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -128,6 +303,7 @@ function Stat({ label, value }) {
   );
 }
 
+
 const styles = StyleSheet.create({
   container: {
     paddingBottom: 60,
@@ -144,7 +320,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
     marginBottom: 30,
-    top:'-3%',
   },
   profileSection: {
     alignItems: 'center',
@@ -191,8 +366,8 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     alignSelf: 'center',
     justifyContent: 'center',
-    marginBottom: 20, 
-    
+    marginBottom: 20,
+
   },
   editButtonText: {
     color: '#fff',
@@ -286,4 +461,3 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
-  //
