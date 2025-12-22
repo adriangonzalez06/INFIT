@@ -278,25 +278,47 @@ export default function Rutinas() {
       </Modal>
 
       {/* Modal de opciones (long press) */}
-      <Modal visible={opcionesVisible} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Opciones</Text>
-            <TouchableOpacity onPress={() => handleEntrarRutina(rutinaSeleccionada, 'grupo1')}>
-              <Text style={styles.modalButtonText}>Editar</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleDuplicarRutina}>
-              <Text style={styles.modalButtonText}>Duplicar</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleEliminarRutina}>
-              <Text style={styles.modalButtonText}>Eliminar</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setOpcionesVisible(false)}>
-              <Text style={styles.modalButtonText}>Cancelar</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+<Modal visible={opcionesVisible} transparent animationType="fade">
+  <View style={styles.optionsOverlay}>
+    <View style={styles.optionsCard}>
+
+      <Text style={styles.optionsTitle}>Opciones de rutina</Text>
+
+      
+
+      <TouchableOpacity
+        style={styles.optionButton}
+        onPress={() => {
+          setOpcionesVisible(false);
+          handleDuplicarRutina();
+        }}
+      >
+        <Ionicons name="copy-outline" size={22} color="#ef2b2d" />
+        <Text style={styles.optionText}>Duplicar rutina</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.optionButton, styles.deleteButton]}
+        onPress={() => {
+          setOpcionesVisible(false);
+          handleEliminarRutina();
+        }}
+      >
+        <Ionicons name="trash-outline" size={22} color="#fff" />
+        <Text style={[styles.optionText, { color: '#fff' }]}>Eliminar rutina</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.cancelButton}
+        onPress={() => setOpcionesVisible(false)}
+      >
+        <Text style={styles.cancelText}>Cancelar</Text>
+      </TouchableOpacity>
+
+    </View>
+  </View>
+</Modal>
+
     </View>
   );
 }
@@ -469,7 +491,58 @@ export default function Rutinas() {
     },
 
     modalButtonText: {
-      color: '#333',
+      color: '#fff',
       fontWeight: '600',
     },
+
+    optionsOverlay: { 
+      flex: 1, 
+      backgroundColor: 'rgba(0,0,0,0.5)', 
+      justifyContent: 'center', 
+      alignItems: 'center', 
+      paddingHorizontal: 20, }, 
+      optionsCard: { width: '100%', 
+        backgroundColor: '#fff', 
+        borderRadius: 16, 
+        padding: 20, 
+        elevation: 10, }, 
+
+      optionsTitle: { 
+        fontSize: 20, 
+        fontWeight: '700', 
+        marginBottom: 20, 
+        textAlign: 'center', 
+        color: '#333', },
+
+      optionButton: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        paddingVertical: 12, 
+        paddingHorizontal: 10, 
+        borderRadius: 10, 
+        backgroundColor: '#f7f7f7', 
+        marginBottom: 12, 
+        gap: 10, 
+      }, 
+      optionText: { 
+        fontSize: 16, 
+        fontWeight: '500', 
+        color: '#333', 
+      }, 
+
+      deleteButton: { 
+        backgroundColor: '#ef2b2d', 
+        }, 
+      cancelButton: { 
+        marginTop: 10, 
+        paddingVertical: 12, 
+        borderRadius: 10, 
+        backgroundColor: '#ddd', 
+        }, 
+      cancelText: {
+        textAlign: 'center', 
+        fontSize: 16, 
+        fontWeight: '600', 
+        color: '#333', 
+        },
   });
