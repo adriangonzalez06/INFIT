@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -8,14 +8,12 @@ import {
   Modal,
   ScrollView,
   StyleSheet,
-  Image,
-  Platform,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LottieView from 'lottie-react-native';
 
 export default function PantallaRutina({ route, navigation }) {
-  const { rutina, grupoKey } = route.params;
+  const { rutina, grupoKey, actualizarRutina } = route.params;
   const [ejercicios, setEjercicios] = useState(rutina.ejercicios || []);
   const [buscadorVisible, setBuscadorVisible] = useState(false);
   const [filtro, setFiltro] = useState('');
@@ -24,93 +22,36 @@ export default function PantallaRutina({ route, navigation }) {
   const [opcionesVisible, setOpcionesVisible] = useState(false);
   const [ejercicioSeleccionado, setEjercicioSeleccionado] = useState(null);
 
-  // Estado para los ejercicios obtenidos del backend
-  const [backendExercises, setBackendExercises] = useState({}); // { [grupo]: [ejercicios] }
+  // Animaciones Lottie
+  const ejerciciosPredefinidos = {
+    piernas: [
+      {
+        nombre: 'Sentadilla',
+        animacion: require('../assets/ejercicios/sentadilla.json'),
+      },
+    ],
+  };
 
-  // Cargar ejercicios desde el backend
-  useEffect(() => {
-    const fetchExercises = async () => {
-      try {
-        const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
-        const response = await fetch(`http://${host}:8082/api/exercises`);
-        if (response.ok) {
-          const validJson = await response.json();
-          // Agrupar por muscular_group
-          const grouped = {};
-          validJson.forEach((ex) => {
-            const group = ex.muscular_group || 'General';
-            if (!grouped[group]) {
-              grouped[group] = [];
-            }
-            grouped[group].push(ex);
-          });
-          setBackendExercises(grouped);
-        } else {
-          console.log('Error fetching exercises:', response.status);
-        }
-      } catch (error) {
-        console.error('Error fetching exercises:', error);
-      }
-    };
-
-    fetchExercises();
-  }, []);
-
-  // Añadir ejercicio
+  // Añadir ejercicio con animación incluida
   const handleAddEjercicio = (ejercicioObj) => {
     const nuevoEjercicio = {
       id: Date.now().toString(),
-      nombre: ejercicioObj.name || ejercicioObj.nombre,
-      animacion: ejercicioObj.animacion, // Legacy lottie support
-      image: ejercicioObj.image,         // New image support
-      gif: ejercicioObj.gif,             // New gif support
-      isBackend: true,
-      originalData: ejercicioObj,
+      nombre: ejercicioObj.nombre,
+      animacion: ejercicioObj.animacion,
     };
 
     const nuevaLista = [...ejercicios, nuevoEjercicio];
     setEjercicios(nuevaLista);
-
-    // Pass updated data back via navigation
-    const rutinaActualizada = { ...rutina, ejercicios: nuevaLista };
-    // We update the local state, but we also need to pass this back when going back.
-    // However, user might add multiple exercises. 
-    // Ideally we update the parent when we go back or immediately via navigate (which might pop? no, navigate pushes or finds).
-    // Using simple approach: update parent state via navigate 'merge' behavior if supported, or just navigate.
-    // But we are INSIDE the screen. We want to stay here.
-    // So we just update local state. When user goes BACK, we should send the final state? 
-    // Or send update immediately?
-    // Let's send update immediately to be safe, but via navigate 'Rutinas' might act weird if it pushes a new screen.
-    // Better: use navigation.setParams or just wait until unmount?
-    // Actually, simply calling navigation.navigate('Rutinas', ...) works if 'Rutinas' is in the stack, it might go back to it? 
-    // No, standard stack behavior pushes a new one unless using 'navigate' on existing route.
-    // React Navigation 'navigate' to existing screen in stack usually goes back to it? No, it depends on configuration.
-
-    // Safer approach for "live" update without callback:
-    // We can't easily do live update without callback or context.
-    // BUT the warning is about serialization. 
-    // We will update when we GO BACK.
-
-    // Let's just update local state here. 
-    // And override the "Go Back" button to send params.
+    actualizarRutina({ ...rutina, ejercicios: nuevaLista });
     setBuscadorVisible(false);
     setFiltro('');
-  };
-
-  // Add effect to sync with parent on go back or unmount? 
-  // Custom back button handling:
-  const handleGoBack = () => {
-    navigation.navigate('Rutinas', {
-      updatedRutina: { ...rutina, ejercicios },
-      grupoKey
-    });
   };
 
   return (
     <View style={styles.rutinaContainer}>
       {/* HEADER */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={handleGoBack}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
         </TouchableOpacity>
         <Text style={styles.title}>{rutina.nombre}</Text>
@@ -119,9 +60,9 @@ export default function PantallaRutina({ route, navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* LISTA DE EJERCICIOS AÑADIDOS A LA RUTINA */}
+      {/* LISTA DE EJERCICIOS */}
       <FlatList
-        contentContainerStyle={{ paddingTop: 0 }}
+      contentContainerStyle={{ paddingTop: 0}}
         data={ejercicios}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
@@ -132,23 +73,13 @@ export default function PantallaRutina({ route, navigation }) {
             }}
           >
             <View style={styles.ejercicioItem}>
-              {item.animacion ? (
+              {item.animacion && (
                 <LottieView
                   source={item.animacion}
                   autoPlay
                   loop
                   style={styles.iconoGif}
                 />
-              ) : item.image ? (
-                <Image
-                  source={{ uri: item.image }}
-                  style={styles.iconoGif}
-                  resizeMode="cover"
-                  resizeMethod="resize"
-                  onError={(e) => console.log(`Error loading image for ${item.nombre}:`, e.nativeEvent.error)}
-                />
-              ) : (
-                <Ionicons name="barbell-outline" size={40} color="#555" />
               )}
               <Text style={styles.ejercicioTexto}>{item.nombre}</Text>
             </View>
@@ -170,61 +101,35 @@ export default function PantallaRutina({ route, navigation }) {
               onChangeText={setFiltro}
             />
 
-            <FlatList
-              data={Object.entries(backendExercises)}
-              keyExtractor={([grupo]) => grupo}
-              initialNumToRender={5}
-              maxToRenderPerBatch={10}
-              windowSize={5}
-              removeClippedSubviews={Platform.OS === 'android'}
-              renderItem={({ item: [grupo, lista] }) => {
-                const filteredList = lista.filter((ej) =>
-                  (ej.name || '').toLowerCase().includes(filtro.toLowerCase())
-                );
+            <ScrollView>
+              {Object.entries(ejerciciosPredefinidos).map(([grupo, lista]) => (
+                <View key={grupo}>
+                  <Text style={styles.grupoTitulo}>{grupo.toUpperCase()}</Text>
 
-                if (filteredList.length === 0) return null;
-
-                return (
-                  <View>
-                    <Text style={styles.grupoTitulo}>{grupo.toUpperCase()}</Text>
-                    {filteredList.map((ejercicio) => (
+                  {lista
+                    .filter((ej) =>
+                      ej.nombre.toLowerCase().includes(filtro.toLowerCase())
+                    )
+                    .map((ejercicio) => (
                       <TouchableOpacity
-                        key={ejercicio.id || ejercicio.name}
+                        key={ejercicio.nombre}
                         style={styles.ejercicioItemModal}
                         onPress={() => handleAddEjercicio(ejercicio)}
                       >
                         <View style={styles.row}>
-                          {ejercicio.animacion ? (
-                            <LottieView
-                              source={ejercicio.animacion}
-                              autoPlay
-                              loop
-                              style={styles.iconoGif}
-                            />
-                          ) : ejercicio.image ? (
-                            <Image
-                              source={{ uri: ejercicio.image }}
-                              style={styles.iconoGif}
-                              resizeMode="cover"
-                              resizeMethod="resize" // Optimizes memory on Android
-                              onError={(e) => console.log(`Error loading modal image for ${ejercicio.name}:`, e.nativeEvent.error)}
-                            />
-                          ) : (
-                            <Ionicons name="fitness" size={40} color="#ef2b2d" />
-                          )}
-                          <Text style={{ flex: 1, flexWrap: 'wrap' }}>{ejercicio.name}</Text>
+                          <LottieView
+                            source={ejercicio.animacion}
+                            autoPlay
+                            loop
+                            style={styles.iconoGif}
+                          />
+                          <Text>{ejercicio.nombre}</Text>
                         </View>
                       </TouchableOpacity>
                     ))}
-                  </View>
-                );
-              }}
-              ListEmptyComponent={
-                <Text style={{ textAlign: 'center', padding: 20 }}>
-                  {Object.keys(backendExercises).length === 0 ? 'Cargando ejercicios...' : 'No se encontraron ejercicios.'}
-                </Text>
-              }
-            />
+                </View>
+              ))}
+            </ScrollView>
 
             <TouchableOpacity
               onPress={() => setBuscadorVisible(false)}

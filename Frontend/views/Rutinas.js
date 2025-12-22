@@ -38,7 +38,7 @@ const rutinasPredefinidas = [
   },
 ];
 
-export default function Rutinas() {
+export default function Rutinas({ route }) {
   const navigation = useNavigation();
   const [rutinas, setRutinas] = useState({ grupo1: [] });
   const [modalVisible, setModalVisible] = useState(false);
@@ -106,18 +106,25 @@ export default function Rutinas() {
     navigation.navigate('PantallaRutina', {
       rutina,
       grupoKey,
-      actualizarRutina: async (rutinaActualizada) => {
-        const nuevasRutinas = {
-          ...rutinas,
-          [grupoKey]: rutinas[grupoKey].map((r) =>
-            r.id === rutinaActualizada.id ? rutinaActualizada : r
-          ),
-        };
-        setRutinas(nuevasRutinas);
-        await guardarEnStorage(nuevasRutinas);
-      },
     });
   };
+
+  useEffect(() => {
+    if (route.params?.updatedRutina && route.params?.grupoKey) {
+      const { updatedRutina, grupoKey } = route.params;
+      const nuevasRutinas = {
+        ...rutinas,
+        [grupoKey]: rutinas[grupoKey].map((r) =>
+          r.id === updatedRutina.id ? updatedRutina : r
+        ),
+      };
+      setRutinas(nuevasRutinas);
+      guardarEnStorage(nuevasRutinas);
+
+      // Clear params to avoid double update if re-focused
+      navigation.setParams({ updatedRutina: null, grupoKey: null });
+    }
+  }, [route.params?.updatedRutina]);
 
   const handleLongPress = (rutina) => {
     setRutinaSeleccionada(rutina);
@@ -278,46 +285,46 @@ export default function Rutinas() {
       </Modal>
 
       {/* Modal de opciones (long press) */}
-<Modal visible={opcionesVisible} transparent animationType="fade">
-  <View style={styles.optionsOverlay}>
-    <View style={styles.optionsCard}>
+      <Modal visible={opcionesVisible} transparent animationType="fade">
+        <View style={styles.optionsOverlay}>
+          <View style={styles.optionsCard}>
 
-      <Text style={styles.optionsTitle}>Opciones de rutina</Text>
+            <Text style={styles.optionsTitle}>Opciones de rutina</Text>
 
-      
 
-      <TouchableOpacity
-        style={styles.optionButton}
-        onPress={() => {
-          setOpcionesVisible(false);
-          handleDuplicarRutina();
-        }}
-      >
-        <Ionicons name="copy-outline" size={22} color="#ef2b2d" />
-        <Text style={styles.optionText}>Duplicar rutina</Text>
-      </TouchableOpacity>
 
-      <TouchableOpacity
-        style={[styles.optionButton, styles.deleteButton]}
-        onPress={() => {
-          setOpcionesVisible(false);
-          handleEliminarRutina();
-        }}
-      >
-        <Ionicons name="trash-outline" size={22} color="#fff" />
-        <Text style={[styles.optionText, { color: '#fff' }]}>Eliminar rutina</Text>
-      </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.optionButton}
+              onPress={() => {
+                setOpcionesVisible(false);
+                handleDuplicarRutina();
+              }}
+            >
+              <Ionicons name="copy-outline" size={22} color="#ef2b2d" />
+              <Text style={styles.optionText}>Duplicar rutina</Text>
+            </TouchableOpacity>
 
-      <TouchableOpacity
-        style={styles.cancelButton}
-        onPress={() => setOpcionesVisible(false)}
-      >
-        <Text style={styles.cancelText}>Cancelar</Text>
-      </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.optionButton, styles.deleteButton]}
+              onPress={() => {
+                setOpcionesVisible(false);
+                handleEliminarRutina();
+              }}
+            >
+              <Ionicons name="trash-outline" size={22} color="#fff" />
+              <Text style={[styles.optionText, { color: '#fff' }]}>Eliminar rutina</Text>
+            </TouchableOpacity>
 
-    </View>
-  </View>
-</Modal>
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={() => setOpcionesVisible(false)}
+            >
+              <Text style={styles.cancelText}>Cancelar</Text>
+            </TouchableOpacity>
+
+          </View>
+        </View>
+      </Modal>
 
     </View>
   );
@@ -327,222 +334,226 @@ export default function Rutinas() {
 
 
 
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      paddingTop: 60,
-      paddingHorizontal: 20,
-      backgroundColor: '#fff',
-    },
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingTop: 60,
+    paddingHorizontal: 20,
+    backgroundColor: '#fff',
+  },
 
-    backButton: {
-      position: 'absolute',
-      top: 60,
-      left: 20,
-      zIndex: 10,
-    },
+  backButton: {
+    position: 'absolute',
+    top: 60,
+    left: 20,
+    zIndex: 10,
+  },
 
-    title: {
-      fontSize: 28,
-      fontWeight: 'bold',
-      color: '#ef2b2d',
-      marginBottom: 20,
-      textAlign: 'center',
-    },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#ef2b2d',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
 
-    searchInput: {
-      borderWidth: 1,
-      borderColor: '#ccc',
-      borderRadius: 8,
-      padding: 10,
-      marginBottom: 20,
-    },
+  searchInput: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 20,
+  },
 
-    scrollContent: {
-      paddingBottom: 40,
-    },
+  scrollContent: {
+    paddingBottom: 40,
+  },
 
-    grupoContainer: {
-      marginBottom: 30,
-    },
+  grupoContainer: {
+    marginBottom: 30,
+  },
 
-    grupoTitulo: {
-      fontSize: 18,
-      fontWeight: '600',
-      marginBottom: 10,
-      color: '#333',
-    },
+  grupoTitulo: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 10,
+    color: '#333',
+  },
 
-    rutinasRow: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 12,
-    },
+  rutinasRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
 
-    rutinaCard: {
-      width: 140,
-      height: 120,
-      borderRadius: 12,
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: 10,
-    },
+  rutinaCard: {
+    width: 140,
+    height: 120,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 10,
+  },
 
-    rutinaTexto: {
-      fontSize: 16,
-      color: '#fff',
-      fontWeight: '600',
-      marginTop: 8,
-    },
+  rutinaTexto: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: '600',
+    marginTop: 8,
+  },
 
-    rutinaSubTexto: {
-      fontSize: 12,
-      color: '#fff',
-    },
+  rutinaSubTexto: {
+    fontSize: 12,
+    color: '#fff',
+  },
 
-    addCard: {
-      width: 140,
-      height: 120,
-      borderRadius: 12,
-      borderWidth: 2,
-      borderColor: '#ef2b2d',
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: '#fff',
-    },
+  addCard: {
+    width: 140,
+    height: 120,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#ef2b2d',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
 
-    modalOverlay: {
-      flex: 1,
-      backgroundColor: 'rgba(0,0,0,0.4)',
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 
-    modalContent: {
-      backgroundColor: '#fff',
-      padding: 20,
-      borderRadius: 12,
-      width: '85%',
+  modalContent: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 12,
+    width: '85%',
 
-    },
+  },
 
-    modalTitle: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      marginBottom: 10,
-    },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
 
-    input: {
-      borderWidth: 1,
-      borderColor: '#ccc',
-      borderRadius: 8,
-      padding: 10,
-      marginBottom: 10,
-    },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 10,
+  },
 
-    sugerenciasContainer: {
-      marginBottom: 10,
-    },
+  sugerenciasContainer: {
+    marginBottom: 10,
+  },
 
-    sugerenciasTitulo: {
-      fontWeight: '600',
-      marginBottom: 5,
-    },
+  sugerenciasTitulo: {
+    fontWeight: '600',
+    marginBottom: 5,
+  },
 
-    chipsContainer: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 8,
-    },
+  chipsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
 
-    chip: {
-      borderWidth: 1,
-      borderColor: '#ccc',
-      borderRadius: 20,
-      paddingVertical: 6,
-      paddingHorizontal: 12,
-    },
+  chip: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 20,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
 
-    chipSelected: {
-      backgroundColor: '#ef2b2d',
-      borderColor: '#ef2b2d',
-    },
+  chipSelected: {
+    backgroundColor: '#ef2b2d',
+    borderColor: '#ef2b2d',
+  },
 
-    chipText: {
-      fontSize: 14,
-      color: '#333',
-    },
+  chipText: {
+    fontSize: 14,
+    color: '#333',
+  },
 
-    chipTextSelected: {
-      color: '#fff',
-    },
+  chipTextSelected: {
+    color: '#fff',
+  },
 
-    modalButtons: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginTop: 20,
-    },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+  },
 
-    modalButton: {
-      backgroundColor: '#ef2b2d',
-      paddingVertical: 10,
-      paddingHorizontal: 20,
-      borderRadius: 8,
-    },
+  modalButton: {
+    backgroundColor: '#ef2b2d',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
 
-    modalButtonText: {
-      color: '#fff',
-      fontWeight: '600',
-    },
+  modalButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
 
-    optionsOverlay: { 
-      flex: 1, 
-      backgroundColor: 'rgba(0,0,0,0.5)', 
-      justifyContent: 'center', 
-      alignItems: 'center', 
-      paddingHorizontal: 20, }, 
-      optionsCard: { width: '100%', 
-        backgroundColor: '#fff', 
-        borderRadius: 16, 
-        padding: 20, 
-        elevation: 10, }, 
+  optionsOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  optionsCard: {
+    width: '100%',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    elevation: 10,
+  },
 
-      optionsTitle: { 
-        fontSize: 20, 
-        fontWeight: '700', 
-        marginBottom: 20, 
-        textAlign: 'center', 
-        color: '#333', },
+  optionsTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 20,
+    textAlign: 'center',
+    color: '#333',
+  },
 
-      optionButton: { 
-        flexDirection: 'row', 
-        alignItems: 'center', 
-        paddingVertical: 12, 
-        paddingHorizontal: 10, 
-        borderRadius: 10, 
-        backgroundColor: '#f7f7f7', 
-        marginBottom: 12, 
-        gap: 10, 
-      }, 
-      optionText: { 
-        fontSize: 16, 
-        fontWeight: '500', 
-        color: '#333', 
-      }, 
+  optionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    backgroundColor: '#f7f7f7',
+    marginBottom: 12,
+    gap: 10,
+  },
+  optionText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+  },
 
-      deleteButton: { 
-        backgroundColor: '#ef2b2d', 
-        }, 
-      cancelButton: { 
-        marginTop: 10, 
-        paddingVertical: 12, 
-        borderRadius: 10, 
-        backgroundColor: '#ddd', 
-        }, 
-      cancelText: {
-        textAlign: 'center', 
-        fontSize: 16, 
-        fontWeight: '600', 
-        color: '#333', 
-        },
-  });
+  deleteButton: {
+    backgroundColor: '#ef2b2d',
+  },
+  cancelButton: {
+    marginTop: 10,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: '#ddd',
+  },
+  cancelText: {
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
+});
