@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput,
   SafeAreaView, Image, ImageBackground, Dimensions
@@ -13,6 +13,7 @@ import Dish from '../src/objects/Dish';
 import Alimentacion from './Alimentacion';
 import { SearchMenu } from '../src/components/SearchMenu';
 import { WeeklyItemsMenu } from '../src/components/WeeklyItemsMenu';
+import { getAllMeals } from '../src/services/MealsService';
 
 const { height } = Dimensions.get('window');
 
@@ -29,13 +30,52 @@ export default function DietView({ route }) {
   const diet = useMemo(() => Diet.from(route?.params), [route?.params]);
   console.log('diet:', diet);
 
-  {/*dishes placeholder, leer los datos de la base de datos*/ }
-  var dish1 = new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, true, true, false);
-  var dish2 = new Dish(2, "Carne", "url2", 550, ["ingrediente1", "ingrediente2"], 550, false, false, true);
-  var dish3 = new Dish(3, "Postre", "url3", 550, ["ingrediente1", "ingrediente2"], 550, true, false, false);
+  {/*dishes desde Firestore*/ }
+  const [allAvailableDishes, setAllAvailableDishes] = useState([]);
+  const [dishes, setDishes] = useState([]);
 
-  const [dishes] = useState(diet.getAllDishes ? diet.getAllDishes() : [dish1, dish2, dish3]);
-  const [allAvailableDishes] = useState([dish1, dish2, dish3]);
+  {/*cargar platos desde Firestore al montar el componente*/ }
+  useEffect(() => {
+    const loadMeals = async () => {
+      try {
+        const meals = await getAllMeals();
+        if (meals && meals.length > 0) {
+          const dishesFromDB = meals.map((meal, index) => 
+            new Dish(
+              meal.id || index,
+              meal.name,
+              meal.imgUrl || require('../assets/images/images_dish/dish_01.jpg'),
+              meal.macronutrients || 0,
+              meal.ingredients || [],
+              meal.calories || 0,
+              meal.vegetarian || false,
+              meal.vegan || false,
+              meal.gluten_free || false
+            )
+          );
+          setAllAvailableDishes(dishesFromDB);
+          const dietDishes = diet.getAllDishes ? diet.getAllDishes() : dishesFromDB.slice(0, 3);
+          setDishes(dietDishes.length > 0 ? dietDishes : dishesFromDB.slice(0, 3));
+          console.log('✅ Platos cargados en DietView:', dishesFromDB.length);
+        } else {
+          // Fallback con platos de ejemplo
+          const fallbackDishes = [
+            new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, true, true, false),
+            new Dish(2, "Carne", require('../assets/images/images_dish/dish_02.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, false, false, false),
+            new Dish(3, "Postre", require('../assets/images/images_dish/dish_03.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, false, false, false),
+          ];
+          setAllAvailableDishes(fallbackDishes);
+          setDishes(fallbackDishes);
+        }
+      } catch (error) {
+        console.error('❌ Error cargando platos:', error);
+        const dietDishes = diet.getAllDishes ? diet.getAllDishes() : [];
+        setDishes(dietDishes);
+      }
+    };
+
+    loadMeals();
+  }, [diet]);
 
 
 

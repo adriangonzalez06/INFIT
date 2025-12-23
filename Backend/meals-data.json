@@ -1,0 +1,1246 @@
+[
+  {
+    "name": "Ensalada de Pollo Grillado",
+    "description": "Pecho de pollo grillado con lechuga, tomate y zanahoria",
+    "ingredients": [
+      {
+        "name": "Pollo pechuga",
+        "portion": 150,
+        "unit": "g",
+        "kcal": 247.5,
+        "macronutrients": {
+          "protein": 46.5,
+          "carbohydrates": 0,
+          "fat": 5.4,
+          "fiber": 0
+        }
+      },
+      {
+        "name": "Lechuga",
+        "portion": 100,
+        "unit": "g",
+        "kcal": 15,
+        "macronutrients": {
+          "protein": 1.4,
+          "carbohydrates": 2.9,
+          "fat": 0.2,
+          "fiber": 1.3
+        }
+      },
+      {
+        "name": "Tomate",
+        "portion": 80,
+        "unit": "g",
+        "kcal": 14.4,
+        "macronutrients": {
+          "protein": 0.7,
+          "carbohydrates": 3.1,
+          "fat": 0.2,
+          "fiber": 1
+        }
+      },
+      {
+        "name": "Zanahoria",
+        "portion": 50,
+        "unit": "g",
+        "kcal": 20.5,
+        "macronutrients": {
+          "protein": 0.5,
+          "carbohydrates": 4.8,
+          "fat": 0.1,
+          "fiber": 1.4
+        }
+      }
+    ],
+    "macronutrients": {
+      "kcal": 297.4,
+      "protein": 49.1,
+      "carbohydrates": 10.8,
+      "fat": 5.9,
+      "fiber": 3.7
+    },
+    "vegan": false,
+    "vegetarian": false,
+    "gluten": false
+  },
+  {
+    "name": "Pasta Integral con Salsa de Tomate",
+    "description": "Pasta integral con salsa casera de tomate y hierbas",
+    "ingredients": [
+      {
+        "name": "Pasta",
+        "portion": 150,
+        "unit": "g",
+        "kcal": 196.5,
+        "macronutrients": {
+          "protein": 7.5,
+          "carbohydrates": 37.5,
+          "fat": 1.7,
+          "fiber": 3
+        }
+      },
+      {
+        "name": "Tomate",
+        "portion": 100,
+        "unit": "g",
+        "kcal": 18,
+        "macronutrients": {
+          "protein": 0.9,
+          "carbohydrates": 3.9,
+          "fat": 0.2,
+          "fiber": 1.2
+        }
+      },
+      {
+        "name": "Ajo",
+        "portion": 5,
+        "unit": "g",
+        "kcal": 7,
+        "macronutrients": {
+          "protein": 0.3,
+          "carbohydrates": 1.4,
+          "fat": 0,
+          "fiber": 0.1
+        }
+      },
+      {
+        "name": "Aceite de oliva",
+        "portion": 10,
+        "unit": "g",
+        "kcal": 88.4,
+        "macronutrients": {
+          "protein": 0,
+          "carbohydrates": 0,
+          "fat": 10,
+          "fiber": 0
+        }
+      },
+      {
+        "name": "Orégano",
+        "portion": 2,
+        "unit": "g",
+        "kcal": 5.3,
+        "macronutrients": {
+          "protein": 0.2,
+          "carbohydrates": 1.4,
+          "fat": 0.1,
+          "fiber": 0.8
+        }
+      }
+    ],
+    "macronutrients": {
+      "kcal": 315.2,
+      "protein": 8.9,
+      "carbohydrates": 44.2,
+      "fat": 11.9,
+      "fiber": 5.1
+    },
+    "vegan": true,
+    "vegetarian": true,
+    "gluten": false
+  },
+  {
+    "name": "Salmón a la Mantequilla",
+    "description": "Filete de salmón con mantequilla y limón",
+    "ingredients": [
+      {
+        "name": "Salmón",
+        "portion": 150,
+        "unit": "g",
+        "kcal": 312,
+        "macronutrients": {
+          "protein": 30,
+          "carbohydrates": 0,
+          "fat": 19.5,
+          "fiber": 0
+        }
+      },
+      {
+        "name": "Mantequilla",
+        "portion": 15,
+        "unit": "g",
+        "kcal": 107.5,
+        "macronutrients": {
+          "protein": 0.1,
+          "carbohydrates": 0,
+          "fat": 12.2,
+          "fiber": 0
+        }
+      }
+    ],
+    "macronutrients": {
+      "kcal": 419.6,
+      "protein": 30.1,
+      "carbohydrates": 0,
+      "fat": 31.6,
+      "fiber": 0
+    },
+    "vegan": false,
+    "vegetarian": false,
+    "gluten": true
+  },
+  {
+    "name": "Arroz Integral con Verduras",
+    "description": "Arroz integral salteado con zanahoria, brócoli y guisantes",
+    "ingredients": [
+      {
+        "name": "Arroz integral",
+        "portion": 150,
+        "unit": "g",
+        "kcal": 184.5,
+        "macronutrients": {
+          "protein": 4.1,
+          "carbohydrates": 39,
+          "fat": 1.7,
+          "fiber": 1.8
+        }
+      },
+      {
+        "name": "Zanahoria",
+        "portion": 50,
+        "unit": "g",
+        "kcal": 20.5,
+        "macronutrients": {
+          "protein": 0.5,
+          "carbohydrates": 4.8,
+          "fat": 0.1,
+          "fiber": 1.4
+        }
+      },
+      {
+        "name": "Brócoli",
+        "portion": 60,
+        "unit": "g",
+        "kcal": 20.4,
+        "macronutrients": {
+          "protein": 1.7,
+          "carbohydrates": 4,
+          "fat": 0.2,
+          "fiber": 1.6
+        }
+      },
+      {
+        "name": "Guisantes",
+        "portion": 60,
+        "unit": "g",
+        "kcal": 48.6,
+        "macronutrients": {
+          "protein": 3.2,
+          "carbohydrates": 8.4,
+          "fat": 0.2,
+          "fiber": 3
+        }
+      },
+      {
+        "name": "Aceite de oliva",
+        "portion": 10,
+        "unit": "g",
+        "kcal": 88.4,
+        "macronutrients": {
+          "protein": 0,
+          "carbohydrates": 0,
+          "fat": 10,
+          "fiber": 0
+        }
+      }
+    ],
+    "macronutrients": {
+      "kcal": 362.4,
+      "protein": 9.4,
+      "carbohydrates": 56.2,
+      "fat": 12.2,
+      "fiber": 7.8
+    },
+    "vegan": true,
+    "vegetarian": true,
+    "gluten": true
+  },
+  {
+    "name": "Pechuga de Pavo con Espárragos",
+    "description": "Pavo asado con espárragos a la plancha",
+    "ingredients": [
+      {
+        "name": "Pavo",
+        "portion": 150,
+        "unit": "g",
+        "kcal": 202.5,
+        "macronutrients": {
+          "protein": 43.5,
+          "carbohydrates": 0,
+          "fat": 2.3,
+          "fiber": 0
+        }
+      },
+      {
+        "name": "Espárragos",
+        "portion": 100,
+        "unit": "g",
+        "kcal": 20,
+        "macronutrients": {
+          "protein": 2.2,
+          "carbohydrates": 3.9,
+          "fat": 0.1,
+          "fiber": 2.1
+        }
+      },
+      {
+        "name": "Aceite de oliva",
+        "portion": 10,
+        "unit": "g",
+        "kcal": 88.4,
+        "macronutrients": {
+          "protein": 0,
+          "carbohydrates": 0,
+          "fat": 10,
+          "fiber": 0
+        }
+      }
+    ],
+    "macronutrients": {
+      "kcal": 310.9,
+      "protein": 45.7,
+      "carbohydrates": 3.9,
+      "fat": 12.3,
+      "fiber": 2.1
+    },
+    "vegan": false,
+    "vegetarian": false,
+    "gluten": true
+  },
+  {
+    "name": "Avena con Frutos Rojos",
+    "description": "Avena cocida con arándanos, frambuesa y miel",
+    "ingredients": [
+      {
+        "name": "Avena",
+        "portion": 50,
+        "unit": "g",
+        "kcal": 183.5,
+        "macronutrients": {
+          "protein": 7,
+          "carbohydrates": 33.3,
+          "fat": 2.5,
+          "fiber": 4
+        }
+      },
+      {
+        "name": "Arándanos",
+        "portion": 40,
+        "unit": "g",
+        "kcal": 22.8,
+        "macronutrients": {
+          "protein": 0.3,
+          "carbohydrates": 5.6,
+          "fat": 0.1,
+          "fiber": 1
+        }
+      },
+      {
+        "name": "Frambuesa",
+        "portion": 30,
+        "unit": "g",
+        "kcal": 15.6,
+        "macronutrients": {
+          "protein": 0.4,
+          "carbohydrates": 3.6,
+          "fat": 0.2,
+          "fiber": 1.9
+        }
+      },
+      {
+        "name": "Miel",
+        "portion": 15,
+        "unit": "g",
+        "kcal": 45.6,
+        "macronutrients": {
+          "protein": 0,
+          "carbohydrates": 12.3,
+          "fat": 0,
+          "fiber": 0
+        }
+      }
+    ],
+    "macronutrients": {
+      "kcal": 267.5,
+      "protein": 7.7,
+      "carbohydrates": 54.8,
+      "fat": 2.8,
+      "fiber": 6.9
+    },
+    "vegan": true,
+    "vegetarian": true,
+    "gluten": true
+  },
+  {
+    "name": "Lentejas Guisadas",
+    "description": "Lentejas con cebolla, tomate y especias",
+    "ingredients": [
+      {
+        "name": "Lentejas",
+        "portion": 150,
+        "unit": "g",
+        "kcal": 504,
+        "macronutrients": {
+          "protein": 36,
+          "carbohydrates": 84,
+          "fat": 2.7,
+          "fiber": 6
+        }
+      },
+      {
+        "name": "Cebolla",
+        "portion": 50,
+        "unit": "g",
+        "kcal": 23.5,
+        "macronutrients": {
+          "protein": 0.7,
+          "carbohydrates": 5,
+          "fat": 0.1,
+          "fiber": 0.5
+        }
+      },
+      {
+        "name": "Tomate",
+        "portion": 80,
+        "unit": "g",
+        "kcal": 14.4,
+        "macronutrients": {
+          "protein": 0.7,
+          "carbohydrates": 3.1,
+          "fat": 0.2,
+          "fiber": 1
+        }
+      },
+      {
+        "name": "Ajo",
+        "portion": 5,
+        "unit": "g",
+        "kcal": 7,
+        "macronutrients": {
+          "protein": 0.3,
+          "carbohydrates": 1.4,
+          "fat": 0,
+          "fiber": 0.1
+        }
+      },
+      {
+        "name": "Aceite de oliva",
+        "portion": 10,
+        "unit": "g",
+        "kcal": 88.4,
+        "macronutrients": {
+          "protein": 0,
+          "carbohydrates": 0,
+          "fat": 10,
+          "fiber": 0
+        }
+      }
+    ],
+    "macronutrients": {
+      "kcal": 637.3,
+      "protein": 37.8,
+      "carbohydrates": 93.5,
+      "fat": 13,
+      "fiber": 7.5
+    },
+    "vegan": true,
+    "vegetarian": true,
+    "gluten": true
+  },
+  {
+    "name": "Huevos Revueltos con Champiñones",
+    "description": "Huevos revueltos con champiñones y pan integral",
+    "ingredients": [
+      {
+        "name": "Huevos",
+        "portion": 2,
+        "unit": "g",
+        "kcal": 3.1,
+        "macronutrients": {
+          "protein": 0.3,
+          "carbohydrates": 0,
+          "fat": 0.2,
+          "fiber": 0
+        }
+      },
+      {
+        "name": "Champiñones",
+        "portion": 100,
+        "unit": "g",
+        "kcal": 28,
+        "macronutrients": {
+          "protein": 2.4,
+          "carbohydrates": 4,
+          "fat": 0.3,
+          "fiber": 3
+        }
+      },
+      {
+        "name": "Pan integral",
+        "portion": 50,
+        "unit": "g",
+        "kcal": 123.5,
+        "macronutrients": {
+          "protein": 6.5,
+          "carbohydrates": 20.5,
+          "fat": 2.1,
+          "fiber": 3.5
+        }
+      }
+    ],
+    "macronutrients": {
+      "kcal": 154.6,
+      "protein": 9.2,
+      "carbohydrates": 24.5,
+      "fat": 2.6,
+      "fiber": 6.5
+    },
+    "vegan": false,
+    "vegetarian": true,
+    "gluten": false
+  },
+  {
+    "name": "Pechuga de Pollo con Quinoa",
+    "description": "Pollo a la plancha con quinoa y vegetales",
+    "ingredients": [
+      {
+        "name": "Pollo pechuga",
+        "portion": 150,
+        "unit": "g",
+        "kcal": 247.5,
+        "macronutrients": {
+          "protein": 46.5,
+          "carbohydrates": 0,
+          "fat": 5.4,
+          "fiber": 0
+        }
+      },
+      {
+        "name": "Quinoa",
+        "portion": 80,
+        "unit": "g",
+        "kcal": 96,
+        "macronutrients": {
+          "protein": 3.5,
+          "carbohydrates": 16.8,
+          "fat": 1.5,
+          "fiber": 2.2
+        }
+      },
+      {
+        "name": "Pimiento rojo",
+        "portion": 60,
+        "unit": "g",
+        "kcal": 18.6,
+        "macronutrients": {
+          "protein": 0.6,
+          "carbohydrates": 3.6,
+          "fat": 0.2,
+          "fiber": 1.3
+        }
+      },
+      {
+        "name": "Calabacín",
+        "portion": 100,
+        "unit": "g",
+        "kcal": 31,
+        "macronutrients": {
+          "protein": 1.3,
+          "carbohydrates": 6,
+          "fat": 0.2,
+          "fiber": 1.3
+        }
+      }
+    ],
+    "macronutrients": {
+      "kcal": 393.1,
+      "protein": 51.9,
+      "carbohydrates": 26.4,
+      "fat": 7.3,
+      "fiber": 4.8
+    },
+    "vegan": false,
+    "vegetarian": false,
+    "gluten": true
+  },
+  {
+    "name": "Merluza al Horno",
+    "description": "Merluza horneada con aceite de oliva y hierbas aromáticas",
+    "ingredients": [
+      {
+        "name": "Merluza",
+        "portion": 150,
+        "unit": "g",
+        "kcal": 129,
+        "macronutrients": {
+          "protein": 25.5,
+          "carbohydrates": 0,
+          "fat": 3,
+          "fiber": 0
+        }
+      },
+      {
+        "name": "Aceite de oliva",
+        "portion": 10,
+        "unit": "g",
+        "kcal": 88.4,
+        "macronutrients": {
+          "protein": 0,
+          "carbohydrates": 0,
+          "fat": 10,
+          "fiber": 0
+        }
+      },
+      {
+        "name": "Romero",
+        "portion": 2,
+        "unit": "g",
+        "kcal": 2.6,
+        "macronutrients": {
+          "protein": 0.1,
+          "carbohydrates": 0.4,
+          "fat": 0.1,
+          "fiber": 0.3
+        }
+      }
+    ],
+    "macronutrients": {
+      "kcal": 220,
+      "protein": 25.6,
+      "carbohydrates": 0.4,
+      "fat": 13.1,
+      "fiber": 0.3
+    },
+    "vegan": false,
+    "vegetarian": false,
+    "gluten": true
+  },
+  {
+    "name": "Garbanzos Tostados con Vegetales",
+    "description": "Garbanzos cocidos con zanahoria, cebolla y especias",
+    "ingredients": [
+      {
+        "name": "Garbanzos secos",
+        "portion": 100,
+        "unit": "g",
+        "kcal": 361,
+        "macronutrients": {
+          "protein": 18,
+          "carbohydrates": 61,
+          "fat": 5,
+          "fiber": 6
+        }
+      },
+      {
+        "name": "Zanahoria",
+        "portion": 60,
+        "unit": "g",
+        "kcal": 24.6,
+        "macronutrients": {
+          "protein": 0.5,
+          "carbohydrates": 5.8,
+          "fat": 0.1,
+          "fiber": 1.7
+        }
+      },
+      {
+        "name": "Cebolla",
+        "portion": 50,
+        "unit": "g",
+        "kcal": 23.5,
+        "macronutrients": {
+          "protein": 0.7,
+          "carbohydrates": 5,
+          "fat": 0.1,
+          "fiber": 0.5
+        }
+      },
+      {
+        "name": "Tomate",
+        "portion": 80,
+        "unit": "g",
+        "kcal": 14.4,
+        "macronutrients": {
+          "protein": 0.7,
+          "carbohydrates": 3.1,
+          "fat": 0.2,
+          "fiber": 1
+        }
+      }
+    ],
+    "macronutrients": {
+      "kcal": 423.5,
+      "protein": 20,
+      "carbohydrates": 74.9,
+      "fat": 5.4,
+      "fiber": 9.1
+    },
+    "vegan": true,
+    "vegetarian": true,
+    "gluten": true
+  },
+  {
+    "name": "Yogur Griego con Granola",
+    "description": "Yogur griego natural con granola casera y miel",
+    "ingredients": [
+      {
+        "name": "Yogur griego natural",
+        "portion": 150,
+        "unit": "g",
+        "kcal": 88.5,
+        "macronutrients": {
+          "protein": 15,
+          "carbohydrates": 5.4,
+          "fat": 0.6,
+          "fiber": 0
+        }
+      },
+      {
+        "name": "Almendras",
+        "portion": 30,
+        "unit": "g",
+        "kcal": 173.7,
+        "macronutrients": {
+          "protein": 6.3,
+          "carbohydrates": 6.6,
+          "fat": 15,
+          "fiber": 3.8
+        }
+      },
+      {
+        "name": "Avena",
+        "portion": 30,
+        "unit": "g",
+        "kcal": 110.1,
+        "macronutrients": {
+          "protein": 4.2,
+          "carbohydrates": 19.9,
+          "fat": 1.5,
+          "fiber": 2.4
+        }
+      },
+      {
+        "name": "Miel",
+        "portion": 15,
+        "unit": "g",
+        "kcal": 45.6,
+        "macronutrients": {
+          "protein": 0,
+          "carbohydrates": 12.3,
+          "fat": 0,
+          "fiber": 0
+        }
+      }
+    ],
+    "macronutrients": {
+      "kcal": 417.9,
+      "protein": 25.5,
+      "carbohydrates": 44.3,
+      "fat": 17.1,
+      "fiber": 6.2
+    },
+    "vegan": false,
+    "vegetarian": true,
+    "gluten": true
+  },
+  {
+    "name": "Ensalada de Quinoa",
+    "description": "Quinoa con tomate, pepino, cebolla y aderezo de limón",
+    "ingredients": [
+      {
+        "name": "Quinoa",
+        "portion": 100,
+        "unit": "g",
+        "kcal": 120,
+        "macronutrients": {
+          "protein": 4.4,
+          "carbohydrates": 21,
+          "fat": 1.9,
+          "fiber": 2.8
+        }
+      },
+      {
+        "name": "Tomate",
+        "portion": 100,
+        "unit": "g",
+        "kcal": 18,
+        "macronutrients": {
+          "protein": 0.9,
+          "carbohydrates": 3.9,
+          "fat": 0.2,
+          "fiber": 1.2
+        }
+      },
+      {
+        "name": "Pepino",
+        "portion": 80,
+        "unit": "g",
+        "kcal": 12.8,
+        "macronutrients": {
+          "protein": 0.6,
+          "carbohydrates": 2.9,
+          "fat": 0.1,
+          "fiber": 0.4
+        }
+      },
+      {
+        "name": "Cebolla",
+        "portion": 40,
+        "unit": "g",
+        "kcal": 18.8,
+        "macronutrients": {
+          "protein": 0.6,
+          "carbohydrates": 4,
+          "fat": 0.1,
+          "fiber": 0.4
+        }
+      },
+      {
+        "name": "Aceite de oliva",
+        "portion": 15,
+        "unit": "g",
+        "kcal": 132.6,
+        "macronutrients": {
+          "protein": 0,
+          "carbohydrates": 0,
+          "fat": 15,
+          "fiber": 0
+        }
+      }
+    ],
+    "macronutrients": {
+      "kcal": 302.2,
+      "protein": 6.4,
+      "carbohydrates": 31.8,
+      "fat": 17.3,
+      "fiber": 4.8
+    },
+    "vegan": true,
+    "vegetarian": true,
+    "gluten": true
+  },
+  {
+    "name": "Atún a la Plancha",
+    "description": "Filete de atún con patata dulce y brócoli",
+    "ingredients": [
+      {
+        "name": "Atún",
+        "portion": 150,
+        "unit": "g",
+        "kcal": 198,
+        "macronutrients": {
+          "protein": 42,
+          "carbohydrates": 0,
+          "fat": 0.9,
+          "fiber": 0
+        }
+      },
+      {
+        "name": "Boniato",
+        "portion": 150,
+        "unit": "g",
+        "kcal": 228,
+        "macronutrients": {
+          "protein": 3.3,
+          "carbohydrates": 48,
+          "fat": 1.4,
+          "fiber": 4.5
+        }
+      },
+      {
+        "name": "Brócoli",
+        "portion": 100,
+        "unit": "g",
+        "kcal": 34,
+        "macronutrients": {
+          "protein": 2.8,
+          "carbohydrates": 6.6,
+          "fat": 0.4,
+          "fiber": 2.6
+        }
+      }
+    ],
+    "macronutrients": {
+      "kcal": 460,
+      "protein": 48.1,
+      "carbohydrates": 54.6,
+      "fat": 2.6,
+      "fiber": 7.1
+    },
+    "vegan": false,
+    "vegetarian": false,
+    "gluten": true
+  },
+  {
+    "name": "Tostadas de Pavo",
+    "description": "Pan integral tostado con pavo desmenuzado y tomate",
+    "ingredients": [
+      {
+        "name": "Pan integral",
+        "portion": 100,
+        "unit": "g",
+        "kcal": 247,
+        "macronutrients": {
+          "protein": 13,
+          "carbohydrates": 41,
+          "fat": 4.2,
+          "fiber": 7
+        }
+      },
+      {
+        "name": "Pavo",
+        "portion": 100,
+        "unit": "g",
+        "kcal": 135,
+        "macronutrients": {
+          "protein": 29,
+          "carbohydrates": 0,
+          "fat": 1.5,
+          "fiber": 0
+        }
+      },
+      {
+        "name": "Tomate",
+        "portion": 80,
+        "unit": "g",
+        "kcal": 14.4,
+        "macronutrients": {
+          "protein": 0.7,
+          "carbohydrates": 3.1,
+          "fat": 0.2,
+          "fiber": 1
+        }
+      }
+    ],
+    "macronutrients": {
+      "kcal": 396.4,
+      "protein": 42.7,
+      "carbohydrates": 44.1,
+      "fat": 5.9,
+      "fiber": 8
+    },
+    "vegan": false,
+    "vegetarian": false,
+    "gluten": false
+  },
+  {
+    "name": "Batido Proteico de Frutas",
+    "description": "Batido con plátano, fresas y yogur natural",
+    "ingredients": [
+      {
+        "name": "Plátano",
+        "portion": 100,
+        "unit": "g",
+        "kcal": 89,
+        "macronutrients": {
+          "protein": 1.1,
+          "carbohydrates": 20,
+          "fat": 0.3,
+          "fiber": 3
+        }
+      },
+      {
+        "name": "Fresas",
+        "portion": 80,
+        "unit": "g",
+        "kcal": 28.8,
+        "macronutrients": {
+          "protein": 0.6,
+          "carbohydrates": 5.6,
+          "fat": 0.5,
+          "fiber": 1.6
+        }
+      },
+      {
+        "name": "Yogur natural",
+        "portion": 150,
+        "unit": "g",
+        "kcal": 88.5,
+        "macronutrients": {
+          "protein": 15,
+          "carbohydrates": 5.4,
+          "fat": 4.9,
+          "fiber": 0
+        }
+      },
+      {
+        "name": "Avena",
+        "portion": 30,
+        "unit": "g",
+        "kcal": 110.1,
+        "macronutrients": {
+          "protein": 4.2,
+          "carbohydrates": 19.9,
+          "fat": 1.5,
+          "fiber": 2.4
+        }
+      }
+    ],
+    "macronutrients": {
+      "kcal": 316.4,
+      "protein": 20.9,
+      "carbohydrates": 51,
+      "fat": 7.2,
+      "fiber": 7
+    },
+    "vegan": false,
+    "vegetarian": true,
+    "gluten": true
+  },
+  {
+    "name": "Carne de Res Magra con Vegetales",
+    "description": "Filete de res magra con zanahoria y repollo salteado",
+    "ingredients": [
+      {
+        "name": "Carne de res magra",
+        "portion": 150,
+        "unit": "g",
+        "kcal": 264,
+        "macronutrients": {
+          "protein": 30.3,
+          "carbohydrates": 0,
+          "fat": 15.9,
+          "fiber": 0
+        }
+      },
+      {
+        "name": "Zanahoria",
+        "portion": 100,
+        "unit": "g",
+        "kcal": 41,
+        "macronutrients": {
+          "protein": 0.9,
+          "carbohydrates": 9.6,
+          "fat": 0.2,
+          "fiber": 2.8
+        }
+      },
+      {
+        "name": "Repollo",
+        "portion": 150,
+        "unit": "g",
+        "kcal": 37.5,
+        "macronutrients": {
+          "protein": 2,
+          "carbohydrates": 8.7,
+          "fat": 0.2,
+          "fiber": 3.8
+        }
+      },
+      {
+        "name": "Aceite de oliva",
+        "portion": 10,
+        "unit": "g",
+        "kcal": 88.4,
+        "macronutrients": {
+          "protein": 0,
+          "carbohydrates": 0,
+          "fat": 10,
+          "fiber": 0
+        }
+      }
+    ],
+    "macronutrients": {
+      "kcal": 430.9,
+      "protein": 33.1,
+      "carbohydrates": 18.3,
+      "fat": 26.2,
+      "fiber": 6.5
+    },
+    "vegan": false,
+    "vegetarian": false,
+    "gluten": true
+  },
+  {
+    "name": "Sopa de Verduras",
+    "description": "Caldo de pollo con zanahoria, calabacín y cebolla",
+    "ingredients": [
+      {
+        "name": "Caldo de pollo",
+        "portion": 300,
+        "unit": "g",
+        "kcal": 45,
+        "macronutrients": {
+          "protein": 4.5,
+          "carbohydrates": 3,
+          "fat": 1.5,
+          "fiber": 0
+        }
+      },
+      {
+        "name": "Zanahoria",
+        "portion": 80,
+        "unit": "g",
+        "kcal": 32.8,
+        "macronutrients": {
+          "protein": 0.7,
+          "carbohydrates": 7.7,
+          "fat": 0.2,
+          "fiber": 2.2
+        }
+      },
+      {
+        "name": "Calabacín",
+        "portion": 100,
+        "unit": "g",
+        "kcal": 31,
+        "macronutrients": {
+          "protein": 1.3,
+          "carbohydrates": 6,
+          "fat": 0.2,
+          "fiber": 1.3
+        }
+      },
+      {
+        "name": "Cebolla",
+        "portion": 50,
+        "unit": "g",
+        "kcal": 23.5,
+        "macronutrients": {
+          "protein": 0.7,
+          "carbohydrates": 5,
+          "fat": 0.1,
+          "fiber": 0.5
+        }
+      }
+    ],
+    "macronutrients": {
+      "kcal": 132.3,
+      "protein": 7.2,
+      "carbohydrates": 21.7,
+      "fat": 2,
+      "fiber": 4
+    },
+    "vegan": false,
+    "vegetarian": false,
+    "gluten": true
+  },
+  {
+    "name": "Arroz Blanco con Pollo",
+    "description": "Pollo guisado con arroz blanco y guisantes",
+    "ingredients": [
+      {
+        "name": "Arroz blanco",
+        "portion": 150,
+        "unit": "g",
+        "kcal": 195,
+        "macronutrients": {
+          "protein": 4.1,
+          "carbohydrates": 42,
+          "fat": 0.4,
+          "fiber": 0.4
+        }
+      },
+      {
+        "name": "Pollo pechuga",
+        "portion": 100,
+        "unit": "g",
+        "kcal": 165,
+        "macronutrients": {
+          "protein": 31,
+          "carbohydrates": 0,
+          "fat": 3.6,
+          "fiber": 0
+        }
+      },
+      {
+        "name": "Guisantes",
+        "portion": 60,
+        "unit": "g",
+        "kcal": 48.6,
+        "macronutrients": {
+          "protein": 3.2,
+          "carbohydrates": 8.4,
+          "fat": 0.2,
+          "fiber": 3
+        }
+      },
+      {
+        "name": "Cebolla",
+        "portion": 40,
+        "unit": "g",
+        "kcal": 18.8,
+        "macronutrients": {
+          "protein": 0.6,
+          "carbohydrates": 4,
+          "fat": 0.1,
+          "fiber": 0.4
+        }
+      }
+    ],
+    "macronutrients": {
+      "kcal": 427.4,
+      "protein": 38.9,
+      "carbohydrates": 54.4,
+      "fat": 4.4,
+      "fiber": 3.9
+    },
+    "vegan": false,
+    "vegetarian": false,
+    "gluten": true
+  },
+  {
+    "name": "Smoothie Bowl",
+    "description": "Yogur griego congelado con granola, arándanos y coco",
+    "ingredients": [
+      {
+        "name": "Yogur griego natural",
+        "portion": 150,
+        "unit": "g",
+        "kcal": 88.5,
+        "macronutrients": {
+          "protein": 15,
+          "carbohydrates": 5.4,
+          "fat": 0.6,
+          "fiber": 0
+        }
+      },
+      {
+        "name": "Arándanos",
+        "portion": 60,
+        "unit": "g",
+        "kcal": 34.2,
+        "macronutrients": {
+          "protein": 0.4,
+          "carbohydrates": 8.4,
+          "fat": 0.2,
+          "fiber": 1.4
+        }
+      },
+      {
+        "name": "Coco seco",
+        "portion": 20,
+        "unit": "g",
+        "kcal": 131.8,
+        "macronutrients": {
+          "protein": 1.4,
+          "carbohydrates": 4.8,
+          "fat": 13,
+          "fiber": 1.8
+        }
+      },
+      {
+        "name": "Almendras",
+        "portion": 30,
+        "unit": "g",
+        "kcal": 173.7,
+        "macronutrients": {
+          "protein": 6.3,
+          "carbohydrates": 6.6,
+          "fat": 15,
+          "fiber": 3.8
+        }
+      }
+    ],
+    "macronutrients": {
+      "kcal": 428.2,
+      "protein": 23.1,
+      "carbohydrates": 25.2,
+      "fat": 28.8,
+      "fiber": 7
+    },
+    "vegan": false,
+    "vegetarian": true,
+    "gluten": true
+  }
+]

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput,
   SafeAreaView, Image, ImageBackground, Animated, Dimensions, FlatList, Alert
@@ -13,6 +13,7 @@ import Dish from '../src/objects/Dish';
 import { SearchMenu } from '../src/components/SearchMenu';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Alimentacion from './Alimentacion';
+import { getAllMeals } from '../src/services/MealsService';
 
 import style from './stylesheet';
 import colors from './colors';
@@ -23,17 +24,6 @@ export default function AddDietMenu({ route }) {
 
   const navigation = useNavigation();
   const { height } = Dimensions.get('window');
-
-  {/*platos placeholder, leer los datos de la base de datos*/ }
-  let dish1 = new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, true, true, false);
-  let dish2 = new Dish(2, "Carne", require('../assets/images/images_dish/dish_02.jpg'), 550, ["ingrediente1", "ingrediente2"], 550, false, false, true);
-  let dish3 = new Dish(3, "Postre", require('../assets/images/images_dish/dish_03.jpg'), 550, ["ingrediente1", "ingrediente2"], 550, true, false, false);
-  let dish4 = new Dish(4, "Pescado", require('../assets/images/images_dish/dish_04.jpg'), 600, ["ingrediente1", "ingrediente2"], 600, false, false, true);
-  let dish5 = new Dish(5, "Sopa", require('../assets/images/images_dish/dish_05.jpg'), 300, ["ingrediente1", "ingrediente2"], 300, true, true, false);
-  let dish6 = new Dish(6, "Pasta", require('../assets/images/images_dish/dish_06.jpg'), 700, ["ingrediente1", "ingrediente2"], 700, false, true, false);
-
-
-  //console.log("test get name: ", dish1.getName());
 
   {/*array de dietas al que añadir la dieta*/ }
   // Asegurarse de que addingGroup sea siempre un array (maneja route.params undefined/null y valores no array)
@@ -48,8 +38,57 @@ export default function AddDietMenu({ route }) {
   let creatingRecipe = false;
   if (diet.getName() == null) creatingRecipe = true;
 
-  {/*array de todos los platos*/ }
-  const allAvailableDishes = [dish1, dish2, dish3, dish4, dish5, dish6];
+  {/*array de todos los platos desde Firestore*/ }
+  const [allAvailableDishes, setAllAvailableDishes] = useState([]);
+
+  {/*cargar platos desde Firestore al montar el componente*/ }
+  useEffect(() => {
+    const loadMeals = async () => {
+      try {
+        const meals = await getAllMeals();
+        if (meals && meals.length > 0) {
+          const dishesFromDB = meals.map((meal, index) => 
+            new Dish(
+              meal.id || index,
+              meal.name,
+              meal.imgUrl || require('../assets/images/images_dish/dish_01.jpg'),
+              meal.macronutrients || 0,
+              meal.ingredients || [],
+              meal.calories || 0,
+              meal.vegetarian || false,
+              meal.vegan || false,
+              meal.gluten_free || false
+            )
+          );
+          setAllAvailableDishes(dishesFromDB);
+          console.log('✅ Platos cargados en AddDietMenu:', dishesFromDB.length);
+        } else {
+          // Si no hay platos de Firestore, usar fallback
+          const fallbackDishes = [
+            new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, true, true, false),
+            new Dish(2, "Carne", require('../assets/images/images_dish/dish_02.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, false, false, false),
+            new Dish(3, "Postre", require('../assets/images/images_dish/dish_03.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, false, false, false),
+            new Dish(4, "Pescado", require('../assets/images/images_dish/dish_04.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, false, false, false),
+            new Dish(5, "Sopa", require('../assets/images/images_dish/dish_05.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, true, true, false),
+            new Dish(6, "Pasta", require('../assets/images/images_dish/dish_06.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, false, false, false),
+          ];
+          setAllAvailableDishes(fallbackDishes);
+          console.log('⚠️  Usando platos de fallback');
+        }
+      } catch (error) {
+        console.error('❌ Error cargando platos:', error);
+        // Fallback en caso de error
+        const fallbackDishes = [
+          new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, true, true, false),
+          new Dish(2, "Carne", require('../assets/images/images_dish/dish_02.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, false, false, false),
+          new Dish(3, "Postre", require('../assets/images/images_dish/dish_03.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, false, false, false),
+        ];
+        setAllAvailableDishes(fallbackDishes);
+      }
+    };
+
+    loadMeals();
+  }, []);
 
   {/*datos de la dieta*/ }
   // selectedDay: 0 = Lunes, 1 = Martes, ... 6 = Domingo
