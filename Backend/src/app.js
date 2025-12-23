@@ -40,6 +40,8 @@ try {
   app.use('/api/freeUsers', freeusersRouter);
   const exercisesRouter = require('./routes/exercises');
   app.use('/api/exercises', exercisesRouter);
+  const routinesRouter = require('./routes/routines');
+  app.use('/api/routines', routinesRouter);
 } catch (e) {
   console.error('Error cargando routes/users.routes:', e);
 }

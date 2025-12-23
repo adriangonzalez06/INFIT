@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput, Platform, Alert
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 
 const SUGERENCIAS = {
   piernas: ['Sentadillas', 'Zancadas', 'Peso muerto rumano'],
@@ -18,21 +19,87 @@ const rutinasPredefinidas = [
   {
     id: 'piernas',
     nombre: 'Piernas explosivas',
-    ejercicios: ['Sentadillas', 'Zancadas', 'Peso muerto rumano'],
+    ejercicios: [
+      {
+        id: 'p1',
+        nombre: 'Barbell Squat',
+        muscular_group: 'quadriceps',
+        difficulty: 'intermediate',
+        image: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/barbell/Barbell_Squat/0.jpg'
+      },
+      {
+        id: 'p2',
+        nombre: 'Barbell Walking Lunge',
+        muscular_group: 'quadriceps',
+        difficulty: 'intermediate',
+        image: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/barbell/Barbell_Walking_Lunge/0.jpg'
+      },
+      {
+        id: 'p3',
+        nombre: 'Romanian Deadlift',
+        muscular_group: 'hamstrings',
+        difficulty: 'intermediate',
+        image: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/barbell/Romanian_Deadlift/0.jpg'
+      }
+    ],
     dificultad: 'Intermedio',
     color: '#ef2b2d',
   },
   {
     id: 'espalda',
     nombre: 'Espalda fuerte',
-    ejercicios: ['Dominadas', 'Remo con barra', 'Peso muerto'],
+    ejercicios: [
+      {
+        id: 'e1',
+        nombre: 'Pull-up',
+        muscular_group: 'lats',
+        difficulty: 'intermediate',
+        image: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/body_weight/Pull-up/0.jpg'
+      },
+      {
+        id: 'e2',
+        nombre: 'Bent Over Barbell Row',
+        muscular_group: 'middle back',
+        difficulty: 'beginner',
+        image: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/barbell/Bent_Over_Barbell_Row/0.jpg'
+      },
+      {
+        id: 'e3',
+        nombre: 'Deadlift',
+        muscular_group: 'lower back',
+        difficulty: 'intermediate',
+        image: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/barbell/Deadlift/0.jpg'
+      }
+    ],
     dificultad: 'Avanzado',
     color: '#2a9d8f',
   },
   {
     id: 'pecho',
     nombre: 'Pecho definido',
-    ejercicios: ['Press banca', 'Flexiones', 'Press inclinado'],
+    ejercicios: [
+      {
+        id: 'c1',
+        nombre: 'Barbell Bench Press',
+        muscular_group: 'chest',
+        difficulty: 'intermediate',
+        image: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/barbell/Barbell_Bench_Press_-_Medium_Grip/0.jpg'
+      },
+      {
+        id: 'c2',
+        nombre: 'Pushups',
+        muscular_group: 'chest',
+        difficulty: 'beginner',
+        image: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/body_weight/Pushups/0.jpg'
+      },
+      {
+        id: 'c3',
+        nombre: 'Incline Dumbbell Flyes',
+        muscular_group: 'chest',
+        difficulty: 'beginner',
+        image: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/dumbbell/Incline_Dumbbell_Flyes/0.jpg'
+      }
+    ],
     dificultad: 'Principiante',
     color: '#f4a261',
   },
@@ -49,16 +116,50 @@ export default function Rutinas({ route }) {
   const [busqueda, setBusqueda] = useState('');
   const [opcionesVisible, setOpcionesVisible] = useState(false);
   const [rutinaSeleccionada, setRutinaSeleccionada] = useState(null);
+  const [userId, setUserId] = useState(null);
+
+  const handleVolverInicio = () => {
+    navigation.navigate('MainTabs');
+  };
+
+  // Helper para URL
+  const getBackendUrl = (path) => {
+    const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+    return `http://${host}:8082/api${path}`;
+  };
 
   useEffect(() => {
-    const cargarRutinas = async () => {
-      const data = await AsyncStorage.getItem('rutinas');
-      if (data) {
-        setRutinas(JSON.parse(data));
+    const init = async () => {
+      try {
+        const id = await AsyncStorage.getItem('userId');
+        if (id) {
+          setUserId(id);
+          fetchRutinas(id);
+        }
+      } catch (e) {
+        console.error('Error obteniendo userId:', e);
       }
     };
-    cargarRutinas();
+    init();
   }, []);
+
+  const fetchRutinas = async (id) => {
+    try {
+      const url = getBackendUrl(`/routines/${id}`);
+      const response = await axios.get(url);
+      if (response.data) {
+        // Map backend 'exercises' to frontend 'ejercicios'
+        const mappedRoutines = response.data.map(r => ({
+          ...r,
+          ejercicios: r.exercises || [],
+          nombre: r.name // Ensure name is also available as nombre
+        }));
+        setRutinas({ grupo1: mappedRoutines });
+      }
+    } catch (error) {
+      console.log('Error cargando rutinas:', error.message);
+    }
+  };
 
 
   useEffect(() => {
@@ -68,9 +169,7 @@ export default function Rutinas({ route }) {
     setSugerencias(palabraClave ? SUGERENCIAS[palabraClave] : []);
   }, [nombreRutina]);
 
-  const guardarEnStorage = async (nuevasRutinas) => {
-    await AsyncStorage.setItem('rutinas', JSON.stringify(nuevasRutinas));
-  };
+  /* Removed guardarEnStorage as we use Backend API now */
 
   const handleAddRutina = (grupo) => {
     setGrupoActivo(grupo);
@@ -78,23 +177,39 @@ export default function Rutinas({ route }) {
   };
 
   const handleGuardarRutina = async () => {
-    if (!nombreRutina.trim()) return;
+    if (!nombreRutina.trim() || !userId) return;
 
     const nuevaRutina = {
-      id: Date.now().toString(),
-      nombre: nombreRutina.trim(),
-      ejercicios: sugerencias,
-      dificultad: dificultad || 'Sin definir',
+      name: nombreRutina.trim(),
+      exercises: sugerencias,
+      day: dificultad || 'Sin definir',
       color: '#264653',
     };
 
-    const nuevasRutinas = {
-      ...rutinas,
-      [grupoActivo]: [...rutinas[grupoActivo], nuevaRutina],
-    };
+    try {
+      const url = getBackendUrl(`/routines/${userId}`);
+      const response = await axios.post(url, nuevaRutina);
 
-    setRutinas(nuevasRutinas);
-    await guardarEnStorage(nuevasRutinas);
+      if (response.status === 201) {
+        // Mapping back for frontend compat
+        const rutinaCreada = {
+          ...nuevaRutina,
+          id: response.data.id,
+          nombre: nuevaRutina.name,
+          dificultad: nuevaRutina.day
+        };
+
+        const nuevasRutinas = {
+          ...rutinas,
+          [grupoActivo]: [...rutinas[grupoActivo], rutinaCreada],
+        };
+
+        setRutinas(nuevasRutinas);
+      }
+    } catch (error) {
+      console.error('Error creando rutina:', error);
+      Alert.alert('Error', 'No se pudo crear la rutina');
+    }
 
     setNombreRutina('');
     setSugerencias([]);
@@ -111,17 +226,8 @@ export default function Rutinas({ route }) {
 
   useEffect(() => {
     if (route.params?.updatedRutina && route.params?.grupoKey) {
-      const { updatedRutina, grupoKey } = route.params;
-      const nuevasRutinas = {
-        ...rutinas,
-        [grupoKey]: rutinas[grupoKey].map((r) =>
-          r.id === updatedRutina.id ? updatedRutina : r
-        ),
-      };
-      setRutinas(nuevasRutinas);
-      guardarEnStorage(nuevasRutinas);
-
-      // Clear params to avoid double update if re-focused
+      // Refresh from backend to ensure consistency
+      if (userId) fetchRutinas(userId);
       navigation.setParams({ updatedRutina: null, grupoKey: null });
     }
   }, [route.params?.updatedRutina]);
@@ -132,30 +238,54 @@ export default function Rutinas({ route }) {
   };
 
   const handleEliminarRutina = async () => {
-    const nuevasRutinas = {
-      ...rutinas,
-      grupo1: rutinas.grupo1.filter((r) => r.id !== rutinaSeleccionada.id),
-    };
-    setRutinas(nuevasRutinas);
-    await guardarEnStorage(nuevasRutinas);
+    if (!rutinaSeleccionada || !userId) return;
+
+    try {
+      const url = getBackendUrl(`/routines/${userId}/${rutinaSeleccionada.id}`);
+      await axios.delete(url);
+
+      const nuevasRutinas = {
+        ...rutinas,
+        grupo1: rutinas.grupo1.filter((r) => r.id !== rutinaSeleccionada.id),
+      };
+      setRutinas(nuevasRutinas);
+    } catch (error) {
+      console.error('Error eliminando rutina:', error);
+      Alert.alert('Error', 'No se pudo eliminar la rutina');
+    }
     setOpcionesVisible(false);
   };
 
   const handleDuplicarRutina = async () => {
-    const copia = { ...rutinaSeleccionada, id: Date.now().toString() };
-    const nuevasRutinas = {
-      ...rutinas,
-      grupo1: [...rutinas.grupo1, copia],
-    };
-    setRutinas(nuevasRutinas);
-    await guardarEnStorage(nuevasRutinas);
+    if (!rutinaSeleccionada || !userId) return;
+
+    try {
+      const nuevaRutina = {
+        name: `${rutinaSeleccionada.nombre || rutinaSeleccionada.name} (Copia)`,
+        day: rutinaSeleccionada.dificultad || 'Sin definir',
+        exercises: rutinaSeleccionada.ejercicios || []
+      };
+
+      const url = getBackendUrl(`/routines/${userId}`);
+      const response = await axios.post(url, nuevaRutina);
+
+      if (response.status === 201) {
+        fetchRutinas(userId);
+      }
+    } catch (error) {
+      console.error('Error duplicando rutina:', error);
+    }
     setOpcionesVisible(false);
   };
 
   const renderGrupo = (titulo, rutinasGrupo, grupoKey) => {
-    const filtradas = rutinasGrupo.filter((r) =>
-      r.nombre.toLowerCase().includes(busqueda.toLowerCase())
-    );
+    // Safety check for search filter
+    const term = (busqueda || '').toLowerCase();
+
+    const filtradas = rutinasGrupo.filter((r) => {
+      const nombre = r.nombre || r.name || '';
+      return nombre.toLowerCase().includes(term);
+    });
 
     return (
       <View style={styles.grupoContainer}>
@@ -169,9 +299,9 @@ export default function Rutinas({ route }) {
               onLongPress={() => handleLongPress(rutina)}
             >
               <Ionicons name="barbell" size={24} color="#fff" />
-              <Text style={styles.rutinaTexto}>{rutina.nombre}</Text>
+              <Text style={styles.rutinaTexto}>{rutina.nombre || rutina.name || 'Sin nombre'}</Text>
               <Text style={styles.rutinaSubTexto}>
-                {rutina.ejercicios.length} ejercicios
+                {rutina.ejercicios ? rutina.ejercicios.length : 0} ejercicios
               </Text>
             </TouchableOpacity>
           ))}
@@ -211,7 +341,7 @@ export default function Rutinas({ route }) {
     <View style={styles.container}>
 
       <Text style={styles.title}>Mis rutinas</Text>
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+      <TouchableOpacity style={styles.backButton} onPress={handleVolverInicio}>
         <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
       </TouchableOpacity>
 

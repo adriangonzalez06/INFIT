@@ -10,9 +10,12 @@ import {
   StyleSheet,
   Image,
   Platform,
+  Alert
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LottieView from 'lottie-react-native';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function PantallaRutina({ route, navigation }) {
   const { rutina, grupoKey } = route.params;
@@ -26,18 +29,37 @@ export default function PantallaRutina({ route, navigation }) {
 
   // Estado para los ejercicios obtenidos del backend
   const [backendExercises, setBackendExercises] = useState({}); // { [grupo]: [ejercicios] }
+  const [userId, setUserId] = useState(null);
+
+  // Helper para URL
+  const getBackendUrl = (path) => {
+    const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+    return `http://${host}:8082/api${path}`;
+  };
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const id = await AsyncStorage.getItem('userId');
+        if (id) setUserId(id);
+      } catch (e) {
+        console.error('Error getting userId:', e);
+      }
+    };
+    init();
+  }, []);
 
   // Cargar ejercicios desde el backend
   useEffect(() => {
     const fetchExercises = async () => {
       try {
-        const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
-        const response = await fetch(`http://${host}:8082/api/exercises`);
-        if (response.ok) {
-          const validJson = await response.json();
+        const url = getBackendUrl('/exercises');
+        const response = await axios.get(url);
+
+        if (response.data) {
           // Agrupar por muscular_group
           const grouped = {};
-          validJson.forEach((ex) => {
+          response.data.forEach((ex) => {
             const group = ex.muscular_group || 'General';
             if (!grouped[group]) {
               grouped[group] = [];
@@ -45,8 +67,6 @@ export default function PantallaRutina({ route, navigation }) {
             grouped[group].push(ex);
           });
           setBackendExercises(grouped);
-        } else {
-          console.log('Error fetching exercises:', response.status);
         }
       } catch (error) {
         console.error('Error fetching exercises:', error);
@@ -56,54 +76,72 @@ export default function PantallaRutina({ route, navigation }) {
     fetchExercises();
   }, []);
 
+  // Autosave function
+  const saveRoutineChanges = async (newExercises) => {
+    if (!userId || !rutina.id) return;
+
+    try {
+      const url = getBackendUrl(`/routines/${userId}/${rutina.id}`);
+      const payload = {
+        exercises: newExercises
+      };
+      await axios.put(url, payload);
+    } catch (error) {
+      console.error('Error autosaving routine:', error);
+      Alert.alert('Error', 'No se pudieron guardar los cambios en la nube');
+    }
+  };
+
   // Añadir ejercicio
-  const handleAddEjercicio = (ejercicioObj) => {
+  const handleAddEjercicio = async (ejercicioObj) => {
     const nuevoEjercicio = {
       id: Date.now().toString(),
       nombre: ejercicioObj.name || ejercicioObj.nombre,
-      animacion: ejercicioObj.animacion, // Legacy lottie support
-      image: ejercicioObj.image,         // New image support
-      gif: ejercicioObj.gif,             // New gif support
+      animacion: ejercicioObj.animacion,
+      image: ejercicioObj.image,
+      gif: ejercicioObj.gif,
       isBackend: true,
       originalData: ejercicioObj,
     };
 
     const nuevaLista = [...ejercicios, nuevoEjercicio];
     setEjercicios(nuevaLista);
+    await saveRoutineChanges(nuevaLista);
 
-    // Pass updated data back via navigation
-    const rutinaActualizada = { ...rutina, ejercicios: nuevaLista };
-    // We update the local state, but we also need to pass this back when going back.
-    // However, user might add multiple exercises. 
-    // Ideally we update the parent when we go back or immediately via navigate (which might pop? no, navigate pushes or finds).
-    // Using simple approach: update parent state via navigate 'merge' behavior if supported, or just navigate.
-    // But we are INSIDE the screen. We want to stay here.
-    // So we just update local state. When user goes BACK, we should send the final state? 
-    // Or send update immediately?
-    // Let's send update immediately to be safe, but via navigate 'Rutinas' might act weird if it pushes a new screen.
-    // Better: use navigation.setParams or just wait until unmount?
-    // Actually, simply calling navigation.navigate('Rutinas', ...) works if 'Rutinas' is in the stack, it might go back to it? 
-    // No, standard stack behavior pushes a new one unless using 'navigate' on existing route.
-    // React Navigation 'navigate' to existing screen in stack usually goes back to it? No, it depends on configuration.
-
-    // Safer approach for "live" update without callback:
-    // We can't easily do live update without callback or context.
-    // BUT the warning is about serialization. 
-    // We will update when we GO BACK.
-
-    // Let's just update local state here. 
-    // And override the "Go Back" button to send params.
     setBuscadorVisible(false);
     setFiltro('');
   };
 
-  // Add effect to sync with parent on go back or unmount? 
-  // Custom back button handling:
   const handleGoBack = () => {
     navigation.navigate('Rutinas', {
       updatedRutina: { ...rutina, ejercicios },
       grupoKey
     });
+  };
+
+  const handleDeleteEjercicio = async () => {
+    if (!ejercicioSeleccionado) return;
+
+    const nuevaLista = ejercicios.filter((e) => e.id !== ejercicioSeleccionado.id);
+    setEjercicios(nuevaLista);
+    await saveRoutineChanges(nuevaLista);
+
+    setOpcionesVisible(false);
+  };
+
+  const handleDuplicateEjercicio = async () => {
+    if (!ejercicioSeleccionado) return;
+
+    const copia = {
+      ...ejercicioSeleccionado,
+      id: Date.now().toString(),
+    };
+
+    const nuevaLista = [...ejercicios, copia];
+    setEjercicios(nuevaLista);
+    await saveRoutineChanges(nuevaLista);
+
+    setOpcionesVisible(false);
   };
 
   return (
@@ -255,12 +293,7 @@ export default function PantallaRutina({ route, navigation }) {
             <TouchableOpacity
               style={styles.optionButton}
               onPress={() => {
-                setOpcionesVisible(false);
-                const copia = {
-                  ...ejercicioSeleccionado,
-                  id: Date.now().toString(),
-                };
-                setEjercicios([...ejercicios, copia]);
+                handleDuplicateEjercicio();
               }}
             >
               <Ionicons name="copy-outline" size={22} color="#ef2b2d" />
@@ -270,10 +303,7 @@ export default function PantallaRutina({ route, navigation }) {
             <TouchableOpacity
               style={[styles.optionButton, styles.deleteButton]}
               onPress={() => {
-                setOpcionesVisible(false);
-                setEjercicios(
-                  ejercicios.filter((e) => e.id !== ejercicioSeleccionado.id)
-                );
+                handleDeleteEjercicio();
               }}
             >
               <Ionicons name="trash-outline" size={22} color="#fff" />
