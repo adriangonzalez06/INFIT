@@ -16,6 +16,7 @@ import Alimentacion from './Alimentacion';
 
 import style from './stylesheet';
 import colors from './colors';
+import Ingredient from '../src/objects/Ingredient';
 
 export default function AddDietMenu({ route }) {
 
@@ -24,13 +25,17 @@ export default function AddDietMenu({ route }) {
   const navigation = useNavigation();
   const { height } = Dimensions.get('window');
 
+  //id, name, imgUrl, calories, fiber, carbohydrates, fat, protein)
+  let in1 = new Ingredient(1, "Manzana", "url", 30, 2, 12, 2, 3);
+  let in2 = new Ingredient(1, "Carne", "url", 40, 4, 14, 3, 1);
+
   {/*platos placeholder, leer los datos de la base de datos*/ }
-  let dish1 = new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, true, true, false);
-  let dish2 = new Dish(2, "Carne", require('../assets/images/images_dish/dish_02.jpg'), 550, ["ingrediente1", "ingrediente2"], 550, false, false, true);
-  let dish3 = new Dish(3, "Postre", require('../assets/images/images_dish/dish_03.jpg'), 550, ["ingrediente1", "ingrediente2"], 550, true, false, false);
-  let dish4 = new Dish(4, "Pescado", require('../assets/images/images_dish/dish_04.jpg'), 600, ["ingrediente1", "ingrediente2"], 600, false, false, true);
-  let dish5 = new Dish(5, "Sopa", require('../assets/images/images_dish/dish_05.jpg'), 300, ["ingrediente1", "ingrediente2"], 300, true, true, false);
-  let dish6 = new Dish(6, "Pasta", require('../assets/images/images_dish/dish_06.jpg'), 700, ["ingrediente1", "ingrediente2"], 700, false, true, false);
+  let dish1 = new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), [{ingredient: in1, grams: 150}, {ingredient: in2, grams: 110}], true, true, false);
+  let dish2 = new Dish(2, "Carne", require('../assets/images/images_dish/dish_02.jpg'), [{ingredient: in2, grams: 150}, {ingredient: in2, grams: 110}], false, false, true);
+  let dish3 = new Dish(3, "Postre", require('../assets/images/images_dish/dish_03.jpg'), [{ingredient: in2, grams: 150}, {ingredient: in1, grams: 110}], true, false, false);
+  let dish4 = new Dish(4, "Pescado", require('../assets/images/images_dish/dish_04.jpg'), [{ingredient: in1, grams: 150}, {ingredient: in2, grams: 110}], false, false, true);
+  let dish5 = new Dish(5, "Sopa", require('../assets/images/images_dish/dish_05.jpg'), [{ingredient: in1, grams: 150}, {ingredient: in2, grams: 110}], true, true, false);
+  let dish6 = new Dish(6, "Pasta", require('../assets/images/images_dish/dish_06.jpg'), [{ingredient: in1, grams: 150}, {ingredient: in2, grams: 110}], false, true, false);
 
 
   //console.log("test get name: ", dish1.getName());
@@ -62,7 +67,10 @@ export default function AddDietMenu({ route }) {
 
   {/*Totales de la diet*/ }
   const totalCalories = (dishes.reduce((sum, p) => sum + (p?.calories || 0), 0));
-  const totalMacronutrients = (dishes.reduce((sum, p) => sum + (p?.macronutrients || 0), 0));
+  const totalFiber = (dishes.reduce((sum, p) => sum + (p?.fiber || 0), 0));
+  const totalCarbs = (dishes.reduce((sum, p) => sum + (p?.carbohydrates || 0), 0));
+  const totalFat = (dishes.reduce((sum, p) => sum + (p?.fat || 0), 0));
+  const totalProtein = (dishes.reduce((sum, p) => sum + (p?.protein || 0), 0));
 
   {/*modal ingredients*/ }
   const [visible, setModalVisible] = useState(false);
@@ -119,6 +127,10 @@ export default function AddDietMenu({ route }) {
 
   {/*funcion para renderizar cada dish de la diet*/ }
   const renderPlato = (dish, index) => {
+
+      console.log("ingredients de dish:" , dish.ingredients);
+      console.log("ingredientesseleccionados2: ", selectedIngredients);
+
     return (
       <TouchableOpacity key={dish.id} onPress={() => showModal(dish.ingredients)} onLongPress={() => handleDeleteDish(index)}>
         <View style={styles.dishContainer}>
@@ -130,7 +142,7 @@ export default function AddDietMenu({ route }) {
             <Text style={styles.dishTitle}>{dish.name}</Text>
 
             <Text style={styles.dishSubtitle}>Calorías</Text>
-            <Text style={styles.dishText}>{dish.calories} kcal</Text>
+            <Text style={styles.dishText}>{calculateDishTotals(dish).totalCalories} kcal</Text>
 
 
             {renderCharacteristics(dish).length > 0 && (
@@ -151,18 +163,75 @@ export default function AddDietMenu({ route }) {
     return list.length ? list.join(', ') : '';
   };
 
+  {/*calcular totales de cada plato para renderizar en su card y en el menu ingredientes*/ }
+  const calculateDishTotals = (dish) => {
+    let totalCalories = 0;
+    let totalFiber = 0;
+    let totalCarbs = 0;
+    let totalFat = 0;
+    let totalProtein = 0;
+
+    dish.getAllIngredients().forEach((ingredient) => {
+      console.log("ingredient calories: ", ingredient.name, ingredient.calories);
+      totalCalories += (ingredient?.calories || 0);
+      totalFiber += (ingredient?.fiber || 0);
+      totalCarbs += (ingredient?.carbohydrates || 0);
+      totalFat += (ingredient?.fat || 0);
+      totalProtein += (ingredient?.protein || 0);
+
+    });
+
+    return { totalCalories, totalFiber, totalCarbs, totalFat, totalProtein, }
+
+
+  };
+
+  {/*funcion para calcular los totales diarios*/ }
+  const calculateDailyTotals = (selectedDay) => {
+    let totalCalories = 0;
+    let totalFiber = 0;
+    let totalCarbs = 0;
+    let totalFat = 0;
+    let totalProtein = 0;
+
+    diet.getDishesForDay(selectedDay).forEach((dish) => {
+        dish.getAllIngredients().forEach((ingredient) => {
+          totalCalories += (ingredient?.calories || 0);
+          totalFiber += (ingredient?.fiber || 0);
+          totalCarbs += (ingredient?.carbohydrates || 0);
+          totalFat += (ingredient?.fat || 0);
+          totalProtein += (ingredient?.protein || 0);
+        });
+    });
+
+    return { totalCalories, totalFiber, totalCarbs, totalFat, totalProtein, }
+
+  };
+
   {/*funcion para calcular los totales semanales*/ }
   const calculateWeeklyTotals = () => {
     let totalCalories = 0;
-    let totalMacronutrients = 0;
+    let totalFiber = 0;
+    let totalCarbs = 0;
+    let totalFat = 0;
+    let totalProtein = 0;
+    console.log(diet.getAllDishes());
+
     diet.getAllDishes().forEach((dayDishes) => {
       (dayDishes || []).forEach((dish) => {
-        totalCalories += (dish?.calories || 0);
-        totalMacronutrients += (dish?.macronutrients || 0);
+        dish.getAllIngredients().forEach((ingredient) => {
+          totalCalories += (ingredient?.calories || 0);
+          totalFiber += (ingredient?.fiber || 0);
+          totalCarbs += (ingredient?.carbohydrates || 0);
+          totalFat += (ingredient?.fat || 0);
+          totalProtein += (ingredient?.protein || 0);
+        })
+
       });
     });
 
-    return { totalCalories, totalMacronutrients };
+    return { totalCalories, totalFiber, totalCarbs, totalFat, totalProtein, }
+
   };
 
   {/*funcion para renderizar la list de dishes*/ }
@@ -181,19 +250,62 @@ export default function AddDietMenu({ route }) {
     <Modal visible={visible} transparent animationType="fade" onRequestClose={hideModal}>
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Ingredientes</Text>
-          <Text style={styles.dishText}>{selectedIngredients.length ? selectedIngredients.join(', ') : 'No hay ingredients'}</Text>
+          <ScrollView>
+          <Text style={styles.grupoTitulo}>Ingredientes</Text>
 
 
-          <View style={styles.modalButtons}>
+          {selectedIngredients.map((item) => (
+            renderIngredientObject(item)
+          ))}
+
+
+        <View style={styles.modalButtons}>
+          <View style={{ flex: 1, alignItems: 'flex-end' }}>
             <TouchableOpacity onPress={hideModal} style={styles.modalButton}>
-              <Text style={styles.modalButtonText}>OK</Text>
+              <Text style={styles.modalButtonText}>Cerrar</Text>
             </TouchableOpacity>
           </View>
+        </View>
+
+          </ScrollView>
         </View>
       </View>
     </Modal>
   );
+
+  //Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), [{ingredient: in1, grams: 150}, {ingredient: in2, grams: 110}], true, true, false);
+  const renderIngredientObject = (item) => (
+
+    <View key={item.ingredient.id}>
+      <Text style={styles.title_2}>{item.grams}g de {item.ingredient.name}</Text>
+
+          <View style={styles.totalsContainer}>
+            <Text style={styles.title_3}>Calorías</Text>
+            <Text style={styles.text}>{item.calories} kcal</Text>
+          </View>
+
+          <View style={styles.totalsContainer}>
+            <Text style={styles.title_3}>Fibra</Text>
+            <Text style={styles.text}>{item.fiber} g</Text>
+          </View>
+
+          <View style={styles.totalsContainer}>
+            <Text style={styles.title_3}>Carbohidratos</Text>
+            <Text style={styles.text}>{item.carbohydrates} g</Text>
+          </View>
+
+          <View style={styles.totalsContainer}>
+            <Text style={styles.title_3}>Grasas</Text>
+            <Text style={styles.text}>{item.fat} g</Text>
+          </View>
+
+          <View style={styles.totalsContainer}>
+            <Text style={styles.title_3}>Proteína</Text>
+            <Text style={styles.text}>{item.protein} g</Text>
+          </View>
+
+    </View>
+  )
 
   // Guarda la dieta  (para probar)
   const saveDiet = async () => {
@@ -269,78 +381,110 @@ export default function AddDietMenu({ route }) {
 
     <View style={styles.container}>
       <StatusBar style="auto" />
-      {/* go back button */}
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
-      </TouchableOpacity>
 
-      {/* title   Array.isArray(route?.params?.recipes) ? route.params.recipes : [];    */}
-      <Text style={styles.title}>{diet.getName() || "Crear una dieta"}</Text>
+      <View style={styles.header}>
+        {/* go back button */}
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
+        </TouchableOpacity>
+        {/* title   Array.isArray(route?.params?.recipes) ? route.params.recipes : [];    */}
+        <Text style={styles.title}>{diet.getName() || "Crear una dieta"}</Text>
+      </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.grupoContainer}>
 
           {renderNameInput(creatingRecipe)}
 
-        <View style={styles.daysContainer}>
-          <TouchableOpacity style={styles.dayButton} onPress={() => { setSelectedDay(0); setDishes(diet.getDishesForDay(0)); }}><Text>LUN</Text></TouchableOpacity>
-          <TouchableOpacity style={styles.dayButton} onPress={() => { setSelectedDay(1); setDishes(diet.getDishesForDay(1)); }}><Text>MAR</Text></TouchableOpacity>
-          <TouchableOpacity style={styles.dayButton} onPress={() => { setSelectedDay(2); setDishes(diet.getDishesForDay(2)); }}><Text>MIE</Text></TouchableOpacity>
-          <TouchableOpacity style={styles.dayButton} onPress={() => { setSelectedDay(3); setDishes(diet.getDishesForDay(3)); }}><Text>JUE</Text></TouchableOpacity>
-          <TouchableOpacity style={styles.dayButton} onPress={() => { setSelectedDay(4); setDishes(diet.getDishesForDay(4)); }}><Text>VIE</Text></TouchableOpacity>
-        </View>
-        <View style={[styles.daysContainer, { justifyContent: 'center' }]}>
-          <TouchableOpacity style={styles.dayButton} onPress={() => { setSelectedDay(5); setDishes(diet.getDishesForDay(5)); }}><Text>SAB</Text></TouchableOpacity>
-          <TouchableOpacity style={styles.dayButton} onPress={() => { setSelectedDay(6); setDishes(diet.getDishesForDay(6)); }}><Text>DOM</Text></TouchableOpacity>
-        </View>
+          <View style={styles.daysContainer}>
+            <TouchableOpacity style={[styles.dayButton, { backgroundColor: 0 === bttId ? colors.light_gray : colors.white }]} onPress={() => { setSelectedDay(0); setDishes(diet.getDishesForDay(0)); setBttId(0); }}><Text>LUN</Text></TouchableOpacity>
+            <TouchableOpacity style={[styles.dayButton, { backgroundColor: 1 === bttId ? colors.light_gray : colors.white }]} onPress={() => { setSelectedDay(1); setDishes(diet.getDishesForDay(1)); setBttId(1) }}><Text>MAR</Text></TouchableOpacity>
+            <TouchableOpacity style={[styles.dayButton, { backgroundColor: 2 === bttId ? colors.light_gray : colors.white }]} onPress={() => { setSelectedDay(2); setDishes(diet.getDishesForDay(2), setBttId(2)); }}><Text>MIE</Text></TouchableOpacity>
+            <TouchableOpacity style={[styles.dayButton, { backgroundColor: 3 === bttId ? colors.light_gray : colors.white }]} onPress={() => { setSelectedDay(3); setDishes(diet.getDishesForDay(3), setBttId(3)); }}><Text>JUE</Text></TouchableOpacity>
+            <TouchableOpacity style={[styles.dayButton, { backgroundColor: 4 === bttId ? colors.light_gray : colors.white }]} onPress={() => { setSelectedDay(4); setDishes(diet.getDishesForDay(4), setBttId(4)); }}><Text>VIE</Text></TouchableOpacity>
+          </View>
+          <View style={[styles.daysContainer, { justifyContent: 'center' }]}>
+            <TouchableOpacity style={[styles.dayButton, { backgroundColor: 5 === bttId ? colors.light_gray : colors.white }]} onPress={() => { setSelectedDay(5); setDishes(diet.getDishesForDay(5), setBttId(5)); }}><Text>SAB</Text></TouchableOpacity>
+            <TouchableOpacity style={[styles.dayButton, { backgroundColor: 6 === bttId ? colors.light_gray : colors.white }]} onPress={() => { setSelectedDay(6); setDishes(diet.getDishesForDay(6), setBttId(6)); }}><Text>DOM</Text></TouchableOpacity>
+          </View>
 
-        {renderAddDishButton(creatingRecipe)}
+          {renderAddDishButton(creatingRecipe)}
 
 
-        {/*renderizar todos los dishes que haya en el día seleccionado*/}
-        {renderDishList()}
+          {/*renderizar todos los dishes que haya en el día seleccionado*/}
+          {renderDishList()}
 
-        <Text style={styles.grupoTitulo}>Totales</Text>
+          <Text style={styles.grupoTitulo}>Totales</Text>
 
-        <Text style={styles.title_2}>Diario</Text>
-        <View style={styles.totalsContainer}>
-          <Text style={styles.title_3}>Calorías</Text>
-          <Text style={styles.text}>{totalCalories} kcal</Text>
-        </View>
+          <Text style={styles.title_2}>Diario</Text>
+          <View style={styles.totalsContainer}>
+            <Text style={styles.title_3}>Calorías</Text>
+            <Text style={styles.text}>{calculateDailyTotals(selectedDay).totalCalories} kcal</Text>
+          </View>
 
-        <View style={styles.totalsContainer}>
-          <Text style={styles.title_3}>Macronutrientes</Text>
-          <Text style={styles.text}>{totalMacronutrients} g</Text>
-        </View>
+          <View style={styles.totalsContainer}>
+            <Text style={styles.title_3}>Fibra</Text>
+            <Text style={styles.text}>{calculateDailyTotals(selectedDay).totalFiber} g</Text>
+          </View>
 
-        <Text style={styles.title_2}>Semanal</Text>
-        <View style={styles.totalsContainer}>
-          <Text style={styles.title_3}>Calorías</Text>
-          <Text style={styles.text}>{calculateWeeklyTotals().totalCalories} kcal</Text>
-        </View>
+          <View style={styles.totalsContainer}>
+            <Text style={styles.title_3}>Carbohidratos</Text>
+            <Text style={styles.text}>{calculateDailyTotals(selectedDay).totalCarbs} g</Text>
+          </View>
 
-        <View style={styles.totalsContainer}>
-          <Text style={styles.title_3}>Macronutrientes</Text>
-          <Text style={styles.text}>{calculateWeeklyTotals().totalMacronutrients} g</Text>
-        </View>
+          <View style={styles.totalsContainer}>
+            <Text style={styles.title_3}>Grasas</Text>
+            <Text style={styles.text}>{calculateDailyTotals(selectedDay).totalFat} g</Text>
+          </View>
 
-        {renderSaveChangesButton(creatingRecipe)}
+          <View style={styles.totalsContainer}>
+            <Text style={styles.title_3}>Proteína</Text>
+            <Text style={styles.text}>{calculateDailyTotals(selectedDay).totalProtein} g</Text>
+          </View>
+
+          <Text style={styles.title_2}>Semanal</Text>
+          <View style={styles.totalsContainer}>
+            <Text style={styles.title_3}>Calorías</Text>
+            <Text style={styles.text}>{calculateWeeklyTotals().totalCalories} kcal</Text>
+          </View>
+
+          <View style={styles.totalsContainer}>
+            <Text style={styles.title_3}>Fibra</Text>
+            <Text style={styles.text}>{calculateWeeklyTotals().totalFiber} g</Text>
+          </View>
+
+          <View style={styles.totalsContainer}>
+            <Text style={styles.title_3}>Carbohidratos</Text>
+            <Text style={styles.text}>{calculateWeeklyTotals().totalCarbs} g</Text>
+          </View>
+
+          <View style={styles.totalsContainer}>
+            <Text style={styles.title_3}>Grasas</Text>
+            <Text style={styles.text}>{calculateWeeklyTotals().totalFat} g</Text>
+          </View>
+
+          <View style={styles.totalsContainer}>
+            <Text style={styles.title_3}>Proteína</Text>
+            <Text style={styles.text}>{calculateWeeklyTotals().totalProtein} g</Text>
+          </View>
+
+          {renderSaveChangesButton(creatingRecipe)}
 
         </View>
       </ScrollView >
 
-    { renderIngredientsModal() }
+      {renderIngredientsModal()}
 
-    < SearchMenu
-  ref = { searchMenuRef }
-  data = { allAvailableDishes }
-  title = "Agregar plato a la dieta"
-  searchFields = { ["name"]}
-  renderCustomItem = { renderDishItemMenu }
-  onSelectItem = { handleAddDish }
-  searchPlaceholder = "Buscar plato..."
-  height = { height }
-    />
+      < SearchMenu
+        ref={searchMenuRef}
+        data={allAvailableDishes}
+        title="Agregar plato a la dieta"
+        searchFields={["name"]}
+        renderCustomItem={renderDishItemMenu}
+        onSelectItem={handleAddDish}
+        searchPlaceholder="Buscar plato..."
+        height={height}
+      />
 
     </View >
 

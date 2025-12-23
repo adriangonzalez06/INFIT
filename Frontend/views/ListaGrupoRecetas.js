@@ -11,11 +11,7 @@ import styles from './stylesheet';
 export default function ListaGrupoRecetas({ route }) {
   const navigation = useNavigation();
 
-  //console.log('route: ', route.params);
-
   const { name, recipes } = route?.params || { name: '', recipes: [] };
-
-  //console.log('grupo asignado: ', name);
 
     {/* render a card*/}
     const renderDietCard = (diet) => {
@@ -50,13 +46,15 @@ export default function ListaGrupoRecetas({ route }) {
 
     <View style={styles.container}>
       <StatusBar style="auto" />
-      {/* go back button */}
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
-      </TouchableOpacity>
-
-      {/* title */}
-      <Text style={styles.title}>{name}</Text>
+      
+      <View style={styles.header}>
+        {/* go back button */}
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
+        </TouchableOpacity>
+        {/* title */}
+        <Text style={styles.title}>{name}</Text>
+      </View>
 
       {/* render groups */}
       <ScrollView  contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>

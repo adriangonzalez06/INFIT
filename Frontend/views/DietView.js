@@ -12,7 +12,6 @@ import Diet from '../src/objects/Diet';
 import Dish from '../src/objects/Dish';
 import Alimentacion from './Alimentacion';
 import { SearchMenu } from '../src/components/SearchMenu';
-import { WeeklyItemsMenu } from '../src/components/WeeklyItemsMenu';
 
 const { height } = Dimensions.get('window');
 
@@ -58,12 +57,6 @@ export default function DietView({ route }) {
             <Text style={styles.text}>{diet?.description ?? ''}</Text>
 
             <Text style={styles.grupoTitulo}>Platos</Text>
-
-            {/*componente*/}
-            <WeeklyItemsMenu
-              object={diet}
-              allAvailableDishes={dishes}
-            />
 
           </View>
         </SafeAreaView>

@@ -1,4 +1,4 @@
-import { StyleSheet, Dimensions } from "react-native";
+import { StyleSheet, Dimensions, Platform, StatusBar } from "react-native";
 import colors from './colors.js';
 
 var width = Dimensions.get('window').width;
@@ -12,7 +12,7 @@ export default StyleSheet.create({
     backgroundColor: colors.bg_gray,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
     width: '100%',
   },
   header: {
@@ -23,7 +23,6 @@ export default StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: 40,
     left: 20,
     zIndex: 1,
   },
@@ -32,7 +31,6 @@ export default StyleSheet.create({
     fontSize: 16,
     color: colors.dark_gray,
     textAlign: 'center',
-    marginBottom: 20,
   },
   scrollContent: {
     paddingBottom: 40,
@@ -47,19 +45,18 @@ export default StyleSheet.create({
     fontSize: 26,
     fontWeight: 'bold',
     color: colors.primary,
-    marginBottom: 10,
     textAlign: 'center',
     width: '100%',
   },
   title_2: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 10,
     color: colors.medium_gray,
+    marginTop: 5,
+    marginBottom: 5,
   },
   title_3: {
     fontSize: 16,
-    marginBottom: 10,
     color: colors.medium_gray,
   },
   grupoTitulo: {
@@ -103,7 +100,7 @@ export default StyleSheet.create({
     backgroundColor: colors.primary,
     paddingVertical: 10,
     paddingHorizontal: 20,
-    borderRadius: 8,
+    borderRadius: 8
   },
   modalButtonText: {
     color: colors.white,
@@ -112,6 +109,14 @@ export default StyleSheet.create({
 
 
   // Alimentacion Screen Styles
+
+  backButton2: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    zIndex: 1,
+  },
+
   recetaTexto: {
     fontSize: 20,
     color: colors.white,
@@ -131,6 +136,10 @@ export default StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
+  },
+
+  allRecipeCardsContainer: {
+    marginTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
   //both cards
   recipeCards: {
@@ -155,7 +164,7 @@ export default StyleSheet.create({
   recetaCardGroup: {
     width: width - width * 0.2,
     height: 150,
-    margin: 25,
+    margin: 10,
   },
   //recipes in recipe main list only (vista alimentacion)
   recetaCard: {
@@ -235,6 +244,7 @@ export default StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginBottom: 5,
   },
 
   label: {
