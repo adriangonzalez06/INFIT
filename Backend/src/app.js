@@ -36,10 +36,40 @@ app.get("/", (req, res) => {
 try {
   const usersRouter = require('./routes/users.routes');
   app.use('/api/usuarios', usersRouter);
+  
   const freeusersRouter = require('./routes/freeUsers');
   app.use('/api/freeUsers', freeusersRouter);
+  
+  const infopersonalizeddietRouter = require('./routes/infopersonalizeddiet');
+  app.use('/api/infopersonalizeddiet', infopersonalizeddietRouter);
+  
+  const infogenericdietRouter = require('./routes/infogenericdiet');
+  app.use('/api/infogenericdiet', infogenericdietRouter);
+  
+  const infomealsRouter = require('./routes/infomeals');
+  app.use('/api/infomeals', infomealsRouter);
+  
+  const answerbotRouter = require('./routes/answerbot');
+  app.use('/api/answerbot', answerbotRouter);
+  
+  const chatbotRouter = require('./routes/chatbot');
+  app.use('/api/chatbot', chatbotRouter);
+  
+  const documentspdfRouter = require('./routes/documentspdf');
+  app.use('/api/documentspdf', documentspdfRouter);
+  
+  const exercisesRouter = require('./routes/exercises');
+  app.use('/api/exercises', exercisesRouter);
+  
+  const progressRouter = require('./routes/progress');
+  app.use('/api/progress', progressRouter);
+  
+  const userspremiumRouter = require('./routes/userspremium');
+  app.use('/api/userspremium', userspremiumRouter);
+  
+  console.log('✅ Todas las rutas cargadas correctamente');
 } catch (e) {
-  console.error('Error cargando routes/users.routes:', e);
+  console.error('❌ Error cargando routes:', e);
 }
 
 module.exports = app;

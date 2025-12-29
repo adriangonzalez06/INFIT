@@ -40,6 +40,7 @@ export default class Diet {
     const weekly = (src.weeklyDishes || Array(7).fill(null).map(() => [])).map(day =>
       (day || []).map(d => require('./Dish').default.from ? require('./Dish').default.from(d) : d)
     );
+    
     return new Diet(src.id, src.name, src.description, src.imgUrl, weekly);
   }
 

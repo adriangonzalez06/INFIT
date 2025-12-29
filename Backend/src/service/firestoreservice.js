@@ -133,12 +133,15 @@ class FirestoreService {
     try {
       const newData = {
         ...data,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
       };
+      console.log(`[firestore] Creando documento en ${collectionName}:`, JSON.stringify(newData, null, 2));
       const docRef = await this.db.collection(collectionName).add(newData);
+      console.log(`[firestore] ✅ Documento creado con ID: ${docRef.id}`);
       return docRef.id;
     } catch (error) {
+      console.error(`[firestore] ❌ Error creando documento:`, error);
       throw new Error(`Error creando documento en ${collectionName}: ${error.message}`);
     }
   }
@@ -154,7 +157,7 @@ class FirestoreService {
     try {
       const updateData = {
         ...data,
-        updatedAt: new Date()
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
       };
       await this.db.collection(collectionName).doc(docId).update(updateData);
     } catch (error) {
@@ -196,6 +199,133 @@ class FirestoreService {
       return items;
     } catch (error) {
       throw new Error(`Error buscando en ${collectionName}: ${error.message}`);
+    }
+  }
+
+  /**
+   * Obtener documentos de una subcollección
+   * @param {string} parentCollection - Nombre de la colección padre
+   * @param {string} parentDocId - ID del documento padre
+   * @param {string} subcollectionName - Nombre de la subcollección
+   * @returns {Promise<Array>} Array de documentos de la subcollección
+   */
+  async getSubcollection(parentCollection, parentDocId, subcollectionName) {
+    try {
+      const snapshot = await this.db
+        .collection(parentCollection)
+        .doc(parentDocId)
+        .collection(subcollectionName)
+        .get();
+      const items = [];
+      snapshot.forEach(doc => {
+        items.push({ id: doc.id, ...doc.data() });
+      });
+      return items;
+    } catch (error) {
+      throw new Error(`Error obteniendo subcollección ${subcollectionName}: ${error.message}`);
+    }
+  }
+
+  /**
+   * Obtener un documento de una subcollección por ID
+   * @param {string} parentCollection - Nombre de la colección padre
+   * @param {string} parentDocId - ID del documento padre
+   * @param {string} subcollectionName - Nombre de la subcollección
+   * @param {string} docId - ID del documento
+   * @returns {Promise<object>} Documento encontrado
+   */
+  async getSubcollectionDoc(parentCollection, parentDocId, subcollectionName, docId) {
+    try {
+      const doc = await this.db
+        .collection(parentCollection)
+        .doc(parentDocId)
+        .collection(subcollectionName)
+        .doc(docId)
+        .get();
+      if (!doc.exists) {
+        throw new Error('Documento no encontrado en la subcollección');
+      }
+      return { id: doc.id, ...doc.data() };
+    } catch (error) {
+      throw new Error(`Error obteniendo documento de subcollección: ${error.message}`);
+    }
+  }
+
+  /**
+   * Crear un nuevo documento en una subcollección
+   * @param {string} parentCollection - Nombre de la colección padre
+   * @param {string} parentDocId - ID del documento padre
+   * @param {string} subcollectionName - Nombre de la subcollección
+   * @param {object} data - Datos del documento
+   * @returns {Promise<string>} ID del documento creado
+   */
+  async createSubcollection(parentCollection, parentDocId, subcollectionName, data) {
+    try {
+      const newData = {
+        ...data,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      };
+      console.log(`[firestore] Creando documento en subcollección ${subcollectionName} del usuario ${parentDocId}:`, JSON.stringify(newData, null, 2));
+      const docRef = await this.db
+        .collection(parentCollection)
+        .doc(parentDocId)
+        .collection(subcollectionName)
+        .add(newData);
+      console.log(`[firestore] ✅ Documento creado en subcollección con ID: ${docRef.id}`);
+      return docRef.id;
+    } catch (error) {
+      console.error(`[firestore] ❌ Error creando documento en subcollección:`, error);
+      throw new Error(`Error creando documento en subcollección ${subcollectionName}: ${error.message}`);
+    }
+  }
+
+  /**
+   * Actualizar un documento en una subcollección
+   * @param {string} parentCollection - Nombre de la colección padre
+   * @param {string} parentDocId - ID del documento padre
+   * @param {string} subcollectionName - Nombre de la subcollección
+   * @param {string} docId - ID del documento
+   * @param {object} data - Datos a actualizar
+   * @returns {Promise<void>}
+   */
+  async updateSubcollection(parentCollection, parentDocId, subcollectionName, docId, data) {
+    try {
+      const updateData = {
+        ...data,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      };
+      await this.db
+        .collection(parentCollection)
+        .doc(parentDocId)
+        .collection(subcollectionName)
+        .doc(docId)
+        .update(updateData);
+      console.log(`[firestore] ✅ Documento actualizado en subcollección`);
+    } catch (error) {
+      throw new Error(`Error actualizando documento en subcollección ${subcollectionName}: ${error.message}`);
+    }
+  }
+
+  /**
+   * Eliminar un documento de una subcollección
+   * @param {string} parentCollection - Nombre de la colección padre
+   * @param {string} parentDocId - ID del documento padre
+   * @param {string} subcollectionName - Nombre de la subcollección
+   * @param {string} docId - ID del documento
+   * @returns {Promise<void>}
+   */
+  async deleteSubcollection(parentCollection, parentDocId, subcollectionName, docId) {
+    try {
+      await this.db
+        .collection(parentCollection)
+        .doc(parentDocId)
+        .collection(subcollectionName)
+        .doc(docId)
+        .delete();
+      console.log(`[firestore] ✅ Documento eliminado de subcollección`);
+    } catch (error) {
+      throw new Error(`Error eliminando documento de subcollección ${subcollectionName}: ${error.message}`);
     }
   }
 

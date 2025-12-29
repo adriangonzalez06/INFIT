@@ -5,7 +5,7 @@ import {
     ImageBackground,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { useRoute, useNavigation } from '@react-navigation/native';
+import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import styles from './stylesheet.js';
 import colors from './colors.js';
@@ -14,13 +14,64 @@ import Diet from '../src/objects/Diet.js';
 import DietView from './DietView.js';
 import DietGroup from '../src/objects/DietGroup.js';
 import { getAllMeals } from '../src/services/MealsService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function Alimentacion() {
-
   const navigation = useNavigation();
 
   {/*platos desde Firestore*/ }
   const [allDishes, setAllDishes] = useState([]);
+  
+  {/*dietas personalizadas del usuario*/ }
+  const [userPersonalizedDiets, setUserPersonalizedDiets] = useState([]);
+
+  {/*cargar dietas personalizadas del usuario cuando se enfoca la pantalla*/ }
+  useFocusEffect(
+    React.useCallback(() => {
+      let isMounted = true;
+      
+      const loadUserPersonalizedDiets = async () => {
+        try {
+          const userDocId = await AsyncStorage.getItem("userDocId");
+          if (!userDocId) {
+            console.warn('⚠️ No se encontró userDocId');
+            return;
+          }
+
+          // Usar 10.0.2.2 para emulador Android, localhost para otros
+          const host = '10.0.2.2'; // Android emulator
+          const port = '8082';
+          const url = `http://${host}:${port}/api/infopersonalizeddiet/user/${userDocId}`;
+          
+          console.log('📥 Cargando dietas de:', url);
+          const response = await fetch(url);
+          
+          if (!response.ok) {
+            throw new Error('Error al cargar dietas personalizadas');
+          }
+
+          const diets = await response.json();
+          console.log('✅ Dietas personalizadas cargadas:', diets.length);
+          
+          if (isMounted) {
+            setUserPersonalizedDiets(diets || []);
+          }
+        } catch (error) {
+          console.error('❌ Error cargando dietas personalizadas:', error);
+          if (isMounted) {
+            setUserPersonalizedDiets([]);
+          }
+        }
+      };
+
+      // Cargar inmediatamente
+      loadUserPersonalizedDiets();
+
+      return () => {
+        isMounted = false;
+      };
+    }, [])
+  );
 
   {/*cargar platos desde Firestore al montar el componente*/ }
   useEffect(() => {
@@ -89,20 +140,67 @@ export default function Alimentacion() {
     return [r1, r2, r3, r4, r5, r6];
   };
 
-  let defaultDiets = createDefaultDiets();
-  let g1 = new DietGroup(1, "Trending", defaultDiets);
-  let g2 = new DietGroup(2, "Mis dietas", defaultDiets.slice(2, 5), true);
-  let g3 = new DietGroup(3, "Para ganar músculo", defaultDiets.slice(0, 5));
-
-  const [recipesGroups] = useState({
-    g1, g2, g3
+  // Inicializar con solo dietas por defecto
+  const defaultDiets = createDefaultDiets();
+  const [recipesGroups, setRecipesGroups] = useState({
+    g1: new DietGroup(1, "Trending", defaultDiets),
+    g2: new DietGroup(2, "Mis dietas", defaultDiets.slice(2, 5), true),
+    g3: new DietGroup(3, "Para ganar músculo", defaultDiets.slice(0, 5))
   });
+
+  // Actualizar recipesGroups cuando userPersonalizedDiets cambia
+  useEffect(() => {
+    const defaultDiets = createDefaultDiets();
+    
+    // Convertir dietas de Firestore a objetos Diet DENTRO del useEffect
+    let personalizedDiets = [];
+    if (userPersonalizedDiets && userPersonalizedDiets.length > 0) {
+      const dietImages = [
+        require('../assets/images/images_diet/diet_02.jpg'),
+        require('../assets/images/images_diet/diet_01.jpg'),
+      ];
+      
+      personalizedDiets = userPersonalizedDiets.map((dietData, index) => {
+        let weeklyDishesArray = [[], [], [], [], [], [], []];
+        
+        if (dietData.weeklyDishes) {
+          if (Array.isArray(dietData.weeklyDishes)) {
+            weeklyDishesArray = dietData.weeklyDishes;
+          } else if (typeof dietData.weeklyDishes === 'object') {
+            for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+              const dayKey = dayIndex.toString();
+              if (dietData.weeklyDishes[dayKey]) {
+                weeklyDishesArray[dayIndex] = dietData.weeklyDishes[dayKey];
+              }
+            }
+          }
+        }
+        
+        // Usar una imagen de las disponibles (rotando entre diet_01 y diet_02)
+        const imageIndex = index % dietImages.length;
+        
+        return new Diet(
+          dietData.id,
+          dietData.name,
+          dietData.description || '',
+          dietImages[imageIndex],
+          weeklyDishesArray
+        );
+      });
+    }
+    
+    const g1 = new DietGroup(1, "Trending", [...defaultDiets]);
+    const g2 = new DietGroup(2, "Mis dietas", personalizedDiets.length > 0 ? [...personalizedDiets] : [...defaultDiets.slice(2, 5)], true);
+    const g3 = new DietGroup(3, "Para ganar músculo", [...defaultDiets.slice(0, 5)]);
+
+    setRecipesGroups({
+      g1, g2, g3
+    });
+  }, [userPersonalizedDiets]);
 
   const [diets, setDiet] = useState([]);
 
   const renderGrupo = (group) => (
-    
-    
     <View style={styles.grupoContainer}>
       {/* group title */}
       <Text style={styles.grupoTitulo}>{group.name}</Text>
@@ -110,9 +208,9 @@ export default function Alimentacion() {
       <View style={styles.recetasRow}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {/* map displays a list of the items that are inside the function */}
-          {group.recipes.slice(0,3).map((diet) => (
-            renderRecetaCard(diet)
-          ))}
+          {group.recipes.slice(0,3).map((diet) => {
+            return renderRecetaCard(diet);
+          })}
           
           {showAddCard(group.canEdit, group)}
 
@@ -127,20 +225,40 @@ export default function Alimentacion() {
 
       </View>
     </View>
-  );
+    );
 
   {/* render a card*/}
   const renderRecetaCard = (diet) => {
+    // Convertir diet a objeto plano si es una instancia de Diet
+    const dietObj = {
+      id: diet.id,
+      name: diet.name,
+      description: diet.description,
+      imgUrl: diet.imgUrl,
+      weeklyDishes: diet.weeklyDishes
+    };
+    
+    // Determinar la imagen: si es un número (require), usarlo directamente; si es string, tratarlo como URI
+    let imageSource;
+    if (typeof dietObj.imgUrl === 'number') {
+      imageSource = dietObj.imgUrl;
+    } else if (typeof dietObj.imgUrl === 'string') {
+      imageSource = { uri: dietObj.imgUrl };
+    } else {
+      // Si no es válido, usar imagen por defecto
+      imageSource = require('../assets/images/images_diet/diet_02.jpg');
+    }
+    
     return (
           <TouchableOpacity
-            key={diet.id}
+            key={dietObj.id}
             style={[styles.recipeCards, styles.recetaCard]}
             onPress={() => {
-              handleEnterDiet(diet);
+              handleEnterDiet(dietObj);
             }}>
 
-            <ImageBackground source={typeof diet.imgUrl === 'number' ? diet.imgUrl : { uri: diet.imgUrl }} resizeMode="cover" style={{width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', zIndex: -1, borderRadius: 14, overflow: 'hidden'}}>
-            <Text style={styles.recetaTextoTitulo}>{diet.name}</Text>
+            <ImageBackground source={imageSource} resizeMode="cover" style={{width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', zIndex: -1, borderRadius: 14, overflow: 'hidden'}}>
+            <Text style={styles.recetaTextoTitulo}>{dietObj.name}</Text>
             <Text style={styles.recetaTexto}>Subtítulo</Text>
             </ImageBackground>
           </TouchableOpacity>

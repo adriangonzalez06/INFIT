@@ -234,33 +234,107 @@ export default function AddDietMenu({ route }) {
     </Modal>
   );
 
-  // Guarda la dieta  (para probar)
+  // Guarda la dieta en la API backend
   const saveDiet = async () => {
     try {
+      // Obtener userId del AsyncStorage
+      const userDocId = await AsyncStorage.getItem("userDocId");
+      
+      if (!userDocId) {
+        Alert.alert('Error', 'No se pudo obtener la información del usuario. Por favor inicia sesión nuevamente.');
+        return;
+      }
+
+      // Validar que tenga nombre
+      if (!dietName || dietName.trim() === '') {
+        Alert.alert('Error', 'Por favor ingresa un nombre para la dieta');
+        return;
+      }
+
       // Actualizar propiedades de diet
       diet.id = Date.now();
-      diet.name = dietName || `Dieta ${new Date().toLocaleDateString()}`;
-      diet.description = dietDescription || '';
+      diet.name = dietName.trim();
+      diet.description = dietDescription?.trim() || '';
 
-      // Serializar diet (convertir a objeto plano)
-      const dietToSave = {
-        id: diet.id,
+      // Convertir weeklyDishes a formato compatible con Firestore (objeto con claves numéricas)
+      // Firestore NO permite arrays anidados, así que usamos un objeto
+      const serializedWeeklyDishes = {};
+      diet.weeklyDishes.forEach((dayDishes, dayIndex) => {
+        serializedWeeklyDishes[dayIndex.toString()] = (dayDishes || []).map(dish => ({
+          id: dish.id,
+          name: dish.name,
+          imgUrl: dish.imgUrl,
+          calories: dish.calories,
+          macronutrients: dish.macronutrients,
+          ingredients: dish.ingredients || [],
+          vegetarian: dish.vegetarian || false,
+          vegan: dish.vegan || false,
+          gluten_free: dish.gluten_free || false
+        }));
+      });
+
+      // Preparar datos para enviar a la API
+      const dietData = {
         name: diet.name,
         description: diet.description,
-        imgUrl: require('../assets/images/images_dish/dish_02.jpg'),
-        weeklyDishes: diet.weeklyDishes
+        userID: userDocId,
+        weeklyDishes: serializedWeeklyDishes,
+        imgUrl: 'https://via.placeholder.com/300x300?text=Dieta+Personalizada',
+        type_diet: 'personalizada',
+        number_meals: 5
       };
 
-      addingGroup.push(dietToSave);
+      // Usar 10.0.2.2 para emulador Android, localhost para otros
+      const host = '10.0.2.2'; // Android emulator, cambiar a localhost en web o a IP en dispositivo real
+      const port = '8082';
+      const url = `http://${host}:${port}/api/infopersonalizeddiet`;
+
+      console.log('📤 Enviando dieta a:', url);
+      console.log('📦 Datos:', JSON.stringify(dietData));
+
+      // Enviar POST a la API
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(dietData),
+      });
+
+      if (!response.ok) {
+        let errorMessage = 'Error al guardar la dieta';
+        let errorDetails = '';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+          errorDetails = errorData.details || errorData.error || '';
+        } catch (e) {
+          errorMessage = `Error HTTP ${response.status}`;
+        }
+        console.error('❌ Error response:', errorMessage, errorDetails);
+        throw new Error(`${errorMessage}${errorDetails ? ': ' + errorDetails : ''}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Dieta guardada:', result);
+      
+      // Actualizar el array local también
+      addingGroup.push({
+        id: result.id,
+        ...dietData
+      });
 
       setDietName('');
       setDietDescription('');
       setAllDishes([...diet.getAllDishes()]);
 
-      Alert.alert('Guardado', 'La dieta se ha guardado correctamente.');
+      Alert.alert('¡Éxito!', 'La dieta personalizada se ha guardado correctamente.');
+      
+      // Navegar de vuelta a Alimentacion
+      navigation.goBack();
     } catch (err) {
-      console.error('Error saving diet:', err);
-      Alert.alert('Error', 'No se pudo guardar la dieta.');
+      console.error('❌ Error saving diet:', err);
+      Alert.alert('Error', err.message || 'No se pudo guardar la dieta. Verifica la conexión al servidor.');
     }
   };
 

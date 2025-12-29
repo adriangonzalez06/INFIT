@@ -54,7 +54,33 @@ export default function DietView({ route }) {
             )
           );
           setAllAvailableDishes(dishesFromDB);
-          const dietDishes = diet.getAllDishes ? diet.getAllDishes() : dishesFromDB.slice(0, 3);
+          
+          // Obtener platos de la dieta
+          let dietDishes = diet.getAllDishes ? diet.getAllDishes() : dishesFromDB.slice(0, 3);
+          
+          // Enriquecer platos de Firestore con imgUrl buscando en dishesFromDB
+          if (dietDishes.length > 0) {
+            dietDishes = dietDishes.map(dishFromDiet => {
+              // Buscar el plato completo en dishesFromDB por ID o por nombre
+              const completeDish = dishesFromDB.find(d => d.id === dishFromDiet.id || d.name === dishFromDiet.name);
+              if (completeDish && !dishFromDiet.imgUrl) {
+                // Crear un nuevo Dish con todos los detalles
+                return new Dish(
+                  dishFromDiet.id,
+                  dishFromDiet.name,
+                  completeDish.imgUrl,
+                  dishFromDiet.macronutrients || completeDish.macronutrients,
+                  dishFromDiet.ingredients || completeDish.ingredients || [],
+                  dishFromDiet.calories || completeDish.calories,
+                  dishFromDiet.vegetarian !== undefined ? dishFromDiet.vegetarian : completeDish.vegetarian,
+                  dishFromDiet.vegan !== undefined ? dishFromDiet.vegan : completeDish.vegan,
+                  dishFromDiet.gluten_free !== undefined ? dishFromDiet.gluten_free : completeDish.gluten_free
+                );
+              }
+              return dishFromDiet;
+            });
+          }
+          
           setDishes(dietDishes.length > 0 ? dietDishes : dishesFromDB.slice(0, 3));
           console.log('✅ Platos cargados en DietView:', dishesFromDB.length);
         } else {
