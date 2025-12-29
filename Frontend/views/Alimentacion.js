@@ -22,13 +22,18 @@ export default function Alimentacion() {
   let in1 = new Ingredient(1, "Manzana", "url", 30, 2, 12, 2, 3);
   let in2 = new Ingredient(1, "Carne", "url", 40, 4, 14, 3, 1);
 
+  let ingredients = [
+    { ingredient: in1, grams: 150 },
+    { ingredient: in2, grams: 110 }
+  ];
+
   {/*platos placeholder, leer los datos de la base de datos*/ }
-  let plato1 = new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), [in1, in2,in1, in2,in1, in2,in1, in2,in1, in2], true, true, false);
-  let plato2 = new Dish(2, "Carne", require('../assets/images/images_dish/dish_02.jpg'), [in2, in2], false, false, true);
-  let plato3 = new Dish(3, "Postre", require('../assets/images/images_dish/dish_03.jpg'), [in1, in1], true, false, false);
-  let plato4 = new Dish(4, "Pescado", require('../assets/images/images_dish/dish_04.jpg'), [in1], false, false, true);
-  let plato5 = new Dish(5, "Sopa", require('../assets/images/images_dish/dish_05.jpg'), [in2, in2], true, true, false);
-  let plato6 = new Dish(6, "Pasta", require('../assets/images/images_dish/dish_06.jpg'), [in1, in2], false, true, false);
+  let plato1 = new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), ingredients, true, true, false);
+  let plato2 = new Dish(2, "Carne", require('../assets/images/images_dish/dish_02.jpg'), ingredients, false, false, true);
+  let plato3 = new Dish(3, "Postre", require('../assets/images/images_dish/dish_03.jpg'), ingredients, true, false, false);
+  let plato4 = new Dish(4, "Pescado", require('../assets/images/images_dish/dish_04.jpg'), ingredients, false, false, true);
+  let plato5 = new Dish(5, "Sopa", require('../assets/images/images_dish/dish_05.jpg'), ingredients, true, true, false);
+  let plato6 = new Dish(6, "Pasta", require('../assets/images/images_dish/dish_06.jpg'), ingredients, false, true, false);
 
   {/* diets de prueba*/ }
   let r1 = new Diet(1, "Dieta Balanceada", "descripcion", require('../assets/images/images_diet/diet_02.jpg'), [[plato2, plato3, plato6], [plato6, plato4, plato5], [plato5, plato4, plato6], [plato2, plato3], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato3]]);

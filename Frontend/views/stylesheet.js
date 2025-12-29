@@ -2,6 +2,7 @@ import { StyleSheet, Dimensions, Platform, StatusBar } from "react-native";
 import colors from './colors.js';
 
 var width = Dimensions.get('window').width;
+var height = Dimensions.get('window').height;
 
 export default StyleSheet.create({
 
@@ -33,7 +34,7 @@ export default StyleSheet.create({
     textAlign: 'center',
   },
   scrollContent: {
-    paddingBottom: 40,
+    paddingBottom: height * 0.6,
     flexGrow: 1,
   },
 
@@ -160,7 +161,7 @@ export default StyleSheet.create({
     // Android shadow
     elevation: 5,
   },
-    //all recipes in group list only
+  //all recipes in group list only
   recetaCardGroup: {
     width: width - width * 0.2,
     height: 150,
@@ -207,7 +208,7 @@ export default StyleSheet.create({
     alignSelf: 'center',
   },
 
-// Recipe Screen Styles
+  // Recipe Screen Styles
   dishContainer: {
     borderWidth: 1,
     borderColor: colors.light_gray,
@@ -248,14 +249,14 @@ export default StyleSheet.create({
   },
 
   label: {
-    fontSize: 10, 
-    paddingHorizontal: 6, 
-    paddingVertical: 2, 
+    fontSize: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
     borderRadius: 4
   },
 
   labelVegetarian: {
-    backgroundColor: '#e8f5e9', 
+    backgroundColor: '#e8f5e9',
   },
 
   labelVegan: {
@@ -281,15 +282,15 @@ export default StyleSheet.create({
     shadowRadius: 4,
     alignSelf: 'center',
     margin: 2,
-},
+  },
 
-daysContainer: {
+  daysContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 20,
-},
+  },
 
-addDishButton: {
+  addDishButton: {
     borderWidth: 2,
     borderColor: colors.light_gray,
     borderRadius: 10,
@@ -298,10 +299,22 @@ addDishButton: {
     marginBottom: 20,
     textAlign: 'center',
     justifyContent: 'center',
-},
+  },
 
+  chooseImage: {
+    flex: 1,
+    alignItems: 'center',
+    borderRadius: 10,
+    margin: 2
+  },
 
-//pantalla rutina styles
+  gridImage: {
+    width: '100%',
+    aspectRatio: 1,
+    borderRadius: 10,
+  },
+
+  //pantalla rutina styles
   rutinaContainer: {
     flex: 1,
     paddingTop: 60,
@@ -364,8 +377,8 @@ addDishButton: {
     fontWeight: '600',
   },
 
-// Changing Password and Forgot Password Screen Styles
-    changingPassTitle: {
+  // Changing Password and Forgot Password Screen Styles
+  changingPassTitle: {
     fontSize: 26,
     fontWeight: 'bold',
     marginBottom: 10,
@@ -389,7 +402,7 @@ addDishButton: {
     fontWeight: 'bold',
   },
 
-// Daily Challenge Screen Styles
+  // Daily Challenge Screen Styles
   card: {
     backgroundColor: colors.white,
     borderRadius: 12,
@@ -418,7 +431,6 @@ addDishButton: {
     resizeMode: 'contain',
   },
   button: {
-    textAlign: 'center',
     color: colors.white,
     backgroundColor: colors.primary,
     paddingVertical: 10,
@@ -430,6 +442,8 @@ addDishButton: {
     color: colors.white,
     fontWeight: 'bold',
     fontSize: 16,
+    textAlign: 'center',
+
   },
   completedText: {
     fontSize: 18,

@@ -1,28 +1,28 @@
+import Ingredient from './Ingredient';
+
 export default class Dish {
 
-
-  constructor(id, name, imgUrl, ingredientsWithGrams, calories, fiber, carbohydrates, protein, vegetarian, vegan, gluten_free) {
+  constructor(id, name, imgUrl, ingredientsWithGrams, vegetarian, vegan, gluten_free) {
     this.id = id;
     this.name = name;
     this.imgUrl = imgUrl;
-    this.ingredients = ingredientsWithGrams;
-    this.calories = calories;
-    this.fiber = fiber;
-    this.carbohydrates = carbohydrates;
-    this.protein = protein;
+    this.ingredients = ingredientsWithGrams; // ← SIEMPRE este formato
     this.vegetarian = vegetarian;
     this.vegan = vegan;
     this.gluten_free = gluten_free;
   }
 
-getName() {
-  return this.name;
-}
+  getIngredientsWithGrams() {
+    return this.ingredients;
+  }
 
-//calcular los totales
-getAllIngredients() {
-  return this.ingredients;
-}
+  getAllIngredients() {
+    return this.ingredients.map(i => i.ingredient);
+  }
+
+  getName() {
+    return this.name;
+  }
 
   // Reconstruye una instancia de Dish desde un objeto plano (p.ej. desde JSON / route params)
 static from(obj) {
@@ -33,7 +33,7 @@ static from(obj) {
     if (item.ingredient) {
       const ing = item.ingredient instanceof IngredientClass
         ? item.ingredient
-        : new IngredientClass(
+        : new Ingredient(
             item.ingredient.id,
             item.ingredient.name,
             item.ingredient.imgUrl,

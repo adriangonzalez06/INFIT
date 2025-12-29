@@ -22,7 +22,10 @@ export const SearchMenu = forwardRef(({
   onSelectItem = () => {},
   renderCustomItem = null,
   searchPlaceholder = 'Buscar...',
-  height: propHeight
+  height: propHeight,
+  numColumns = 0,
+  columnWrapperStyle = null,
+  contentContainerStyle = null
 }, ref) => {
 
   const windowHeight = propHeight || Dimensions.get('window').height;
@@ -126,12 +129,15 @@ export const SearchMenu = forwardRef(({
             onChangeText={setSearchText}
           />
 
-          <FlatList
-            data={filteredData}
-            keyExtractor={(item) => String(item.id)}
-            renderItem={renderCustomItem || renderDefaultItem}
-            keyboardShouldPersistTaps="handled"
-          />
+          <View style={{paddingBottom: 200}}>
+            <FlatList
+              data={filteredData}
+              keyExtractor={(item) => String(item.id)}
+              renderItem={renderCustomItem || renderDefaultItem}
+              keyboardShouldPersistTaps="handled"
+              numColumns= {numColumns}
+            />
+          </View>
 
         </Animated.View>
       )}
@@ -154,6 +160,7 @@ const styles = StyleSheet.create({
   },
   buttonText: { color: "#fff", fontSize: 18, fontWeight: "bold" },
   bottomSheet: {
+    flex: 1,
     position: "absolute",
     left: 0,
     right: 0,
