@@ -15,31 +15,52 @@ import {
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import colors from "./colors";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { primary } = colors;
 const { white } = colors;
 
-export default function Feed() {
- 
-  const username = "Sergi"; 
-  
 
-  const [posts, setPosts] = useState([
-    {
-      id: "1",
-      username, 
-      title: `Bienvenido al feed ${username}!`,
-      content: "Esta es una publicación ejemplo",
-      createdAt: Date.now() - 1000 * 60 * 60,
-      imageUri: undefined,
-    },
-  ]);
+
+export default function Feed() {
+
+  const [username, setUsername] = useState(null);
+  const [posts, setPosts] = useState([]);
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [imageUri, setImageUri] = useState(undefined);
   const [submitting, setSubmitting] = useState(false);
   const [visible, setVisible] = useState(false);
+
+  const loadUser = async () => {
+    try {
+      const storedName = await AsyncStorage.getItem('userName');
+
+      if (storedName) {
+        setUsername(storedName);
+
+        setPosts([
+          {
+            id: "1",
+            username: storedName,
+            title: `Bienvenido al feed ${storedName}!`,
+            content: "Esta es una publicación ejemplo",
+            createdAt: Date.now() - 1000 * 60 * 60,
+            imageUri: undefined,
+          },
+        ]);
+      } else {
+        console.log("No se encontró username");
+      }
+    } catch (error) {
+      console.error("Error al obtener username:", error);
+    }
+  };
+
+  loadUser();
+
+
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -71,7 +92,7 @@ export default function Feed() {
 
     const newPost = {
       id: Math.random().toString(36).slice(2),
-      username, 
+      username,
       title: title.trim(),
       content: content.trim(),
       imageUri,
@@ -80,7 +101,7 @@ export default function Feed() {
 
     setPosts((prev) => [newPost, ...prev]);
 
-    
+
     setTitle("");
     setContent("");
     setImageUri(undefined);
@@ -117,14 +138,14 @@ export default function Feed() {
         transparent
         onRequestClose={() => setVisible(false)}
       >
-        
+
         <TouchableOpacity
           activeOpacity={1}
           style={styles.overlay}
           onPress={() => setVisible(false)}
         >
-         
-          <TouchableOpacity activeOpacity={1} style={styles.modalContent} onPress={() => {}}>
+
+          <TouchableOpacity activeOpacity={1} style={styles.modalContent} onPress={() => { }}>
             <Text style={styles.modalTitle}>Crear publicación</Text>
 
             <TextInput
@@ -206,14 +227,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     alignSelf: "flex-start",
-    marginTop:45,
+    marginTop: 45,
     zIndex: 10,
   },
-  primaryBtnText: { 
-    color: "#fff", 
-    fontWeight: "700", 
-    fontSize: 24, 
-      
+  primaryBtnText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 24,
+
   },
 
   // Modal

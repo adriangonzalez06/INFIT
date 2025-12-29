@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput, Platform, Alert
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 
 const SUGERENCIAS = {
   piernas: ['Sentadillas', 'Zancadas', 'Peso muerto rumano'],
@@ -18,27 +19,93 @@ const rutinasPredefinidas = [
   {
     id: 'piernas',
     nombre: 'Piernas explosivas',
-    ejercicios: ['Sentadillas', 'Zancadas', 'Peso muerto rumano'],
+    ejercicios: [
+      {
+        id: 'p1',
+        nombre: 'Barbell Squat',
+        muscular_group: 'quadriceps',
+        difficulty: 'intermediate',
+        image: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/barbell/Barbell_Squat/0.jpg'
+      },
+      {
+        id: 'p2',
+        nombre: 'Barbell Walking Lunge',
+        muscular_group: 'quadriceps',
+        difficulty: 'intermediate',
+        image: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/barbell/Barbell_Walking_Lunge/0.jpg'
+      },
+      {
+        id: 'p3',
+        nombre: 'Romanian Deadlift',
+        muscular_group: 'hamstrings',
+        difficulty: 'intermediate',
+        image: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/barbell/Romanian_Deadlift/0.jpg'
+      }
+    ],
     dificultad: 'Intermedio',
     color: '#ef2b2d',
   },
   {
     id: 'espalda',
     nombre: 'Espalda fuerte',
-    ejercicios: ['Dominadas', 'Remo con barra', 'Peso muerto'],
+    ejercicios: [
+      {
+        id: 'e1',
+        nombre: 'Pull-up',
+        muscular_group: 'lats',
+        difficulty: 'intermediate',
+        image: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/body_weight/Pull-up/0.jpg'
+      },
+      {
+        id: 'e2',
+        nombre: 'Bent Over Barbell Row',
+        muscular_group: 'middle back',
+        difficulty: 'beginner',
+        image: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/barbell/Bent_Over_Barbell_Row/0.jpg'
+      },
+      {
+        id: 'e3',
+        nombre: 'Deadlift',
+        muscular_group: 'lower back',
+        difficulty: 'intermediate',
+        image: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/barbell/Deadlift/0.jpg'
+      }
+    ],
     dificultad: 'Avanzado',
     color: '#2a9d8f',
   },
   {
     id: 'pecho',
     nombre: 'Pecho definido',
-    ejercicios: ['Press banca', 'Flexiones', 'Press inclinado'],
+    ejercicios: [
+      {
+        id: 'c1',
+        nombre: 'Barbell Bench Press',
+        muscular_group: 'chest',
+        difficulty: 'intermediate',
+        image: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/barbell/Barbell_Bench_Press_-_Medium_Grip/0.jpg'
+      },
+      {
+        id: 'c2',
+        nombre: 'Pushups',
+        muscular_group: 'chest',
+        difficulty: 'beginner',
+        image: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/body_weight/Pushups/0.jpg'
+      },
+      {
+        id: 'c3',
+        nombre: 'Incline Dumbbell Flyes',
+        muscular_group: 'chest',
+        difficulty: 'beginner',
+        image: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/dumbbell/Incline_Dumbbell_Flyes/0.jpg'
+      }
+    ],
     dificultad: 'Principiante',
     color: '#f4a261',
   },
 ];
 
-export default function Rutinas() {
+export default function Rutinas({ route }) {
   const navigation = useNavigation();
   const [rutinas, setRutinas] = useState({ grupo1: [] });
   const [modalVisible, setModalVisible] = useState(false);
@@ -49,16 +116,50 @@ export default function Rutinas() {
   const [busqueda, setBusqueda] = useState('');
   const [opcionesVisible, setOpcionesVisible] = useState(false);
   const [rutinaSeleccionada, setRutinaSeleccionada] = useState(null);
+  const [userId, setUserId] = useState(null);
+
+  const handleVolverInicio = () => {
+    navigation.navigate('MainTabs');
+  };
+
+  // Helper para URL
+  const getBackendUrl = (path) => {
+    const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+    return `http://${host}:8082/api${path}`;
+  };
 
   useEffect(() => {
-    const cargarRutinas = async () => {
-      const data = await AsyncStorage.getItem('rutinas');
-      if (data) {
-        setRutinas(JSON.parse(data));
+    const init = async () => {
+      try {
+        const id = await AsyncStorage.getItem('userId');
+        if (id) {
+          setUserId(id);
+          fetchRutinas(id);
+        }
+      } catch (e) {
+        console.error('Error obteniendo userId:', e);
       }
     };
-    cargarRutinas();
+    init();
   }, []);
+
+  const fetchRutinas = async (id) => {
+    try {
+      const url = getBackendUrl(`/routines/${id}`);
+      const response = await axios.get(url);
+      if (response.data) {
+        // Map backend 'exercises' to frontend 'ejercicios'
+        const mappedRoutines = response.data.map(r => ({
+          ...r,
+          ejercicios: r.exercises || [],
+          nombre: r.name // Ensure name is also available as nombre
+        }));
+        setRutinas({ grupo1: mappedRoutines });
+      }
+    } catch (error) {
+      console.log('Error cargando rutinas:', error.message);
+    }
+  };
 
 
   useEffect(() => {
@@ -68,9 +169,7 @@ export default function Rutinas() {
     setSugerencias(palabraClave ? SUGERENCIAS[palabraClave] : []);
   }, [nombreRutina]);
 
-  const guardarEnStorage = async (nuevasRutinas) => {
-    await AsyncStorage.setItem('rutinas', JSON.stringify(nuevasRutinas));
-  };
+  /* Removed guardarEnStorage as we use Backend API now */
 
   const handleAddRutina = (grupo) => {
     setGrupoActivo(grupo);
@@ -78,23 +177,39 @@ export default function Rutinas() {
   };
 
   const handleGuardarRutina = async () => {
-    if (!nombreRutina.trim()) return;
+    if (!nombreRutina.trim() || !userId) return;
 
     const nuevaRutina = {
-      id: Date.now().toString(),
-      nombre: nombreRutina.trim(),
-      ejercicios: sugerencias,
-      dificultad: dificultad || 'Sin definir',
+      name: nombreRutina.trim(),
+      exercises: sugerencias,
+      day: dificultad || 'Sin definir',
       color: '#264653',
     };
 
-    const nuevasRutinas = {
-      ...rutinas,
-      [grupoActivo]: [...rutinas[grupoActivo], nuevaRutina],
-    };
+    try {
+      const url = getBackendUrl(`/routines/${userId}`);
+      const response = await axios.post(url, nuevaRutina);
 
-    setRutinas(nuevasRutinas);
-    await guardarEnStorage(nuevasRutinas);
+      if (response.status === 201) {
+        // Mapping back for frontend compat
+        const rutinaCreada = {
+          ...nuevaRutina,
+          id: response.data.id,
+          nombre: nuevaRutina.name,
+          dificultad: nuevaRutina.day
+        };
+
+        const nuevasRutinas = {
+          ...rutinas,
+          [grupoActivo]: [...rutinas[grupoActivo], rutinaCreada],
+        };
+
+        setRutinas(nuevasRutinas);
+      }
+    } catch (error) {
+      console.error('Error creando rutina:', error);
+      Alert.alert('Error', 'No se pudo crear la rutina');
+    }
 
     setNombreRutina('');
     setSugerencias([]);
@@ -106,18 +221,16 @@ export default function Rutinas() {
     navigation.navigate('PantallaRutina', {
       rutina,
       grupoKey,
-      actualizarRutina: async (rutinaActualizada) => {
-        const nuevasRutinas = {
-          ...rutinas,
-          [grupoKey]: rutinas[grupoKey].map((r) =>
-            r.id === rutinaActualizada.id ? rutinaActualizada : r
-          ),
-        };
-        setRutinas(nuevasRutinas);
-        await guardarEnStorage(nuevasRutinas);
-      },
     });
   };
+
+  useEffect(() => {
+    if (route.params?.updatedRutina && route.params?.grupoKey) {
+      // Refresh from backend to ensure consistency
+      if (userId) fetchRutinas(userId);
+      navigation.setParams({ updatedRutina: null, grupoKey: null });
+    }
+  }, [route.params?.updatedRutina]);
 
   const handleLongPress = (rutina) => {
     setRutinaSeleccionada(rutina);
@@ -125,30 +238,54 @@ export default function Rutinas() {
   };
 
   const handleEliminarRutina = async () => {
-    const nuevasRutinas = {
-      ...rutinas,
-      grupo1: rutinas.grupo1.filter((r) => r.id !== rutinaSeleccionada.id),
-    };
-    setRutinas(nuevasRutinas);
-    await guardarEnStorage(nuevasRutinas);
+    if (!rutinaSeleccionada || !userId) return;
+
+    try {
+      const url = getBackendUrl(`/routines/${userId}/${rutinaSeleccionada.id}`);
+      await axios.delete(url);
+
+      const nuevasRutinas = {
+        ...rutinas,
+        grupo1: rutinas.grupo1.filter((r) => r.id !== rutinaSeleccionada.id),
+      };
+      setRutinas(nuevasRutinas);
+    } catch (error) {
+      console.error('Error eliminando rutina:', error);
+      Alert.alert('Error', 'No se pudo eliminar la rutina');
+    }
     setOpcionesVisible(false);
   };
 
   const handleDuplicarRutina = async () => {
-    const copia = { ...rutinaSeleccionada, id: Date.now().toString() };
-    const nuevasRutinas = {
-      ...rutinas,
-      grupo1: [...rutinas.grupo1, copia],
-    };
-    setRutinas(nuevasRutinas);
-    await guardarEnStorage(nuevasRutinas);
+    if (!rutinaSeleccionada || !userId) return;
+
+    try {
+      const nuevaRutina = {
+        name: `${rutinaSeleccionada.nombre || rutinaSeleccionada.name} (Copia)`,
+        day: rutinaSeleccionada.dificultad || 'Sin definir',
+        exercises: rutinaSeleccionada.ejercicios || []
+      };
+
+      const url = getBackendUrl(`/routines/${userId}`);
+      const response = await axios.post(url, nuevaRutina);
+
+      if (response.status === 201) {
+        fetchRutinas(userId);
+      }
+    } catch (error) {
+      console.error('Error duplicando rutina:', error);
+    }
     setOpcionesVisible(false);
   };
 
   const renderGrupo = (titulo, rutinasGrupo, grupoKey) => {
-    const filtradas = rutinasGrupo.filter((r) =>
-      r.nombre.toLowerCase().includes(busqueda.toLowerCase())
-    );
+    // Safety check for search filter
+    const term = (busqueda || '').toLowerCase();
+
+    const filtradas = rutinasGrupo.filter((r) => {
+      const nombre = r.nombre || r.name || '';
+      return nombre.toLowerCase().includes(term);
+    });
 
     return (
       <View style={styles.grupoContainer}>
@@ -162,9 +299,9 @@ export default function Rutinas() {
               onLongPress={() => handleLongPress(rutina)}
             >
               <Ionicons name="barbell" size={24} color="#fff" />
-              <Text style={styles.rutinaTexto}>{rutina.nombre}</Text>
+              <Text style={styles.rutinaTexto}>{rutina.nombre || rutina.name || 'Sin nombre'}</Text>
               <Text style={styles.rutinaSubTexto}>
-                {rutina.ejercicios.length} ejercicios
+                {rutina.ejercicios ? rutina.ejercicios.length : 0} ejercicios
               </Text>
             </TouchableOpacity>
           ))}
@@ -204,7 +341,7 @@ export default function Rutinas() {
     <View style={styles.container}>
 
       <Text style={styles.title}>Mis rutinas</Text>
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+      <TouchableOpacity style={styles.backButton} onPress={handleVolverInicio}>
         <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
       </TouchableOpacity>
 
@@ -278,46 +415,46 @@ export default function Rutinas() {
       </Modal>
 
       {/* Modal de opciones (long press) */}
-<Modal visible={opcionesVisible} transparent animationType="fade">
-  <View style={styles.optionsOverlay}>
-    <View style={styles.optionsCard}>
+      <Modal visible={opcionesVisible} transparent animationType="fade">
+        <View style={styles.optionsOverlay}>
+          <View style={styles.optionsCard}>
 
-      <Text style={styles.optionsTitle}>Opciones de rutina</Text>
+            <Text style={styles.optionsTitle}>Opciones de rutina</Text>
 
-      
 
-      <TouchableOpacity
-        style={styles.optionButton}
-        onPress={() => {
-          setOpcionesVisible(false);
-          handleDuplicarRutina();
-        }}
-      >
-        <Ionicons name="copy-outline" size={22} color="#ef2b2d" />
-        <Text style={styles.optionText}>Duplicar rutina</Text>
-      </TouchableOpacity>
 
-      <TouchableOpacity
-        style={[styles.optionButton, styles.deleteButton]}
-        onPress={() => {
-          setOpcionesVisible(false);
-          handleEliminarRutina();
-        }}
-      >
-        <Ionicons name="trash-outline" size={22} color="#fff" />
-        <Text style={[styles.optionText, { color: '#fff' }]}>Eliminar rutina</Text>
-      </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.optionButton}
+              onPress={() => {
+                setOpcionesVisible(false);
+                handleDuplicarRutina();
+              }}
+            >
+              <Ionicons name="copy-outline" size={22} color="#ef2b2d" />
+              <Text style={styles.optionText}>Duplicar rutina</Text>
+            </TouchableOpacity>
 
-      <TouchableOpacity
-        style={styles.cancelButton}
-        onPress={() => setOpcionesVisible(false)}
-      >
-        <Text style={styles.cancelText}>Cancelar</Text>
-      </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.optionButton, styles.deleteButton]}
+              onPress={() => {
+                setOpcionesVisible(false);
+                handleEliminarRutina();
+              }}
+            >
+              <Ionicons name="trash-outline" size={22} color="#fff" />
+              <Text style={[styles.optionText, { color: '#fff' }]}>Eliminar rutina</Text>
+            </TouchableOpacity>
 
-    </View>
-  </View>
-</Modal>
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={() => setOpcionesVisible(false)}
+            >
+              <Text style={styles.cancelText}>Cancelar</Text>
+            </TouchableOpacity>
+
+          </View>
+        </View>
+      </Modal>
 
     </View>
   );
@@ -327,222 +464,226 @@ export default function Rutinas() {
 
 
 
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      paddingTop: 60,
-      paddingHorizontal: 20,
-      backgroundColor: '#fff',
-    },
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingTop: 60,
+    paddingHorizontal: 20,
+    backgroundColor: '#fff',
+  },
 
-    backButton: {
-      position: 'absolute',
-      top: 60,
-      left: 20,
-      zIndex: 10,
-    },
+  backButton: {
+    position: 'absolute',
+    top: 60,
+    left: 20,
+    zIndex: 10,
+  },
 
-    title: {
-      fontSize: 28,
-      fontWeight: 'bold',
-      color: '#ef2b2d',
-      marginBottom: 20,
-      textAlign: 'center',
-    },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#ef2b2d',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
 
-    searchInput: {
-      borderWidth: 1,
-      borderColor: '#ccc',
-      borderRadius: 8,
-      padding: 10,
-      marginBottom: 20,
-    },
+  searchInput: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 20,
+  },
 
-    scrollContent: {
-      paddingBottom: 40,
-    },
+  scrollContent: {
+    paddingBottom: 40,
+  },
 
-    grupoContainer: {
-      marginBottom: 30,
-    },
+  grupoContainer: {
+    marginBottom: 30,
+  },
 
-    grupoTitulo: {
-      fontSize: 18,
-      fontWeight: '600',
-      marginBottom: 10,
-      color: '#333',
-    },
+  grupoTitulo: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 10,
+    color: '#333',
+  },
 
-    rutinasRow: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 12,
-    },
+  rutinasRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
 
-    rutinaCard: {
-      width: 140,
-      height: 120,
-      borderRadius: 12,
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: 10,
-    },
+  rutinaCard: {
+    width: 140,
+    height: 120,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 10,
+  },
 
-    rutinaTexto: {
-      fontSize: 16,
-      color: '#fff',
-      fontWeight: '600',
-      marginTop: 8,
-    },
+  rutinaTexto: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: '600',
+    marginTop: 8,
+  },
 
-    rutinaSubTexto: {
-      fontSize: 12,
-      color: '#fff',
-    },
+  rutinaSubTexto: {
+    fontSize: 12,
+    color: '#fff',
+  },
 
-    addCard: {
-      width: 140,
-      height: 120,
-      borderRadius: 12,
-      borderWidth: 2,
-      borderColor: '#ef2b2d',
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: '#fff',
-    },
+  addCard: {
+    width: 140,
+    height: 120,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#ef2b2d',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
 
-    modalOverlay: {
-      flex: 1,
-      backgroundColor: 'rgba(0,0,0,0.4)',
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 
-    modalContent: {
-      backgroundColor: '#fff',
-      padding: 20,
-      borderRadius: 12,
-      width: '85%',
+  modalContent: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 12,
+    width: '85%',
 
-    },
+  },
 
-    modalTitle: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      marginBottom: 10,
-    },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
 
-    input: {
-      borderWidth: 1,
-      borderColor: '#ccc',
-      borderRadius: 8,
-      padding: 10,
-      marginBottom: 10,
-    },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 10,
+  },
 
-    sugerenciasContainer: {
-      marginBottom: 10,
-    },
+  sugerenciasContainer: {
+    marginBottom: 10,
+  },
 
-    sugerenciasTitulo: {
-      fontWeight: '600',
-      marginBottom: 5,
-    },
+  sugerenciasTitulo: {
+    fontWeight: '600',
+    marginBottom: 5,
+  },
 
-    chipsContainer: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 8,
-    },
+  chipsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
 
-    chip: {
-      borderWidth: 1,
-      borderColor: '#ccc',
-      borderRadius: 20,
-      paddingVertical: 6,
-      paddingHorizontal: 12,
-    },
+  chip: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 20,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
 
-    chipSelected: {
-      backgroundColor: '#ef2b2d',
-      borderColor: '#ef2b2d',
-    },
+  chipSelected: {
+    backgroundColor: '#ef2b2d',
+    borderColor: '#ef2b2d',
+  },
 
-    chipText: {
-      fontSize: 14,
-      color: '#333',
-    },
+  chipText: {
+    fontSize: 14,
+    color: '#333',
+  },
 
-    chipTextSelected: {
-      color: '#fff',
-    },
+  chipTextSelected: {
+    color: '#fff',
+  },
 
-    modalButtons: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginTop: 20,
-    },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+  },
 
-    modalButton: {
-      backgroundColor: '#ef2b2d',
-      paddingVertical: 10,
-      paddingHorizontal: 20,
-      borderRadius: 8,
-    },
+  modalButton: {
+    backgroundColor: '#ef2b2d',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
 
-    modalButtonText: {
-      color: '#fff',
-      fontWeight: '600',
-    },
+  modalButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
 
-    optionsOverlay: { 
-      flex: 1, 
-      backgroundColor: 'rgba(0,0,0,0.5)', 
-      justifyContent: 'center', 
-      alignItems: 'center', 
-      paddingHorizontal: 20, }, 
-      optionsCard: { width: '100%', 
-        backgroundColor: '#fff', 
-        borderRadius: 16, 
-        padding: 20, 
-        elevation: 10, }, 
+  optionsOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  optionsCard: {
+    width: '100%',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    elevation: 10,
+  },
 
-      optionsTitle: { 
-        fontSize: 20, 
-        fontWeight: '700', 
-        marginBottom: 20, 
-        textAlign: 'center', 
-        color: '#333', },
+  optionsTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 20,
+    textAlign: 'center',
+    color: '#333',
+  },
 
-      optionButton: { 
-        flexDirection: 'row', 
-        alignItems: 'center', 
-        paddingVertical: 12, 
-        paddingHorizontal: 10, 
-        borderRadius: 10, 
-        backgroundColor: '#f7f7f7', 
-        marginBottom: 12, 
-        gap: 10, 
-      }, 
-      optionText: { 
-        fontSize: 16, 
-        fontWeight: '500', 
-        color: '#333', 
-      }, 
+  optionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    backgroundColor: '#f7f7f7',
+    marginBottom: 12,
+    gap: 10,
+  },
+  optionText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+  },
 
-      deleteButton: { 
-        backgroundColor: '#ef2b2d', 
-        }, 
-      cancelButton: { 
-        marginTop: 10, 
-        paddingVertical: 12, 
-        borderRadius: 10, 
-        backgroundColor: '#ddd', 
-        }, 
-      cancelText: {
-        textAlign: 'center', 
-        fontSize: 16, 
-        fontWeight: '600', 
-        color: '#333', 
-        },
-  });
+  deleteButton: {
+    backgroundColor: '#ef2b2d',
+  },
+  cancelButton: {
+    marginTop: 10,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: '#ddd',
+  },
+  cancelText: {
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
+});

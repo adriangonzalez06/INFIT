@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,9 +8,14 @@ import {
   Modal,
   ScrollView,
   StyleSheet,
+  Image,
+  Platform,
+  Alert
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LottieView from 'lottie-react-native';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function PantallaRutina({ route, navigation }) {
   const { rutina, grupoKey, actualizarRutina } = route.params;
@@ -22,6 +27,15 @@ export default function PantallaRutina({ route, navigation }) {
   const [opcionesVisible, setOpcionesVisible] = useState(false);
   const [ejercicioSeleccionado, setEjercicioSeleccionado] = useState(null);
 
+  // Estado para los ejercicios obtenidos del backend
+  const [backendExercises, setBackendExercises] = useState({}); // { [grupo]: [ejercicios] }
+  const [userId, setUserId] = useState(null);
+
+  // Helper para URL
+  const getBackendUrl = (path) => {
+  const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+  return `http://${host}:8082/api${path}`;
+};
   // Modal de detalles
   const [detallesVisible, setDetallesVisible] = useState(false);
   const [ejercicioEnEdicion, setEjercicioEnEdicion] = useState(null);
@@ -44,11 +58,118 @@ export default function PantallaRutina({ route, navigation }) {
     ],
   };
 
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const id = await AsyncStorage.getItem('userId');
+        if (id) setUserId(id);
+      } catch (e) {
+        console.error('Error getting userId:', e);
+      }
+    };
+    init();
+  }, []);
+
+  // Cargar ejercicios desde el backend
+  useEffect(() => {
+    const fetchExercises = async () => {
+      try {
+        const url = getBackendUrl('/exercises');
+        const response = await axios.get(url);
+
+        if (response.data) {
+          // Agrupar por muscular_group
+          const grouped = {};
+          response.data.forEach((ex) => {
+            const group = ex.muscular_group || 'General';
+            if (!grouped[group]) {
+              grouped[group] = [];
+            }
+            grouped[group].push(ex);
+          });
+          setBackendExercises(grouped);
+        }
+      } catch (error) {
+        console.error('Error fetching exercises:', error);
+      }
+    };
+
+    fetchExercises();
+  }, []);
+
+  // Autosave function
+  const saveRoutineChanges = async (newExercises) => {
+    if (!userId || !rutina.id) return;
+
+    try {
+      const url = getBackendUrl(`/routines/${userId}/${rutina.id}`);
+      const payload = {
+        exercises: newExercises
+      };
+      await axios.put(url, payload);
+    } catch (error) {
+      console.error('Error autosaving routine:', error);
+      Alert.alert('Error', 'No se pudieron guardar los cambios en la nube');
+    }
+  };
+
+  // Añadir ejercicio
+  const handleAddEjercicio = async (ejercicioObj) => {
+    const nuevoEjercicio = {
+      id: Date.now().toString(),
+      nombre: ejercicioObj.name || ejercicioObj.nombre,
+      animacion: ejercicioObj.animacion,
+      image: ejercicioObj.image,
+      gif: ejercicioObj.gif,
+      isBackend: true,
+      originalData: ejercicioObj,
+    };
+
+    const nuevaLista = [...ejercicios, nuevoEjercicio];
+    setEjercicios(nuevaLista);
+    await saveRoutineChanges(nuevaLista);
+
+    setBuscadorVisible(false);
+    setFiltro('');
+  };
+
+  const handleGoBack = () => {
+    navigation.navigate('Rutinas', {
+      updatedRutina: { ...rutina, ejercicios },
+      grupoKey
+    });
+  };
+
+  const handleDeleteEjercicio = async () => {
+    if (!ejercicioSeleccionado) return;
+
+    const nuevaLista = ejercicios.filter((e) => e.id !== ejercicioSeleccionado.id);
+    setEjercicios(nuevaLista);
+    await saveRoutineChanges(nuevaLista);
+
+    setOpcionesVisible(false);
+  };
+
+  const handleDuplicateEjercicio = async () => {
+    if (!ejercicioSeleccionado) return;
+
+    const copia = {
+      ...ejercicioSeleccionado,
+      id: Date.now().toString(),
+    };
+
+    const nuevaLista = [...ejercicios, copia];
+    setEjercicios(nuevaLista);
+    await saveRoutineChanges(nuevaLista);
+
+    setOpcionesVisible(false);
+  };
+
   return (
     <View style={styles.rutinaContainer}>
       {/* HEADER */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={handleGoBack}>
           <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
         </TouchableOpacity>
         <Text style={styles.title}>{rutina.nombre}</Text>
@@ -70,13 +191,24 @@ export default function PantallaRutina({ route, navigation }) {
             }}
           >
             <View style={styles.ejercicioItem}>
-              {item.animacion && (
+              {item.animacion ? (
                 <LottieView
                   source={item.animacion}
                   autoPlay
                   loop
                   style={styles.iconoGif}
                 />
+              ) 
+              : item.image ? (
+                <Image
+                  source={{ uri: item.image }}
+                  style={styles.iconoGif}
+                  resizeMode="cover"
+                  resizeMethod="resize"
+                  onError={(e) => console.log(`Error loading image for ${item.nombre}:`, e.nativeEvent.error)}
+                />
+              ) : (
+                <Ionicons name="barbell-outline" size={40} color="#555" />
               )}
 
               <View style={styles.rowBetween}>
@@ -107,18 +239,26 @@ export default function PantallaRutina({ route, navigation }) {
               onChangeText={setFiltro}
             />
 
-            <ScrollView>
-              {Object.entries(ejerciciosPredefinidos).map(([grupo, lista]) => (
-                <View key={grupo}>
-                  <Text style={styles.grupoTitulo}>{grupo.toUpperCase()}</Text>
+            <FlatList
+              data={Object.entries(backendExercises)}
+              keyExtractor={([grupo]) => grupo}
+              initialNumToRender={5}
+              maxToRenderPerBatch={10}
+              windowSize={5}
+              removeClippedSubviews={Platform.OS === 'android'}
+              renderItem={({ item: [grupo, lista] }) => {
+                const filteredList = lista.filter((ej) =>
+                  (ej.name || '').toLowerCase().includes(filtro.toLowerCase())
+                );
 
-                  {lista
-                    .filter((ej) =>
-                      ej.nombre.toLowerCase().includes(filtro.toLowerCase())
-                    )
-                    .map((ejercicio) => (
+                if (filteredList.length === 0) return null;
+
+                return (
+                  <View>
+                    <Text style={styles.grupoTitulo}>{grupo.toUpperCase()}</Text>
+                    {filteredList.map((ejercicio) => (
                       <TouchableOpacity
-                        key={ejercicio.nombre}
+                        key={ejercicio.id || ejercicio.name}
                         style={styles.ejercicioItemModal}
                         onPress={() => {
                           setModoEdicion(false);
@@ -131,19 +271,37 @@ export default function PantallaRutina({ route, navigation }) {
                         }}
                       >
                         <View style={styles.row}>
-                          <LottieView
-                            source={ejercicio.animacion}
-                            autoPlay
-                            loop
-                            style={styles.iconoGif}
-                          />
-                          <Text>{ejercicio.nombre}</Text>
+                          {ejercicio.animacion ? (
+                            <LottieView
+                              source={ejercicio.animacion}
+                              autoPlay
+                              loop
+                              style={styles.iconoGif}
+                            />
+                          ) : ejercicio.image ? (
+                            <Image
+                              source={{ uri: ejercicio.image }}
+                              style={styles.iconoGif}
+                              resizeMode="cover"
+                              resizeMethod="resize" // Optimizes memory on Android
+                              onError={(e) => console.log(`Error loading modal image for ${ejercicio.name}:`, e.nativeEvent.error)}
+                            />
+                          ) : (
+                            <Ionicons name="fitness" size={40} color="#ef2b2d" />
+                          )}
+                          <Text style={{ flex: 1, flexWrap: 'wrap' }}>{ejercicio.name}</Text>
                         </View>
                       </TouchableOpacity>
                     ))}
-                </View>
-              ))}
-            </ScrollView>
+                  </View>
+                );
+              }}
+              ListEmptyComponent={
+                <Text style={{ textAlign: 'center', padding: 20 }}>
+                  {Object.keys(backendExercises).length === 0 ? 'Cargando ejercicios...' : 'No se encontraron ejercicios.'}
+                </Text>
+              }
+            />
 
             <TouchableOpacity
               onPress={() => setBuscadorVisible(false)}
@@ -185,12 +343,7 @@ export default function PantallaRutina({ route, navigation }) {
             <TouchableOpacity
               style={styles.optionButton2}
               onPress={() => {
-                setOpcionesVisible(false);
-                const copia = {
-                  ...ejercicioSeleccionado,
-                  id: Date.now().toString(),
-                };
-                setEjercicios([...ejercicios, copia]);
+                handleDuplicateEjercicio();
               }}
             >
               <Ionicons name="copy-outline" size={22} color="#ef2b2d" />
@@ -201,10 +354,7 @@ export default function PantallaRutina({ route, navigation }) {
             <TouchableOpacity
               style={[styles.optionButton2, styles.deleteButton]}
               onPress={() => {
-                setOpcionesVisible(false);
-                setEjercicios(
-                  ejercicios.filter((e) => e.id !== ejercicioSeleccionado.id)
-                );
+                handleDeleteEjercicio();
               }}
             >
               <Ionicons name="trash-outline" size={22} color="#fff" />
