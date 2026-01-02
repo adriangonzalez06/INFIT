@@ -23,8 +23,6 @@ export default function AddDietMenu({ route }) {
   const navigation = useNavigation();
   const { height } = Dimensions.get('window');
 
-  console.log("tiene id?", route.params);
-
   //id, name, imgUrl, calories, fiber, carbohydrates, fat, protein)
   let in1 = new Ingredient(1, "Manzana", "url", 30, 2, 12, 2, 3);
   let in2 = new Ingredient(1, "Carne", "url", 40, 4, 14, 3, 1);
@@ -112,6 +110,7 @@ export default function AddDietMenu({ route }) {
 
   {/*array de todos los platos*/ }
   const allAvailableDishes = [dish1, dish2, dish3, dish4, dish5, dish6];
+  const myDishes = [dish1, dish3];
 
   {/*datos de la dieta*/ }
   // selectedDay: 0 = Lunes, 1 = Martes, ... 6 = Domingo
@@ -158,7 +157,7 @@ export default function AddDietMenu({ route }) {
   {/*componente personalizado para renderizar items en el SearchMenu*/ }
   const renderDishItemMenu = ({ item }) => (
     <TouchableOpacity onPress={() => { handleAddDish(item); searchMenuRef.current?.cerrarMenu?.(); }}>
-      <View style={[styles.dishContainer, { marginHorizontal: 10, marginVertical: 8 }]}>
+      <View style={[styles.dishContainer]}>
         <Image
           style={[styles.dishImage, { width: 80, height: 80, borderRadius: 8 }]}
           source={typeof item.imgUrl === 'number' ? item.imgUrl : { uri: item.imgUrl }}
@@ -589,7 +588,7 @@ export default function AddDietMenu({ route }) {
             <Text style={styles.text}>{calculateWeeklyTotals().totalProtein} g</Text>
           </View>
 
-          <Text style={styles.title_2}>Elegir imagen</Text>
+          <Text style={styles.grupoTitulo}>Elegir imagen</Text>
 
           <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 10 }}>
             <TouchableOpacity onPress={() => imgMenuRef.current?.abrirMenu()} style={{ width: '100%', alignItems: 'center', marginBottom: 20 }}>
@@ -619,6 +618,10 @@ export default function AddDietMenu({ route }) {
       <SearchMenu
         ref={searchMenuRef}
         data={allAvailableDishes}
+        data2={myDishes}
+        dataButton="Todos los platos"
+        dataButton2="Mis platos"
+        viewButtons={true}
         title="Agregar plato a la dieta"
         searchFields={["name"]}
         renderCustomItem={renderDishItemMenu}

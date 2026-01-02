@@ -10,13 +10,17 @@ import {
   PanResponder,
   StyleSheet
 } from 'react-native';
+import { useRoute, useNavigation } from '@react-navigation/native';
 import style from '../../views/stylesheet'
 
   const { height } = Dimensions.get("window");
 
-
 export const SearchMenu = forwardRef(({
   data = [],
+  data2 = [],
+  viewButtons = false,
+  dataButton = 'Data 1',
+  dataButton2 = 'Data 2',
   title = 'Disponibles',
   searchFields = ['nombre', 'name'],
   onSelectItem = () => {},
@@ -32,6 +36,10 @@ export const SearchMenu = forwardRef(({
   const [visible, setVisible] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [tipo, setTipo] = useState(null);
+  const [selectedData, setSelectedData] = useState(data);
+  const [showCreateButton, setShowCreateButton] = useState(false);
+
+  const navigation = useNavigation();
 
   const slideAnim = useRef(new Animated.Value(windowHeight)).current;
 
@@ -92,11 +100,11 @@ export const SearchMenu = forwardRef(({
 
   const filteredData = useMemo(() => {
     const q = searchText.trim().toLowerCase();
-    if (!q) return data;
-    return data.filter(item =>
+    if (!q) return selectedData;
+    return selectedData.filter(item =>
       searchFields.some(f => String(item[f] ?? '').toLowerCase().includes(q))
     );
-  }, [data, searchText, searchFields]);
+  }, [selectedData, searchText, searchFields]);
 
   const renderDefaultItem = ({ item }) => (
     <TouchableOpacity onPress={() => handleSelect(item)}>
@@ -110,6 +118,52 @@ export const SearchMenu = forwardRef(({
       </View>
     </TouchableOpacity>
   );
+
+  const renderCategoryButtons = (viewButtons) => {
+
+    if (!viewButtons) return null;
+      return (
+        <View>
+          <View style={[style.middleRowElementsContainer]}>
+
+              <TouchableOpacity 
+                style={style.grayButton} 
+                onPress={() => {setSelectedData(data); setShowCreateButton(true)}}
+              >
+
+                <Text>{dataButton}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={style.grayButton} 
+                onPress={() => {setSelectedData(data2); setShowCreateButton(false)}}
+              >
+
+                <Text>{dataButton2}</Text>
+              </TouchableOpacity>
+
+          </View>
+
+          <View style={style.dayButtons}>
+              {renderCreateButton(showCreateButton)};
+          </View>
+
+        </View>
+      );
+  };
+
+  const renderCreateButton = (showCreateButton) => {
+    if (showCreateButton) return null;
+
+    return (
+      <TouchableOpacity
+      style={style.createDishButton}
+      onPress={() => navigation.navigate('CreateDishMenu')}
+      >
+        <Text>+ Crear plato</Text>
+      </TouchableOpacity>
+    )
+  }
 
 
   return (
@@ -130,6 +184,9 @@ export const SearchMenu = forwardRef(({
           />
 
           <View style={{paddingBottom: 200}}>
+            
+            {renderCategoryButtons(viewButtons)}
+
             <FlatList
               data={filteredData}
               keyExtractor={(item) => String(item.id)}

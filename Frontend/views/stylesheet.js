@@ -33,6 +33,14 @@ export default StyleSheet.create({
     color: colors.dark_gray,
     textAlign: 'center',
   },
+
+  smallText: {
+    fontSize: 14,
+    color: colors.dark_gray,
+    textAlign: 'left',
+    marginBottom: 5
+  },
+  
   scrollContent: {
     paddingBottom: height * 0.6,
     flexGrow: 1,
@@ -42,6 +50,7 @@ export default StyleSheet.create({
     marginBottom: 30,
     width: width - 50,
   },
+
   title: {
     fontSize: 26,
     fontWeight: 'bold',
@@ -66,6 +75,13 @@ export default StyleSheet.create({
     marginBottom: 10,
     color: colors.medium_gray,
   },
+  grayButton: {
+    backgroundColor: colors.bg_gray,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    borderColor: colors.dark_gray,
+  },
 
   modalOverlay: {
     flex: 1,
@@ -84,14 +100,6 @@ export default StyleSheet.create({
     fontWeight: '600',
     marginBottom: 10,
     color: colors.dark_gray,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.medium_gray,
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 20,
-    backgroundColor: colors.white,
   },
   modalButtons: {
     flexDirection: 'row',
@@ -301,6 +309,27 @@ export default StyleSheet.create({
     justifyContent: 'center',
   },
 
+  createDishButton: {
+    borderWidth: 2,
+    borderColor: colors.light_gray,
+    borderRadius: 10,
+    borderStyle: 'dashed',
+    padding: 15,
+    textAlign: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    marginBottom: 15,
+    
+  },
+
+  middleRowElementsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingLeft: '10%',
+    paddingRight: '10%',
+    marginBottom: 15,
+  },
+
   chooseImage: {
     flex: 1,
     alignItems: 'center',
@@ -358,9 +387,10 @@ export default StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.light_gray,
     borderRadius: 8,
-    padding: 10,
-    marginBottom: 15,
+    padding: 16,
+    margin: 0,
     backgroundColor: colors.white,
+    width: '100%'
   },
 
   ejercicioItemModal: {

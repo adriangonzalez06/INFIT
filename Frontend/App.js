@@ -41,6 +41,7 @@ import ListaGrupoRecetas from './views/ListaGrupoRecetas';
 import AddDietMenu from './views/AddDietMenu';
 import colors from './views/colors';
 import EditProfile from "./views/EditProfile";
+import CreateDishMenu from "./views/CreateDishMenu";
 
 import { initializeApp, getApps } from 'firebase/app';
 import { firebaseConfig } from './firebaseConfig';
@@ -242,6 +243,7 @@ export default function App() {
           <Stack.Screen name="Challenges" component={Challenges} options={{headerShown: false}}/>
           <Stack.Screen name="AddDietMenu" component={AddDietMenu} options={{headerShown: false}}/>
           <Stack.Screen name="EditProfile" component={EditProfile} options={{headerShown: false}}/>
+          <Stack.Screen name="CreateDishMenu" component={CreateDishMenu} options={{headerShown: false}}/>
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
