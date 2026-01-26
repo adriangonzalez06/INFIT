@@ -26,6 +26,8 @@ export default class Dish {
 
   // Reconstruye una instancia de Dish desde un objeto plano (p.ej. desde JSON / route params)
 static from(obj) {
+  if (!obj) return null;
+  
   const IngredientClass = require('./Ingredient').default;
 
   const ingredientsWithGrams = (obj.ingredients || []).map(item => {
@@ -80,6 +82,17 @@ static from(obj) {
 }
 
 
+  getUrl() {
+    return this.imgUrl;
+  }
+
+  setUrl(url) {
+    this.imgUrl = url;
+  }
+
+  addIngredient(ingredientWithGrams) {
+    this.ingredients.push(ingredientWithGrams);
+  }
 
 }
 

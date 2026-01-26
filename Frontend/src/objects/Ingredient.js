@@ -1,4 +1,5 @@
 export default class Ingredient {
+
     constructor(id, name, imgUrl, calories, fiber, carbohydrates, fat, protein) {
         this.id = id;
         this.name = name;
@@ -8,6 +9,8 @@ export default class Ingredient {
         this.carbohydrates = carbohydrates;
         this.fat = fat;
         this.protein = protein;
+        this.defaultGrams = 100;
+        this.grams = this.defaultGrams;
 
     }
 

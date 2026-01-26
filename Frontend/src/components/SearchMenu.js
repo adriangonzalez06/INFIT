@@ -37,7 +37,7 @@ export const SearchMenu = forwardRef(({
   const [searchText, setSearchText] = useState('');
   const [tipo, setTipo] = useState(null);
   const [selectedData, setSelectedData] = useState(data);
-  const [showCreateButton, setShowCreateButton] = useState(false);
+  const [showCreateButton, setShowCreateButton] = useState(true);
 
   const navigation = useNavigation();
 
@@ -122,6 +122,7 @@ export const SearchMenu = forwardRef(({
   const renderCategoryButtons = (viewButtons) => {
 
     if (!viewButtons) return null;
+
       return (
         <View>
           <View style={[style.middleRowElementsContainer]}>
@@ -192,7 +193,9 @@ export const SearchMenu = forwardRef(({
               keyExtractor={(item) => String(item.id)}
               renderItem={renderCustomItem || renderDefaultItem}
               keyboardShouldPersistTaps="handled"
-              numColumns= {numColumns}
+              numColumns={numColumns}
+              columnWrapperStyle={columnWrapperStyle}
+              contentContainerStyle={contentContainerStyle}
             />
           </View>
 

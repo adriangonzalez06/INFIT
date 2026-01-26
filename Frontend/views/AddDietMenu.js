@@ -147,7 +147,6 @@ export default function AddDietMenu({ route }) {
       : { uri: imgUrl };
   };
 
-
   {/*-------CONSTANTES MENU DESPLEGABLE--------*/ }
   {/*SearchMenu ref para abrirlo desde el boton*/ }
   const searchMenuRef = useRef(null);
@@ -230,7 +229,6 @@ export default function AddDietMenu({ route }) {
           />
           <View style={{ margin: 5, flex: 1 }}>
             <Text style={styles.dishTitle}>{dish.name}</Text>
-
             <Text style={styles.dishSubtitle}>Calorías</Text>
             <Text style={styles.dishText}>{calculateDishTotals(dish).totalCalories} kcal</Text>
 
