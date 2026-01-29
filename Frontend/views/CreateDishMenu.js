@@ -101,12 +101,12 @@ export default function CreateDishMenu({ route }) {
   // Asegurarse de que addingGroup sea siempre un array (maneja route.params undefined/null y valores no array)
   const addingGroup = Array.isArray(route?.params?.dish) ? route.params.dish : [];
 
-  // Rehydrate route.params.dish into a Dish instance so instance methods work
-  const dish = useMemo(() => Dish.from(route?.params?.dish) || new Dish(null, '', '', [], false, false, false), [route?.params?.dish]);
-
   {/* If its null it means that we are creating a dish*/ }
   let creatingDish = false;
   if (!dish) creatingDish = true;
+
+  // Rehydrate route.params.dish into a Dish instance so instance methods work
+  const dish = useMemo(() => Dish.from(route?.params?.dish) || new Dish(null, '', '', [], false, false, false), [route?.params?.dish]);
 
   {/*gestion de imagenes locales y remotas*/ }
   {/*comprobar de donde vienen*/ }
@@ -130,6 +130,11 @@ export default function CreateDishMenu({ route }) {
   const [visible, setModalVisible] = useState(false);
   const [selectedUri, setSelectedUri] = useState(route?.params?.dish?.imgUrl || images[0].url || null);
   const [ingredientsWithGrams, setIngredientsWithGrams] = useState(dish?.getIngredientsWithGrams() || []);
+  const [selectedIngredientIndex, setSelectedIngredientIndex] = useState(null);
+  const [selectedIngredientWithGrams, setSelectedIngredientWithGrams] = useState(null);
+  const [dishName, setDishName] = useState('');
+  const [dishDescription, setDishDescription] = useState('');
+  const [allDishes, setAllDishes] = useState([]);
 
   const renderImageItemMenu = ({ item }) => (
     <TouchableOpacity onPress={() => { handleSetImage(item.url); imgMenuRef.current?.cerrarMenu?.(); }} style={styles.chooseImage}>
@@ -241,10 +246,10 @@ export default function CreateDishMenu({ route }) {
     const { ingredient, grams } = item;
 
     return (
-      <TouchableOpacity key={ingredient.id} onPress={() => { showModal(renderSelectGramsModal(item, index)) }} onLongPress={() => handleDeleteIngredient(index)}>
+      <TouchableOpacity key={ingredient.id} onPress={() => { showModal(index, grams) }} onLongPress={() => handleDeleteIngredient(index)}>
         <View style={[styles.dishContainer]}>
 
-          <View style={{ marginLeft: 10, flex: 1 }}>
+          <View style={{ flex: 1 }}>
             <View key={ingredient.id} >
               <Text style={styles.title_2}>{grams}g de {ingredient.name}</Text>
 
@@ -288,12 +293,14 @@ export default function CreateDishMenu({ route }) {
 
   {/*funcion para eliminar un ingrediente del plato*/ }
   const handleDeleteIngredient = (index) => {
-    // borra por índice del día seleccionado
-    dish.ingredientsWithGrams.splice(index, 1);
-    setIngredientsWithGrams([...dish.getIngredientsWithGrams()]);
+    const currentIngredients = dish.getIngredientsWithGrams();
+    if (currentIngredients && currentIngredients.length > index) {
+      currentIngredients.splice(index, 1);
+      setIngredientsWithGrams([...currentIngredients]);
+    }
   };
 
-  {/*funcion para renderizar la lista de ingredientes*/ }
+  {/*funcion para renderizar la lista de ingredientes del plato*/ }
   const renderIngredientList = () => {
     return (
       <>
@@ -310,30 +317,125 @@ export default function CreateDishMenu({ route }) {
     }
   };
 
-  const renderSelectGramsModal = (item, index) => {
+  const renderSelectGramsModal = () => {
+    const currentIngredient = ingredientsWithGrams[selectedIngredientIndex]?.ingredient;
+
     return (
       <Modal visible={visible} transparent animationType="fade" onRequestClose={hideModal}>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}></View>
-          <LabelTextInput
-            label="Introduzca la cantidad de gramos deseada"
-            placeholder="Gramos..."
-            onChangeText={handleSelectGrams(index, {item : grams})}
-            value={grams}
-          />
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Cambiar gramos de {currentIngredient?.name}</Text>
+            <LabelTextInput
+              label="Introduzca la cantidad de gramos deseada"
+              placeholder="Gramos..."
+              onChangeText={setGrams}
+              value={grams?.toString()}
+              keyboardType="numeric"
+              maxLength={6}
+            />
+            <View style={styles.modalButtons}>
+              <View style={{ flex: 1, justifyContent: 'flex-end', flexDirection: 'row', gap: 10, marginTop: 10 }}>
+                <TouchableOpacity onPress={hideModal} style={[styles.modalButton, { backgroundColor: '#ccc' }]}>
+                  <Text style={styles.modalButtonText}>Cancelar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleUpdateGrams()} style={styles.modalButton}>
+                  <Text style={styles.modalButtonText}>Actualizar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
         </View>
       </Modal>
     )
   };
 
-  const showModal = (ingredients) => {
-    setSelectedIngredients(ingredients);
+  const showModal = (index, gramsValue) => {
+    setSelectedIngredientIndex(index);
+    setGrams(gramsValue);
     setModalVisible(true);
   };
 
   const hideModal = () => {
     setModalVisible(false);
-    setSelectedIngredients([]);
+    setGrams(null);
+    setSelectedIngredientIndex(null);
+  };
+
+  const handleUpdateGrams = () => {
+    if (selectedIngredientIndex !== null && grams) {
+      const parsedGrams = parseInt(grams);
+      if (!isNaN(parsedGrams) && parsedGrams > 0) {
+        handleSelectGrams(selectedIngredientIndex, parsedGrams);
+        hideModal();
+      } else {
+        Alert.alert('Error', 'Por favor ingrese una cantidad válida de gramos');
+      }
+    }
+  };
+
+  const renderSaveChangesButton = (creatingDish) => {
+    if (creatingDish) {
+      return (
+        <TouchableOpacity style={styles.button} onPress={saveDish}>
+          <Text style={styles.buttonText}>{creatingDish ? "Guardar Plato" : "Guardar Cambios"}</Text>
+        </TouchableOpacity>
+
+      )
+    }
+  };
+
+
+  // Guarda el plato
+  const saveDish = async () => {
+    try {
+      //id con la fecha para que sea unico
+      dish.id = Date.now();
+      //nombre con la fecha para que sea unico por si no tiene nombre
+      dish.name = name || `Dish ${new Date().toLocaleDateString()}`;
+      dish.imgUrl = selectedUri;
+      dish.calories = calculateTotals(dish).totalCalories;
+      dish.fiber = calculateTotals(dish).totalFiber;
+      dish.carbohydrates = calculateTotals(dish).totalCarbs;
+      dish.fat = calculateTotals(dish).totalFat;
+      dish.protein = calculateTotals(dish).totalProtein;
+      //lista de ingredientes con gramos
+      dish.ingredients = ingredientsWithGrams;
+
+      // Serializar dish (convertir a objeto plano)
+      const dishToSave = {
+        id: dish.id,
+        name: dish.name,
+        imgUrl: dish.imgUrl,
+        ingredients: dish.ingredients.map(({ ingredient, grams }) => ({
+          ingredient: {
+            id: ingredient.id,
+            name: ingredient.name,
+            imgUrl: ingredient.imgUrl,
+            calories: ingredient.calories,
+            fiber: ingredient.fiber,
+            carbohydrates: ingredient.carbohydrates,
+            fat: ingredient.fat,
+            protein: ingredient.protein,
+          },
+          grams: grams,
+        })),
+        calories: dish.calories,
+        fiber: dish.fiber,
+        carbohydrates: dish.carbohydrates,
+        fat: dish.fat,
+        protein: dish.protein
+      };
+
+      addingGroup.push(dishToSave);
+
+      setDishName('');
+      setDishDescription('');
+
+      Alert.alert('Guardado', 'El plato se ha guardado correctamente.');
+    } catch (err) {
+      console.error('Error saving dish:', err);
+      Alert.alert('Error', 'No se pudo guardar el plato.');
+    }
   };
 
   return (
@@ -361,13 +463,13 @@ export default function CreateDishMenu({ route }) {
             value={name}
           />
 
-          <Text style={styles.grupoTitulo}>Ingredientes</Text>
+          <Text style={[styles.grupoTitulo, { marginTop: 15 }]}>Ingredientes</Text>
 
           <TouchableOpacity
             style={styles.addDishButton}
             onPress={() => searchMenuRef.current?.abrirMenu()}
           >
-            <Text>+ Añadir ingrediente</Text>
+            <Text style={styles.addDishButtonText}>+ Añadir ingrediente</Text>
           </TouchableOpacity>
 
           {renderIngredientList()}
@@ -400,7 +502,7 @@ export default function CreateDishMenu({ route }) {
           </View>
 
 
-          <Text style={styles.grupoTitulo}>Elegir imagen</Text>
+          <Text style={[styles.grupoTitulo, { marginTop: 10 }]}>Elegir imagen</Text>
 
           <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 10 }}>
             <TouchableOpacity onPress={() => imgMenuRef.current?.abrirMenu()} style={{ width: '100%', alignItems: 'center', marginBottom: 20 }}>
@@ -419,8 +521,13 @@ export default function CreateDishMenu({ route }) {
             </TouchableOpacity>
           </View>
 
+          {renderSaveChangesButton(creatingDish)}
+
         </View>
-      </ScrollView >
+      </ScrollView>
+
+      {/* render modal para seleccionar gramos */}
+      {renderSelectGramsModal()}
 
       {/*menu buscar ingredientes*/}
       <SearchMenu

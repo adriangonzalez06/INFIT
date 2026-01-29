@@ -309,6 +309,13 @@ export default StyleSheet.create({
     justifyContent: 'center',
   },
 
+  addDishButtonText: {
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
+
   createDishButton: {
     borderWidth: 2,
     borderColor: colors.light_gray,

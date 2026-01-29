@@ -24,6 +24,9 @@ export const LabelTextInput = forwardRef(({
                 <TextInput
                     style={styles.input}
                     placeholder={placeholder}
+                    onChangeText={onChangeText}
+                    value={value}
+                    keyboardType={keyboardType}
                 />
 
             </View>

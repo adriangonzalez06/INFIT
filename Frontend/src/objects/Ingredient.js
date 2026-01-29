@@ -18,6 +18,7 @@ export default class Ingredient {
         return this.name;
     }
 
+
     // Reconstruye una instancia de Ingredient desde un objeto plano (p.ej. desde JSON / route params)
     static from(obj) {
         if (!obj) return null;

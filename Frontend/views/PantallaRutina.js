@@ -82,7 +82,7 @@ export default function PantallaRutina({ route, navigation }) {
                         style={styles.ejercicioItemModal}
                         onPress={() => handleAddEjercicio(ejercicio)}
                       >
-                        <Text>{ejercicio}</Text>
+                        <Text style={styles.ejercicioItemModalText}>{ejercicio}</Text>
                       </TouchableOpacity>
                     ))}
                 </View>
@@ -156,6 +156,10 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
+  },
+  ejercicioItemModalText: {
+    fontSize: 16,
+    color: '#111',
   },
   cerrar: {
     marginTop: 10,

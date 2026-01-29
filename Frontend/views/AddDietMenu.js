@@ -298,7 +298,6 @@ export default function AddDietMenu({ route }) {
               selectedIngredients.map((item) => renderIngredientObject(item))
             }
 
-
             <View style={styles.modalButtons}>
               <View style={{ flex: 1, alignItems: 'flex-end' }}>
                 <TouchableOpacity onPress={hideModal} style={styles.modalButton}>
