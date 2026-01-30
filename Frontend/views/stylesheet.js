@@ -264,15 +264,15 @@ export default StyleSheet.create({
   },
 
   labelVegetarian: {
-    backgroundColor: '#e8f5e9',
+    backgroundColor: '#f0ffb9',
   },
 
   labelVegan: {
-    backgroundColor: '#feffa8ff',
+    backgroundColor: 'rgb(212, 255, 187)',
   },
 
   labelGlutenFree: {
-    backgroundColor: '#f3e5f5',
+    backgroundColor: '#feffbe',
   },
 
   //create diet screen
