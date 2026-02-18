@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput, Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Header from '../src/components/Header';
 import { StatusBar } from 'expo-status-bar';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import axios from 'axios';
 
 
 const SUGERENCIAS = {
@@ -49,18 +51,59 @@ export default function Rutinas() {
   const [nombreRutina, setNombreRutina] = useState('');
   const [sugerencias, setSugerencias] = useState([]);
   const [dificultad, setDificultad] = useState(null);
-  const [busqueda, setBusqueda] = useState('');
+  const [userName, setUserName] = useState('');
   const [opcionesVisible, setOpcionesVisible] = useState(false);
   const [rutinaSeleccionada, setRutinaSeleccionada] = useState(null);
 
   useEffect(() => {
+    // 1. Cargar rutinas de AsyncStorage
     const cargarRutinas = async () => {
-      const data = await AsyncStorage.getItem('rutinas');
-      if (data) {
-        setRutinas(JSON.parse(data));
+      try {
+        const data = await AsyncStorage.getItem('rutinas');
+        if (data) {
+          setRutinas(JSON.parse(data));
+        }
+      } catch (e) {
+        console.error('Error cargando rutinas:', e);
       }
     };
     cargarRutinas();
+
+    // 2. Cargar nombre de usuario (Quick cache + Firebase listener)
+    const setupIdentidad = async () => {
+      const cachedName = await AsyncStorage.getItem('userName');
+      if (cachedName) setUserName(cachedName);
+
+      const auth = getAuth();
+      const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
+        if (firebaseUser) {
+          try {
+            const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+            const resp = await axios.get(
+              `http://${host}:8082/api/usuarios/buscar/email/${encodeURIComponent(firebaseUser.email)}`,
+              { timeout: 5000 }
+            );
+            if (resp.data && resp.data.nombre) {
+              setUserName(resp.data.nombre);
+              await AsyncStorage.setItem('userName', resp.data.nombre);
+            } else {
+              setUserName(firebaseUser.displayName || firebaseUser.email.split('@')[0]);
+            }
+          } catch (e) {
+            console.warn('Error fetching backend user name in Rutinas:', e.message);
+            setUserName(firebaseUser.displayName || firebaseUser.email.split('@')[0]);
+          }
+        }
+      });
+      return unsub;
+    };
+
+    let authUnsub;
+    setupIdentidad().then(unsub => { authUnsub = unsub; });
+
+    return () => {
+      if (authUnsub) authUnsub();
+    };
   }, []);
 
 
@@ -93,7 +136,7 @@ export default function Rutinas() {
 
     const nuevasRutinas = {
       ...rutinas,
-      [grupoActivo]: [...rutinas[grupoActivo], nuevaRutina],
+      [grupoActivo]: [...(rutinas[grupoActivo] || []), nuevaRutina],
     };
 
     setRutinas(nuevasRutinas);
@@ -112,7 +155,7 @@ export default function Rutinas() {
       actualizarRutina: async (rutinaActualizada) => {
         const nuevasRutinas = {
           ...rutinas,
-          [grupoKey]: rutinas[grupoKey].map((r) =>
+          [grupoKey]: (rutinas[grupoKey] || []).map((r) =>
             r.id === rutinaActualizada.id ? rutinaActualizada : r
           ),
         };
@@ -130,7 +173,7 @@ export default function Rutinas() {
   const handleEliminarRutina = async () => {
     const nuevasRutinas = {
       ...rutinas,
-      grupo1: rutinas.grupo1.filter((r) => r.id !== rutinaSeleccionada.id),
+      grupo1: (rutinas.grupo1 || []).filter((r) => r.id !== rutinaSeleccionada.id),
     };
     setRutinas(nuevasRutinas);
     await guardarEnStorage(nuevasRutinas);
@@ -141,7 +184,7 @@ export default function Rutinas() {
     const copia = { ...rutinaSeleccionada, id: Date.now().toString() };
     const nuevasRutinas = {
       ...rutinas,
-      grupo1: [...rutinas.grupo1, copia],
+      grupo1: [...(rutinas.grupo1 || []), copia],
     };
     setRutinas(nuevasRutinas);
     await guardarEnStorage(nuevasRutinas);
@@ -149,15 +192,11 @@ export default function Rutinas() {
   };
 
   const renderGrupo = (titulo, rutinasGrupo, grupoKey) => {
-    const filtradas = rutinasGrupo.filter((r) =>
-      r.nombre.toLowerCase().includes(busqueda.toLowerCase())
-    );
-
     return (
       <View style={styles.grupoContainer}>
         <Text style={styles.grupoTitulo}>{titulo}</Text>
         <View style={styles.rutinasRow}>
-          {filtradas.map((rutina) => (
+          {(rutinasGrupo || []).map((rutina) => (
             <TouchableOpacity
               key={rutina.id}
               style={[styles.rutinaCard, { backgroundColor: rutina.color || '#ccc' }]}
@@ -208,14 +247,12 @@ export default function Rutinas() {
       <StatusBar style="auto" />
       <Header title="Rutinas" showBackButton={false} />
 
-      <TextInput
-        style={styles.searchInput}
-        placeholder="Buscar rutinas"
-        value={busqueda}
-        onChangeText={setBusqueda}
-      />
+      <View style={styles.greetingContainer}>
+        <Text style={styles.greetingText}>Hola {userName || 'usuario'},</Text>
+        <Text style={styles.subGreetingText}>¿listo para entrenar?</Text>
+      </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {renderPredefinidas()}
         {renderGrupo('Mis rutinas personalizadas', rutinas.grupo1, 'grupo1')}
       </ScrollView>
@@ -282,7 +319,9 @@ export default function Rutinas() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Opciones</Text>
-            <TouchableOpacity onPress={() => handleEntrarRutina(rutinaSeleccionada, 'grupo1')}>
+            <TouchableOpacity onPress={() => {
+              if (rutinaSeleccionada) handleEntrarRutina(rutinaSeleccionada, 'grupo1');
+            }}>
               <Text style={styles.modalButtonText}>Editar</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={handleDuplicarRutina}>
@@ -301,175 +340,145 @@ export default function Rutinas() {
   );
 }
 
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingTop: 60,
+    paddingHorizontal: 20,
+    backgroundColor: '#fff',
+  },
+  greetingContainer: {
+    paddingVertical: 15,
+    marginBottom: 10,
 
-
-
-
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      paddingTop: 60,
-      paddingHorizontal: 20,
-      backgroundColor: '#fff',
-    },
-
-    backButton: {
-      position: 'absolute',
-      top: 60,
-      left: 20,
-      zIndex: 10,
-    },
-
-    title: {
-      fontSize: 28,
-      fontWeight: 'bold',
-      color: '#ef2b2d',
-      marginBottom: 20,
-      textAlign: 'center',
-    },
-
-    searchInput: {
-      borderWidth: 1,
-      borderColor: '#ccc',
-      borderRadius: 8,
-      padding: 10,
-      marginBottom: 20,
-    },
-
-    scrollContent: {
-      paddingBottom: 40,
-    },
-
-    grupoContainer: {
-      marginBottom: 30,
-    },
-
-    grupoTitulo: {
-      fontSize: 18,
-      fontWeight: '600',
-      marginBottom: 10,
-      color: '#333',
-    },
-
-    rutinasRow: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 12,
-    },
-
-    rutinaCard: {
-      width: 140,
-      height: 120,
-      borderRadius: 12,
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: 10,
-    },
-
-    rutinaTexto: {
-      fontSize: 16,
-      color: '#fff',
-      fontWeight: '600',
-      marginTop: 8,
-    },
-
-    rutinaSubTexto: {
-      fontSize: 12,
-      color: '#fff',
-    },
-
-    addCard: {
-      width: 140,
-      height: 120,
-      borderRadius: 12,
-      borderWidth: 2,
-      borderColor: '#ef2b2d',
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: '#fff',
-    },
-
-    modalOverlay: {
-      flex: 1,
-      backgroundColor: 'rgba(0,0,0,0.4)',
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-
-    modalContent: {
-      backgroundColor: '#fff',
-      padding: 20,
-      borderRadius: 12,
-      width: '85%',
-
-    },
-
-    modalTitle: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      marginBottom: 10,
-    },
-
-    input: {
-      borderWidth: 1,
-      borderColor: '#ccc',
-      borderRadius: 8,
-      padding: 10,
-      marginBottom: 10,
-    },
-
-    sugerenciasContainer: {
-      marginBottom: 10,
-    },
-
-    sugerenciasTitulo: {
-      fontWeight: '600',
-      marginBottom: 5,
-    },
-
-    chipsContainer: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 8,
-    },
-
-    chip: {
-      borderWidth: 1,
-      borderColor: '#ccc',
-      borderRadius: 20,
-      paddingVertical: 6,
-      paddingHorizontal: 12,
-    },
-
-    chipSelected: {
-      backgroundColor: '#ef2b2d',
-      borderColor: '#ef2b2d',
-    },
-
-    chipText: {
-      fontSize: 14,
-      color: '#333',
-    },
-
-    chipTextSelected: {
-      color: '#fff',
-    },
-
-    modalButtons: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginTop: 20,
-    },
-
-    modalButton: {
-      backgroundColor: '#ef2b2d',
-      paddingVertical: 10,
-      paddingHorizontal: 20,
-      borderRadius: 8,
-    },
-
-    modalButtonText: {
-      color: '#333',
-      fontWeight: '600',
-    },
-  });
+  },
+  greetingText: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+  },
+  subGreetingText: {
+    fontSize: 18,
+    color: '#666',
+    marginTop: 2,
+    position: 'center',
+    textAlign: 'center',
+  },
+  scrollContent: {
+    paddingBottom: 40,
+  },
+  grupoContainer: {
+    marginBottom: 30,
+  },
+  grupoTitulo: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 10,
+    color: '#333',
+  },
+  rutinasRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  rutinaCard: {
+    width: 140,
+    height: 120,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 10,
+  },
+  rutinaTexto: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: '600',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  rutinaSubTexto: {
+    fontSize: 12,
+    color: '#fff',
+    marginTop: 4,
+  },
+  addCard: {
+    width: 140,
+    height: 120,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#ef2b2d',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 12,
+    width: '85%',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 10,
+  },
+  sugerenciasContainer: {
+    marginBottom: 10,
+  },
+  sugerenciasTitulo: {
+    fontWeight: '600',
+    marginBottom: 5,
+  },
+  chipsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  chip: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 20,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  chipSelected: {
+    backgroundColor: '#ef2b2d',
+    borderColor: '#ef2b2d',
+  },
+  chipText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  chipTextSelected: {
+    color: '#fff',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+  },
+  modalButton: {
+    backgroundColor: '#ef2b2d',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  modalButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+});
