@@ -147,7 +147,7 @@ export const SearchMenu = forwardRef(({
           </View>
 
           <View style={style.dayButtons}>
-              {renderCreateButton(showCreateButton)};
+              {renderCreateButton(showCreateButton)}
           </View>
 
         </View>

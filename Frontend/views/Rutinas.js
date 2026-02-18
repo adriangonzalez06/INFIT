@@ -5,6 +5,9 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Header from '../src/components/Header';
+import { StatusBar } from 'expo-status-bar';
+
 
 const SUGERENCIAS = {
   piernas: ['Sentadillas', 'Zancadas', 'Peso muerto rumano'],
@@ -202,11 +205,8 @@ export default function Rutinas() {
 
   return (
     <View style={styles.container}>
-
-      <Text style={styles.title}>Mis rutinas</Text>
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
-      </TouchableOpacity>
+      <StatusBar style="auto" />
+      <Header title="Rutinas" showBackButton={false} />
 
       <TextInput
         style={styles.searchInput}

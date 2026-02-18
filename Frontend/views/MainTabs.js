@@ -2,18 +2,21 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 import WelcomeScreen from './WelcomeScreen';
 import ChatBot from './ChatBot';
 import ProfileScreen from './profile';
 import Buscar from './Buscar';
+import Rutinas from './Rutinas';
+import Alimentacion from './Alimentacion';
 
 const Tab = createBottomTabNavigator();
 
 export default function MainTabs() {
   return (
     <Tab.Navigator
-      initialRouteName="Bienvenida"
+      initialRouteName="Rutinas"
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarActiveTintColor: '#ef2b2d',
@@ -27,8 +30,11 @@ export default function MainTabs() {
           let iconName;
 
           switch (route.name) {
-            case 'Bienvenida':
-              iconName = 'home-outline';
+            case 'Rutinas':
+              iconName = 'barbell-outline';
+              break;
+            case 'Alimentacion':
+              iconName = 'nutrition-outline';
               break;
             case 'ChatBot':
               iconName = 'chatbubble-ellipses-outline';
@@ -47,7 +53,8 @@ export default function MainTabs() {
         },
       })}
     >
-      <Tab.Screen name="Bienvenida" component={WelcomeScreen} />
+      <Tab.Screen name="Rutinas" component={Rutinas} />
+      <Tab.Screen name="Alimentacion" component={Alimentacion} />
       <Tab.Screen name="ChatBot" component={ChatBot}/>
       <Tab.Screen name="Descubre" component={Buscar}/>
       <Tab.Screen name="Perfil" component={ProfileScreen} />

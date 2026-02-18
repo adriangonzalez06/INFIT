@@ -13,7 +13,7 @@ import Dish from '../src/objects/Dish';
 import { SearchMenu } from '../src/components/SearchMenu';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Alimentacion from './Alimentacion';
-
+import Header from '../src/components/Header';
 import style from './stylesheet';
 import colors from './colors';
 import Ingredient from '../src/objects/Ingredient';
@@ -136,6 +136,9 @@ export default function AddDietMenu({ route }) {
 
   {/*button color*/ }
   const [bttId, setBttId] = useState(0);
+
+  {/*titulo crear dieta o nombre de la dieta*/}
+  const screenTitle = diet.getName() || "Crear una dieta";
 
   {/*gestion de imagenes locales y remotas*/ }
   {/*comprobar de donde vienen*/ }
@@ -492,14 +495,9 @@ export default function AddDietMenu({ route }) {
     <View style={styles.container}>
       <StatusBar style="auto" />
 
-      <View style={styles.header}>
-        {/* go back button */}
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
-        </TouchableOpacity>
-        {/* title   Array.isArray(route?.params?.recipes) ? route.params.recipes : [];    */}
-        <Text style={styles.title}>{diet.getName() || "Crear una dieta"}</Text>
-      </View>
+      <Header title={screenTitle} showBackButton={true} />
+
+
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.grupoContainer}>

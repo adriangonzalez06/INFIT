@@ -13,6 +13,7 @@ import Dish from '../src/objects/Dish.js';
 import Diet from '../src/objects/Diet.js';
 import DietGroup from '../src/objects/DietGroup.js';
 import Ingredient from '../src/objects/Ingredient.js';
+import Header from '../src/components/Header';
 
 export default function Alimentacion() {
 
@@ -141,16 +142,8 @@ export default function Alimentacion() {
 
     <View style={styles.container}>
       <StatusBar style="auto" />
-      <View style={styles.header}>
-
-        {/* go back button */}
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
-        </TouchableOpacity>
-
-        {/* title */}
-        <Text style={styles.title}>Alimentación</Text>
-      </View>
+      
+      <Header title="Alimentación" showBackButton={false} />
 
 
       {/* render groups */}

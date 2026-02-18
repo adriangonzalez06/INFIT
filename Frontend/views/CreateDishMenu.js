@@ -18,6 +18,7 @@ import style from './stylesheet';
 import colors from './colors';
 import { LabelTextInput } from '../src/components/LabelTextInput';
 import { SearchMenu } from '../src/components/SearchMenu';
+import Header from '../src/components/Header';
 
 
 export default function CreateDishMenu({ route }) {
@@ -442,15 +443,7 @@ export default function CreateDishMenu({ route }) {
     <View style={styles.container}>
       <StatusBar style="auto" />
 
-      <View style={styles.header}>
-        {/* go back button */}
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
-        </TouchableOpacity>
-
-        <Text style={styles.title}>{"Nuevo plato"}</Text>
-
-      </View>
+      <Header title="Nuevo plato" showBackButton={true} />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.grupoContainer}>

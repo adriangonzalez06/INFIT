@@ -5,7 +5,6 @@ import {
     TextInput
 } from 'react-native';
 import styles from '../../views/stylesheet'
-import colors from '../../views/colors'
 
 
 export const LabelTextInput = forwardRef(({
