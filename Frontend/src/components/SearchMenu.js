@@ -8,7 +8,8 @@ import {
   FlatList,
   Dimensions,
   PanResponder,
-  StyleSheet
+  StyleSheet,
+  SafeAreaView
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import style from '../../views/stylesheet'
@@ -43,7 +44,7 @@ export const SearchMenu = forwardRef(({
 
   const slideAnim = useRef(new Animated.Value(windowHeight)).current;
 
-  // pan responder para arrastrar el sheet
+  {/*}pan responder para arrastrar el sheet*/}
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 5,
@@ -164,8 +165,7 @@ export const SearchMenu = forwardRef(({
         <Text>+ Crear plato</Text>
       </TouchableOpacity>
     )
-  }
-
+  };
 
   return (
     <>
@@ -184,7 +184,7 @@ export const SearchMenu = forwardRef(({
             onChangeText={setSearchText}
           />
 
-          <View style={{paddingBottom: 200}}>
+          <View style={{paddingBottom: 100}}>
             
             {renderCategoryButtons(viewButtons)}
 
@@ -224,11 +224,16 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 0,
     right: 0,
-    height: height * 0.8, // más grande
+    bottom: 0,
+    marginBottom: 0,
+    height: height * 0.8,
     backgroundColor: "#fff",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    padding: 16,
+    paddingTop: 16,
+    paddingLeft: 16,
+    paddingRight: 16,
+    paddingBottom: 0,
     elevation: 10
   },
   dragIndicator: {

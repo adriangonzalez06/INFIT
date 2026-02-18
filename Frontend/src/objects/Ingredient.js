@@ -1,14 +1,14 @@
 export default class Ingredient {
 
-    constructor(id, name, imgUrl, calories, fiber, carbohydrates, fat, protein) {
+    constructor(id, name, calories, fiber, carbohydrates, fat, protein, imgUrl) {
         this.id = id;
         this.name = name;
-        this.imgUrl = imgUrl;
         this.calories = calories;
         this.fiber = fiber;
         this.carbohydrates = carbohydrates;
         this.fat = fat;
         this.protein = protein;
+        this.imgUrl = imgUrl;
         this.defaultGrams = 100;
         this.grams = this.defaultGrams;
 
@@ -23,16 +23,15 @@ export default class Ingredient {
     static from(obj) {
         if (!obj) return null;
         if (obj instanceof Ingredient) return obj;
-        return new Dish(
+        return new Ingredient(
             obj.id,
             obj.name,
-            obj.imgUrl,
             obj.calories,
             obj.fiber,
             obj.carbohydrates,
-            obj.calories,
             obj.fat,
             obj.protein,
+            obj.imgUrl
         );
     }
 

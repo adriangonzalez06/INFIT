@@ -51,12 +51,12 @@ static from(obj) {
               const ingr = new Ingredient(
                 item.ingredient?.id,
                 item.ingredient?.name,
-                item.ingredient?.imgUrl,
                 item.ingredient?.calories,
                 item.ingredient?.fiber,
                 item.ingredient?.carbohydrates,
                 item.ingredient?.fat,
-                item.ingredient?.protein
+                item.ingredient?.protein,
+                item.ingredient?.imgUrl
               );
               return { ingredient: ingr, grams: item.grams || 0 };
             });

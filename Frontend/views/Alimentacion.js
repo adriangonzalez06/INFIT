@@ -19,12 +19,12 @@ export default function Alimentacion() {
   const navigation = useNavigation();
 
   //id, name, imgUrl, calories, fiber, carbohydrates, fat, protein)
-  let in1 = new Ingredient(1, "Manzana", "url", 30, 2, 12, 2, 3);
-  let in2 = new Ingredient(1, "Carne", "url", 40, 4, 14, 3, 1);
+  let in1 = new Ingredient(1, "Manzana", 30, 2, 12, 2, 3);
+  let in2 = new Ingredient(2, "Carne", 40, 4, 14, 3, 1);
 
   let ingredients = [
-    { ingredient: in1, grams: 150 },
-    { ingredient: in2, grams: 110 }
+    { ingredient: in1, grams: 100 },
+    { ingredient: in2, grams: 100 }
   ];
 
   {/*platos placeholder, leer los datos de la base de datos*/ }

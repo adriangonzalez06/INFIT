@@ -38,12 +38,12 @@ static from(obj) {
         : new Ingredient(
             item.ingredient.id,
             item.ingredient.name,
-            item.ingredient.imgUrl,
             item.ingredient.calories,
             item.ingredient.fiber,
             item.ingredient.carbohydrates,
             item.ingredient.fat,
-            item.ingredient.protein
+            item.ingredient.protein,
+            item.ingredient.imgUrl
           );
 
       return { ingredient: ing, grams: item.grams };
@@ -55,12 +55,12 @@ static from(obj) {
       : new IngredientClass(
           item.id,
           item.name,
-          item.imgUrl,
           item.calories,
           item.fiber,
           item.carbohydrates,
           item.fat,
-          item.protein
+          item.protein,
+          item.imgUrl
         );
 
     return { ingredient: ing, grams: item.grams ?? 0 };
@@ -71,16 +71,11 @@ static from(obj) {
     obj.name,
     obj.imgUrl,
     ingredientsWithGrams,
-    obj.calories,
-    obj.fiber,
-    obj.carbohydrates,
-    obj.protein,
     obj.vegetarian,
     obj.vegan,
     obj.gluten_free
   );
 }
-
 
   getUrl() {
     return this.imgUrl;
@@ -94,5 +89,11 @@ static from(obj) {
     this.ingredients.push(ingredientWithGrams);
   }
 
+  getTotalCalories() {
+    return this.ingredients.reduce((total, item) => {
+      const caloriesPerGram = item.ingredient.calories / item.ingredient.grams;
+      return total + caloriesPerGram * item.grams;
+    }, 0);
+  }
 }
 

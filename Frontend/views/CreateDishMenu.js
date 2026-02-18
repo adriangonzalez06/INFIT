@@ -29,9 +29,9 @@ export default function CreateDishMenu({ route }) {
   const searchMenuRef = useRef(null);
 
   //id, name, imgUrl, calories, fiber, carbohydrates, fat, protein)
-  let in1 = new Ingredient(1, "Manzana", "url", 30, 2, 12, 2, 3);
-  let in2 = new Ingredient(2, "Carne", "url", 40, 4, 14, 3, 1);
-  let in3 = new Ingredient(3, "Huevo", "url", 50, 4, 14, 3, 1);
+  let in1 = new Ingredient(1, "Manzana", 30, 2, 12, 2, 3);
+  let in2 = new Ingredient(2, "Carne", 40, 4, 14, 3, 1);
+  let in3 = new Ingredient(3, "Huevo", 50, 4, 14, 3, 1);
 
   let ingredients = [
     { ingredient: in1, grams: 150 },
@@ -199,7 +199,7 @@ export default function CreateDishMenu({ route }) {
 
       <View style={[styles.dishContainer]}>
 
-        <View style={{ marginLeft: 10, flex: 1 }}>
+        <View style={{flex: 1 }}>
 
           <Text style={[styles.modalTitle, { fontSize: 14 }]}>{item.name}</Text>
 
@@ -410,7 +410,6 @@ export default function CreateDishMenu({ route }) {
           ingredient: {
             id: ingredient.id,
             name: ingredient.name,
-            imgUrl: ingredient.imgUrl,
             calories: ingredient.calories,
             fiber: ingredient.fiber,
             carbohydrates: ingredient.carbohydrates,
@@ -500,7 +499,6 @@ export default function CreateDishMenu({ route }) {
             <Text style={styles.title_3}>Proteína</Text>
             <Text style={styles.text}>{calculateTotals(dish).totalProtein} g</Text>
           </View>
-
 
           <Text style={[styles.grupoTitulo, { marginTop: 10 }]}>Elegir imagen</Text>
 

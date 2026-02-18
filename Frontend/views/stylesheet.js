@@ -1,5 +1,6 @@
 import { StyleSheet, Dimensions, Platform, StatusBar } from "react-native";
 import colors from './colors.js';
+import sizes from './font_sizes.js';
 
 var width = Dimensions.get('window').width;
 var height = Dimensions.get('window').height;
@@ -14,6 +15,7 @@ export default StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
+    marginBottom: Platform.OS === "android" ? StatusBar.currentHeight : 0,
     width: '100%',
   },
   header: {
@@ -27,7 +29,6 @@ export default StyleSheet.create({
     left: 20,
     zIndex: 1,
   },
-
   text: {
     fontSize: 16,
     color: colors.dark_gray,
@@ -40,9 +41,8 @@ export default StyleSheet.create({
     textAlign: 'left',
     marginBottom: 5
   },
-  
+
   scrollContent: {
-    paddingBottom: height * 0.6,
     flexGrow: 1,
   },
 
@@ -278,24 +278,26 @@ export default StyleSheet.create({
   //create diet screen
 
   dayButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 50,
+    width: width * 0.12,
+    height: width * 0.12,
+    borderRadius: 5,
     backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 2,
     shadowColor: '#000',
     shadowOpacity: 0.2,
-    shadowRadius: 4,
+    shadowRadius: 2,
     alignSelf: 'center',
-    margin: 2,
+    margin: 0,
   },
 
   daysContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 20,
+    marginLeft: 2,
+    marginRight: 2
   },
 
   addDishButton: {
@@ -326,7 +328,7 @@ export default StyleSheet.create({
     justifyContent: 'center',
     width: '100%',
     marginBottom: 15,
-    
+
   },
 
   middleRowElementsContainer: {
@@ -509,4 +511,23 @@ export default StyleSheet.create({
     color: colors.dark_gray,
     textAlign: 'center',
   },
+  picker: {
+    borderWidth: 0,
+    backgroundColor: colors.bg_gray,
+    marginBottom: 10,
+  },
+  pickerLabel: {
+    fontWeight: 'bold',
+    fontSize: sizes.l,
+    textAlign: 'center',
+    left: width * 0.04,
+    borderWidth: 0,
+  },
+  pickerDropDownContainer:
+  {
+    backgroundColor: colors.white,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.light_gray,
+  }
 });
