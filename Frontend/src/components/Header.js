@@ -12,12 +12,13 @@ export const Header = forwardRef(({
     title = "",
     showBackButton = false,
 }, ref) => {
+    
     const navigation = useNavigation();
 
     const renderBackButton = (showBackButton) => {
         if (showBackButton) {
             return (
-                <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+                <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
                 </TouchableOpacity>
             );

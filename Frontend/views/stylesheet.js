@@ -15,18 +15,19 @@ export default StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
-    marginBottom: Platform.OS === "android" ? StatusBar.currentHeight : 0,
     width: '100%',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    margin: 20,
+    
   },
   backButton: {
     position: 'absolute',
-    left: 20,
+    left: 0,
+    top: 0,
     zIndex: 1,
   },
   text: {
@@ -52,7 +53,7 @@ export default StyleSheet.create({
   },
 
   title: {
-    fontSize: 26,
+    fontSize: 22,
     fontWeight: 'bold',
     color: colors.primary,
     textAlign: 'center',
@@ -358,12 +359,6 @@ export default StyleSheet.create({
     paddingTop: 60,
     paddingHorizontal: 20,
     backgroundColor: colors.light_gray,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
   },
   ejercicioItem: {
     paddingVertical: 12,

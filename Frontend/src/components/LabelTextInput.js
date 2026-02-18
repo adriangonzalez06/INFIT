@@ -26,6 +26,7 @@ export const LabelTextInput = forwardRef(({
                     onChangeText={onChangeText}
                     value={value}
                     keyboardType={keyboardType}
+                    maxLength={20}
                 />
 
             </View>

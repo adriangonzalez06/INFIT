@@ -145,7 +145,6 @@ export default function Alimentacion() {
       
       <Header title="Alimentación" showBackButton={false} />
 
-
       {/* render groups */}
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <SafeAreaView>
