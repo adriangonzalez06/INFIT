@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -11,17 +10,88 @@ import {
   Modal,
   StyleSheet,
   Platform,
+  Animated,
+  Easing,
+  Alert,
+  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import axios from 'axios';
+import * as ImagePicker from 'expo-image-picker';
 
-import colors from './colors';
+
+
+async function ensureCameraPermission() {
+  const { status } = await ImagePicker.requestCameraPermissionsAsync();
+  return status === 'granted';
+}
+
+
+
+export async function openCameraForAvatar() {
+  const ok = await ensureCameraPermission();
+  if (!ok) {
+    Alert.alert(
+      'Permiso requerido',
+      'Activa el permiso de cámara en Ajustes para continuar.',
+      [{ text: 'Cancelar', style: 'cancel' }, { text: 'Abrir ajustes', onPress: () => Linking.openSettings() }]
+    );
+    return null;
+  }
+
+  const result = await ImagePicker.launchCameraAsync({
+    allowsEditing: true,
+    aspect: [1, 1],
+    quality: 0.85,
+  });
+
+  if (result.canceled || !result.assets?.length) return null;
+  return result.assets[0];
+}
+
+// 3) Abrir galería usando el Photo Picker del sistema (no pide storage)
+export async function openGalleryForAvatar() {
+  const result = await ImagePicker.launchImageLibraryAsync({
+    allowsEditing: true,
+    aspect: [1, 1],
+    quality: 0.85,
+  });
+
+  if (result.canceled || !result.assets?.length) return null;
+  return result.assets[0];
+}
+
+
+// 4) Pequeño Action Sheet
+export async function chooseAvatarSource() {
+  return new Promise(resolve => {
+    Alert.alert(
+      'Foto de perfil',
+      'Elige un origen',
+      [
+        { text: 'Cámara', onPress: () => resolve('camera') },
+        { text: 'Galería', onPress: () => resolve('gallery') },
+        { text: 'Cancelar', style: 'cancel', onPress: () => resolve('cancel') },
+      ],
+      { cancelable: true }
+    );
+  });
+}
+
+
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
+
+
+  const [avatarScale] = useState(new Animated.Value(0));     // zoom
+  const [avatarOpacity] = useState(new Animated.Value(0));   // fade imagen
+  const [bgOpacity] = useState(new Animated.Value(0));       // fade fondo
+
+
 
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -32,6 +102,9 @@ export default function ProfileScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [pesoInput, setPesoInput] = useState('');
   const [alturaInput, setAlturaInput] = useState('');
+
+  //Estado para el modal y foto de perfil ampliable
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
 
   useEffect(() => {
     const auth = getAuth();
@@ -65,29 +138,38 @@ export default function ProfileScreen() {
               await ReactNativeAsyncStorage.setItem('userWeight', String(pesoGuardado));
               await ReactNativeAsyncStorage.setItem('userHeight', String(alturaGuardada));
               await ReactNativeAsyncStorage.setItem('userDocId', documentId);  // Guardar el ID real
+
+              // Actualizar el estado con el avatar del backend si existe
+              const backendAvatar = resp.data.photoURL ? { uri: resp.data.photoURL } : require('../assets/avatar.png');
+
+              setUser({
+                nombre: nombreUser,
+                email: emailUser,
+                avatar: backendAvatar,
+                peso: pesoGuardado ? parseFloat(String(pesoGuardado)) : 80,
+                altura: alturaGuardada ? parseFloat(String(alturaGuardada)) : 1.9,
+                registros: [
+                  { tipo: 'Ejercicio', detalle: '30 min de cardio', fecha: '22/10/2025' },
+                  { tipo: 'Alimentación', detalle: 'Desayuno saludable', fecha: '22/10/2025' },
+                  { tipo: 'Sueño', detalle: 'Dormido 7h 45min', fecha: '21/10/2025' },
+                ],
+              });
             }
           } catch (e) {
             console.warn('No se pudo obtener datos del backend:', e?.message);
             documentId = firebaseUser.uid;
+            // Si falla el backend, inicializamos con datos mínimos
+            setUser({
+              nombre: firebaseUser.displayName || 'Usuario',
+              email: firebaseUser.email,
+              avatar: require('../assets/avatar.png'),
+              peso: 80,
+              altura: 1.9,
+              registros: [],
+            });
           }
 
-          // Usar el ID real del documento
           setUserId(documentId || firebaseUser.uid);
-
-          const userData = {
-            nombre: nombreUser,
-            email: emailUser,
-            avatar: require('../assets/avatar.png'),
-            peso: pesoGuardado ? parseFloat(String(pesoGuardado)) : 80,
-            altura: alturaGuardada ? parseFloat(String(alturaGuardada)) : 1.9,
-            registros: [
-              { tipo: 'Ejercicio', detalle: '30 min de cardio', fecha: '22/10/2025' },
-              { tipo: 'Alimentación', detalle: 'Desayuno saludable', fecha: '22/10/2025' },
-              { tipo: 'Sueño', detalle: 'Dormido 7h 45min', fecha: '21/10/2025' },
-            ],
-          };
-
-          setUser(userData);
         } catch (error) {
           console.error('Error cargando perfil:', error);
           setUser({
@@ -119,6 +201,59 @@ export default function ProfileScreen() {
     setPesoInput(String(user.peso));
     setAlturaInput(String(user.altura));
     setModalVisible(true);
+  };
+
+  const openAvatarModal = () => {
+    setShowAvatarModal(true);
+
+    // estados iniciales
+    avatarScale.setValue(0.85);     // empieza un poco pequeño
+    avatarOpacity.setValue(0);      // fade in imagen
+    bgOpacity.setValue(0);          // fade in fondo
+
+    Animated.parallel([
+      Animated.timing(bgOpacity, {
+        toValue: 1,
+        duration: 300,              // un pelín más largo para fondo
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(avatarOpacity, {
+        toValue: 1,
+        duration: 240,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(avatarScale, {
+        toValue: 1,
+        duration: 300,
+        easing: Easing.out(Easing.cubic), // sin rebote, suave
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const closeAvatarModal = () => {
+    Animated.parallel([
+      Animated.timing(bgOpacity, {
+        toValue: 0,
+        duration: 180,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(avatarOpacity, {
+        toValue: 0,
+        duration: 150,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(avatarScale, {
+        toValue: 0.85,               // vuelve a pequeño
+        duration: 160,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start(() => setShowAvatarModal(false));
   };
 
   const saveEdits = async () => {
@@ -200,7 +335,7 @@ export default function ProfileScreen() {
     );
   }
 
-  const imc = (user.peso / (user.altura * user.altura)).toFixed(1);
+  const imc = (user.altura > 0) ? (user.peso / (user.altura * user.altura)).toFixed(1) : '0';
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -213,7 +348,12 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.profileSection}>
-        <Image source={user.avatar} style={styles.avatarPerfil} />
+        <TouchableOpacity activeOpacity={0.9} onLongPress={openAvatarModal}>
+          <Image
+            source={user.avatar}
+            style={styles.avatarPerfil}
+          />
+        </TouchableOpacity>
         <Text style={styles.nombre}>{user.nombre}</Text>
       </View>
 
@@ -275,6 +415,105 @@ export default function ProfileScreen() {
         </View>
       </Modal>
 
+      <Modal
+        visible={showAvatarModal}
+        transparent
+        animationType="none"
+        onRequestClose={closeAvatarModal}
+      >
+        {/* Capa de fondo animada */}
+        <Animated.View
+          style={[
+            styles.blurBackground,
+            { opacity: bgOpacity },
+          ]}
+        />
+
+        {/* Capa invisible para cerrar al tocar fuera */}
+        <TouchableOpacity
+          activeOpacity={1}
+          style={StyleSheet.absoluteFillObject}
+          onPress={closeAvatarModal}
+        />
+
+        <View style={styles.modalFullCenter} pointerEvents="box-none">
+          {/* Imagen ampliada */}
+          <Animated.Image
+            source={user.avatar}
+            style={[
+              styles.avatarZoom,
+              {
+                opacity: avatarOpacity,
+                transform: [{ scale: avatarScale }],
+              },
+            ]}
+          />
+
+          {/* Botón "Modificar foto" */}
+          <Animated.View
+            style={{
+              opacity: avatarOpacity,
+              transform: [{ scale: avatarScale }],
+              marginTop: 24,
+            }}
+          >
+            <TouchableOpacity
+              style={styles.modifyButton}
+              onPress={async () => {
+                closeAvatarModal();
+
+                const choice = await chooseAvatarSource();
+                if (choice === 'cancel') return;
+
+                const asset = choice === 'camera'
+                  ? await openCameraForAvatar()
+                  : await openGalleryForAvatar();
+
+                if (!asset) return;
+
+                // 1) Pide firma a tu backend (axios)
+                const host = Platform.OS === "android" ? "10.0.2.2" : "localhost";
+                const sig = await axios.post(`http://${host}:8082/cloudinary/signature`).then(r => r.data);
+
+                // 2) Sube a Cloudinary (axios + FormData)
+                const fileToUpload = {
+                  uri: asset.uri,
+                  type: asset.type || 'image/jpeg',
+                  name: asset.fileName || 'avatar.jpg',
+                };
+
+                const form = new FormData();
+                form.append('file', fileToUpload);
+                form.append('api_key', sig.apiKey);
+                form.append('timestamp', String(sig.timestamp));
+                form.append('signature', sig.signature);
+                form.append('folder', sig.folder);
+
+                const up = await axios.post(
+                  `https://api.cloudinary.com/v1_1/${sig.cloudName}/image/upload`,
+                  form,
+                  { headers: { 'Content-Type': 'multipart/form-data' } }
+                );
+
+                const url = up.data.secure_url;
+
+                // 3) Actualiza visualmente el avatar 
+                setUser(prev => prev ? { ...prev, avatar: { uri: url } } : prev);
+
+                // 4) Guardar en backend
+                try {
+                  await axios.put(`http://${host}:8082/api/usuarios/${userId}`, { photoURL: url });
+                } catch (err) {
+                  console.error('Error actualizando foto en backend:', err);
+                }
+              }}
+            >
+              <Text style={styles.modifyButtonText}>Modificar foto</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
+      </Modal>
+
       <Text style={styles.sectionTitle}>Últimos registros</Text>
       {user.registros.map((registro, index) => (
         <View key={index} style={styles.registroBox}>
@@ -286,7 +525,7 @@ export default function ProfileScreen() {
 
       <TouchableOpacity
         style={styles.boton}
-        onPress={() => navigation.navigate('RegistroNuevo')}
+        onPress={() => navigation.navigate('AddDietMenu')}
       >
         <Text style={styles.botonTexto}>Añadir nuevo registro</Text>
       </TouchableOpacity>
@@ -305,6 +544,40 @@ function Stat({ label, value }) {
 
 
 const styles = StyleSheet.create({
+
+  modalFullCenter: {
+    position: 'absolute',
+    top: 0, bottom: 0, left: 0, right: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  blurBackground: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.85)',
+  },
+
+  avatarZoom: {
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    borderWidth: 3,
+    borderColor: '#fff',
+  },
+
+  modifyButton: {
+    backgroundColor: '#ef2b2d',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+  },
+
+  modifyButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+
   container: {
     paddingBottom: 60,
     backgroundColor: '#f9f9f9',
@@ -460,4 +733,5 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
+
 });

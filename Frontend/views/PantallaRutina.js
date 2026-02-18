@@ -169,7 +169,7 @@ export default function PantallaRutina({ route, navigation }) {
     <View style={styles.rutinaContainer}>
       {/* HEADER */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={handleGoBack}>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
         </TouchableOpacity>
         <Text style={styles.title}>{rutina.nombre}</Text>
@@ -214,9 +214,9 @@ export default function PantallaRutina({ route, navigation }) {
               <View style={styles.rowBetween}>
                 <Text style={styles.ejercicioTexto}>{item.nombre}</Text>
 
-                {(item.series || item.repeticiones || item.peso) && (
+                {item.series && item.repeticiones && item.peso && (
                   <Text style={styles.datosEjercicio}>
-                    {item.series || '0'}s x {item.repeticiones || '0'}r x {item.peso || '0'}kg
+                    {item.series}x{item.repeticiones}x{item.peso}
                   </Text>
                 )}
               </View>

@@ -24,11 +24,11 @@ const rutinasPredefinidas = [
     id: 'piernas',
     nombre: 'Piernas explosivas',
     ejercicios: [
-      { id: 'p1', nombre: 'Sentadillas', series: '4', repeticiones: '12', peso: '60' },
-      { id: 'p2', nombre: 'Zancadas', series: '3', repeticiones: '10', peso: '20' },
-      { id: 'p3', nombre: 'Peso muerto rumano', series: '4', repeticiones: '10', peso: '50' },
-      { id: 'p4', nombre: 'Prensa de piernas', series: '3', repeticiones: '15', peso: '100' },
-      { id: 'p5', nombre: 'Extensión de cuádriceps', series: '3', repeticiones: '12', peso: '40' },
+      { id: 'p1', nombre: 'Sentadillas', series: '4', repeticiones: '12', peso: '60', animacion: require('../assets/ejercicios/sentadilla.json') },
+      { id: 'p2', nombre: 'Zancadas', series: '3', repeticiones: '10', peso: '20', image: 'https://media.istockphoto.com/id/1310156903/photo/young-woman-doing-lunges-exercise-at-home.jpg?s=612x612&w=0&k=20&c=JCcun30_jK-9_I0E6-I6tUaM0V7QO8_l7v5Z1S_V8_M=' },
+      { id: 'p3', nombre: 'Peso muerto rumano', series: '4', repeticiones: '10', peso: '50', image: 'https://images.squarespace-cdn.com/content/v1/594c3dcd37c58189856cc33b/1589139825444-2L3LXZO3M5ZG1Z3Z3V3Z/Romanian+Deadlift' },
+      { id: 'p4', nombre: 'Prensa de piernas', series: '3', repeticiones: '15', peso: '100', image: 'https://www.verywellfit.com/thmb/Jz_vHwKk_lG5n2u0Y2G9X_4V-I8=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/81-3120071-Leg-Press-GIF-669357e6005740348705009a259c7d81.gif' },
+      { id: 'p5', nombre: 'Extensión de cuádriceps', series: '3', repeticiones: '12', peso: '40', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/LEG-EXTENSION.gif' },
     ],
     dificultad: 'Intermedio',
     color: '#ef2b2d',
@@ -37,11 +37,11 @@ const rutinasPredefinidas = [
     id: 'espalda',
     nombre: 'Espalda fuerte',
     ejercicios: [
-      { id: 'e1', nombre: 'Dominadas', series: '4', repeticiones: '8', peso: '0' },
-      { id: 'e2', nombre: 'Remo con barra', series: '4', repeticiones: '10', peso: '40' },
-      { id: 'e3', nombre: 'Peso muerto', series: '3', repeticiones: '8', peso: '80' },
-      { id: 'e4', nombre: 'Jalón al pecho', series: '4', repeticiones: '12', peso: '50' },
-      { id: 'e5', nombre: 'Remo en polea baja', series: '3', repeticiones: '12', peso: '45' },
+      { id: 'e1', nombre: 'Dominadas', series: '4', repeticiones: '8', peso: '0', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/PULL-UP.gif' },
+      { id: 'e2', nombre: 'Remo con barra', series: '4', repeticiones: '10', peso: '40', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/BARBELL-BENT-OVER-ROW.gif' },
+      { id: 'e3', nombre: 'Peso muerto', series: '3', repeticiones: '8', peso: '80', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/BARBELL-DEADLIFT.gif' },
+      { id: 'e4', nombre: 'Jalón al pecho', series: '4', repeticiones: '12', peso: '50', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/LAT-PULLDOWN.gif' },
+      { id: 'e5', nombre: 'Remo en polea baja', series: '3', repeticiones: '12', peso: '45', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/04/Seated-Cable-Row.gif' },
     ],
     dificultad: 'Avanzado',
     color: '#2a9d8f',
@@ -50,11 +50,11 @@ const rutinasPredefinidas = [
     id: 'pecho',
     nombre: 'Pecho definido',
     ejercicios: [
-      { id: 'c1', nombre: 'Press banca', series: '4', repeticiones: '10', peso: '60' },
-      { id: 'c2', nombre: 'Flexiones', series: '3', repeticiones: '20', peso: '0' },
-      { id: 'c3', nombre: 'Press inclinado', series: '4', repeticiones: '10', peso: '50' },
-      { id: 'c4', nombre: 'Aperturas con mancuernas', series: '3', repeticiones: '12', peso: '15' },
-      { id: 'c5', nombre: 'Fondos en paralelas', series: '3', repeticiones: '10', peso: '0' },
+      { id: 'c1', nombre: 'Press banca', series: '4', repeticiones: '10', peso: '60', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/BARBELL-BENCH-PRESS.gif' },
+      { id: 'c2', nombre: 'Flexiones', series: '3', repeticiones: '20', peso: '0', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/PUSH-UP.gif' },
+      { id: 'c3', nombre: 'Press inclinado', series: '4', repeticiones: '10', peso: '50', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/INCLINE-BARBELL-BENCH-PRESS.gif' },
+      { id: 'c4', nombre: 'Aperturas con mancuernas', series: '3', repeticiones: '12', peso: '15', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/DUMBBELL-FLY.gif' },
+      { id: 'c5', nombre: 'Fondos en paralelas', series: '3', repeticiones: '10', peso: '0', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/06/Triceps-Dips.gif' },
     ],
     dificultad: 'Principiante',
     color: '#f4a261',
@@ -78,16 +78,27 @@ export default function Rutinas() {
     const cargarRutinas = async () => {
       try {
         const data = await AsyncStorage.getItem('rutinas');
-        if (data) {
-          const parsed = JSON.parse(data);
-          // Asegurar que existan las claves básicas
-          setRutinas({
-            grupo1: parsed.grupo1 || [],
-            predefinidas: parsed.predefinidas || rutinasPredefinidas
+        const parsed = data ? JSON.parse(data) : { grupo1: [], predefinidas: rutinasPredefinidas };
+
+        // Sincronizar predefinidas para incluir nuevas imágenes/animaciones
+        const syncPredefinidas = rutinasPredefinidas.map(original => {
+          const saved = (parsed.predefinidas || []).find(p => p.id === original.id);
+          if (!saved) return original;
+
+          // Mezclar ejercicios: mantener series/reps/peso del usuario, pero usar imagen/animación de la constante
+          const mergedEjercicios = original.ejercicios.map(oe => {
+            const se = saved.ejercicios.find(e => e.id === oe.id || e.nombre === oe.nombre);
+            if (!se) return oe;
+            return { ...oe, ...se, image: oe.image, animacion: oe.animacion };
           });
-        } else {
-          setRutinas({ grupo1: [], predefinidas: rutinasPredefinidas });
-        }
+
+          return { ...saved, ejercicios: mergedEjercicios };
+        });
+
+        setRutinas({
+          grupo1: parsed.grupo1 || [],
+          predefinidas: syncPredefinidas
+        });
       } catch (e) {
         console.error('Error cargando rutinas:', e);
       }
