@@ -23,21 +23,39 @@ const rutinasPredefinidas = [
   {
     id: 'piernas',
     nombre: 'Piernas explosivas',
-    ejercicios: ['Sentadillas', 'Zancadas', 'Peso muerto rumano'],
+    ejercicios: [
+      { id: 'p1', nombre: 'Sentadillas', series: '4', repeticiones: '12', peso: '60' },
+      { id: 'p2', nombre: 'Zancadas', series: '3', repeticiones: '10', peso: '20' },
+      { id: 'p3', nombre: 'Peso muerto rumano', series: '4', repeticiones: '10', peso: '50' },
+      { id: 'p4', nombre: 'Prensa de piernas', series: '3', repeticiones: '15', peso: '100' },
+      { id: 'p5', nombre: 'Extensión de cuádriceps', series: '3', repeticiones: '12', peso: '40' },
+    ],
     dificultad: 'Intermedio',
     color: '#ef2b2d',
   },
   {
     id: 'espalda',
     nombre: 'Espalda fuerte',
-    ejercicios: ['Dominadas', 'Remo con barra', 'Peso muerto'],
+    ejercicios: [
+      { id: 'e1', nombre: 'Dominadas', series: '4', repeticiones: '8', peso: '0' },
+      { id: 'e2', nombre: 'Remo con barra', series: '4', repeticiones: '10', peso: '40' },
+      { id: 'e3', nombre: 'Peso muerto', series: '3', repeticiones: '8', peso: '80' },
+      { id: 'e4', nombre: 'Jalón al pecho', series: '4', repeticiones: '12', peso: '50' },
+      { id: 'e5', nombre: 'Remo en polea baja', series: '3', repeticiones: '12', peso: '45' },
+    ],
     dificultad: 'Avanzado',
     color: '#2a9d8f',
   },
   {
     id: 'pecho',
     nombre: 'Pecho definido',
-    ejercicios: ['Press banca', 'Flexiones', 'Press inclinado'],
+    ejercicios: [
+      { id: 'c1', nombre: 'Press banca', series: '4', repeticiones: '10', peso: '60' },
+      { id: 'c2', nombre: 'Flexiones', series: '3', repeticiones: '20', peso: '0' },
+      { id: 'c3', nombre: 'Press inclinado', series: '4', repeticiones: '10', peso: '50' },
+      { id: 'c4', nombre: 'Aperturas con mancuernas', series: '3', repeticiones: '12', peso: '15' },
+      { id: 'c5', nombre: 'Fondos en paralelas', series: '3', repeticiones: '10', peso: '0' },
+    ],
     dificultad: 'Principiante',
     color: '#f4a261',
   },
@@ -61,7 +79,14 @@ export default function Rutinas() {
       try {
         const data = await AsyncStorage.getItem('rutinas');
         if (data) {
-          setRutinas(JSON.parse(data));
+          const parsed = JSON.parse(data);
+          // Asegurar que existan las claves básicas
+          setRutinas({
+            grupo1: parsed.grupo1 || [],
+            predefinidas: parsed.predefinidas || rutinasPredefinidas
+          });
+        } else {
+          setRutinas({ grupo1: [], predefinidas: rutinasPredefinidas });
         }
       } catch (e) {
         console.error('Error cargando rutinas:', e);
@@ -153,14 +178,16 @@ export default function Rutinas() {
       rutina,
       grupoKey,
       actualizarRutina: async (rutinaActualizada) => {
-        const nuevasRutinas = {
-          ...rutinas,
-          [grupoKey]: (rutinas[grupoKey] || []).map((r) =>
-            r.id === rutinaActualizada.id ? rutinaActualizada : r
-          ),
-        };
-        setRutinas(nuevasRutinas);
-        await guardarEnStorage(nuevasRutinas);
+        setRutinas(prev => {
+          const nuevasRutinas = {
+            ...prev,
+            [grupoKey]: (prev[grupoKey] || []).map((r) =>
+              r.id === rutinaActualizada.id ? rutinaActualizada : r
+            ),
+          };
+          guardarEnStorage(nuevasRutinas);
+          return nuevasRutinas;
+        });
       },
     });
   };
@@ -225,11 +252,12 @@ export default function Rutinas() {
     <View style={styles.grupoContainer}>
       <Text style={styles.grupoTitulo}>Rutinas recomendadas</Text>
       <View style={styles.rutinasRow}>
-        {rutinasPredefinidas.map((rutina) => (
+        {(rutinas.predefinidas || rutinasPredefinidas).map((rutina) => (
           <TouchableOpacity
             key={rutina.id}
             style={[styles.rutinaCard, { backgroundColor: rutina.color }]}
             onPress={() => handleEntrarRutina(rutina, 'predefinidas')}
+            onLongPress={() => handleLongPress(rutina)}
           >
             <Ionicons name="barbell" size={24} color="#fff" />
             <Text style={styles.rutinaTexto}>{rutina.nombre}</Text>

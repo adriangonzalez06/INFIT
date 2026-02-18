@@ -33,9 +33,9 @@ export default function PantallaRutina({ route, navigation }) {
 
   // Helper para URL
   const getBackendUrl = (path) => {
-  const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
-  return `http://${host}:8082/api${path}`;
-};
+    const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+    return `http://${host}:8082/api${path}`;
+  };
   // Modal de detalles
   const [detallesVisible, setDetallesVisible] = useState(false);
   const [ejercicioEnEdicion, setEjercicioEnEdicion] = useState(null);
@@ -128,16 +128,14 @@ export default function PantallaRutina({ route, navigation }) {
     const nuevaLista = [...ejercicios, nuevoEjercicio];
     setEjercicios(nuevaLista);
     await saveRoutineChanges(nuevaLista);
+    actualizarRutina({ ...rutina, ejercicios: nuevaLista });
 
     setBuscadorVisible(false);
     setFiltro('');
   };
 
   const handleGoBack = () => {
-    navigation.navigate('Rutinas', {
-      updatedRutina: { ...rutina, ejercicios },
-      grupoKey
-    });
+    navigation.goBack();
   };
 
   const handleDeleteEjercicio = async () => {
@@ -146,6 +144,7 @@ export default function PantallaRutina({ route, navigation }) {
     const nuevaLista = ejercicios.filter((e) => e.id !== ejercicioSeleccionado.id);
     setEjercicios(nuevaLista);
     await saveRoutineChanges(nuevaLista);
+    actualizarRutina({ ...rutina, ejercicios: nuevaLista });
 
     setOpcionesVisible(false);
   };
@@ -161,6 +160,7 @@ export default function PantallaRutina({ route, navigation }) {
     const nuevaLista = [...ejercicios, copia];
     setEjercicios(nuevaLista);
     await saveRoutineChanges(nuevaLista);
+    actualizarRutina({ ...rutina, ejercicios: nuevaLista });
 
     setOpcionesVisible(false);
   };
@@ -199,24 +199,24 @@ export default function PantallaRutina({ route, navigation }) {
                   style={styles.iconoGif}
                 />
               )
-              : item.image ? (
-                <Image
-                  source={{ uri: item.image }}
-                  style={styles.iconoGif}
-                  resizeMode="cover"
-                  resizeMethod="resize"
-                  onError={(e) => console.log(`Error loading image for ${item.nombre}:`, e.nativeEvent.error)}
-                />
-              ) : (
-                <Ionicons name="barbell-outline" size={40} color="#555" />
-              )}
+                : item.image ? (
+                  <Image
+                    source={{ uri: item.image }}
+                    style={styles.iconoGif}
+                    resizeMode="cover"
+                    resizeMethod="resize"
+                    onError={(e) => console.log(`Error loading image for ${item.nombre}:`, e.nativeEvent.error)}
+                  />
+                ) : (
+                  <Ionicons name="barbell-outline" size={40} color="#555" />
+                )}
 
               <View style={styles.rowBetween}>
                 <Text style={styles.ejercicioTexto}>{item.nombre}</Text>
 
-                {item.series && item.repeticiones && item.peso && (
+                {(item.series || item.repeticiones || item.peso) && (
                   <Text style={styles.datosEjercicio}>
-                    {item.series}x{item.repeticiones}x{item.peso}
+                    {item.series || '0'}s x {item.repeticiones || '0'}r x {item.peso || '0'}kg
                   </Text>
                 )}
               </View>
@@ -270,7 +270,6 @@ export default function PantallaRutina({ route, navigation }) {
                           setDetallesVisible(true);
                         }}
                       >
-                        <Text style={styles.ejercicioItemModalText}>{ejercicio}</Text>
                         <View style={styles.row}>
                           {ejercicio.animacion ? (
                             <LottieView
@@ -290,7 +289,7 @@ export default function PantallaRutina({ route, navigation }) {
                           ) : (
                             <Ionicons name="fitness" size={40} color="#ef2b2d" />
                           )}
-                          <Text style={{ flex: 1, flexWrap: 'wrap' }}>{ejercicio.name}</Text>
+                          <Text style={{ flex: 1, flexWrap: 'wrap' }}>{ejercicio.name || ejercicio.nombre}</Text>
                         </View>
                       </TouchableOpacity>
                     ))}
@@ -378,16 +377,22 @@ export default function PantallaRutina({ route, navigation }) {
       <Modal visible={detallesVisible} transparent animationType="slide">
         <View style={styles.optionsOverlay}>
           <View style={styles.optionsCard}>
-            <Text style={styles.optionsTitle}>{ejercicioEnEdicion?.nombre}</Text>
+            <Text style={styles.optionsTitle}>{ejercicioEnEdicion?.nombre || ejercicioEnEdicion?.name}</Text>
 
-            {ejercicioEnEdicion?.animacion && (
+            {ejercicioEnEdicion?.animacion ? (
               <LottieView
                 source={ejercicioEnEdicion.animacion}
                 autoPlay
                 loop
                 style={{ width: 150, height: 150, alignSelf: 'center' }}
               />
-            )}
+            ) : ejercicioEnEdicion?.image ? (
+              <Image
+                source={{ uri: ejercicioEnEdicion.image }}
+                style={{ width: 150, height: 150, alignSelf: 'center', borderRadius: 10 }}
+                resizeMode="cover"
+              />
+            ) : null}
 
             <TextInput
               style={styles.inputDescripcion}
@@ -446,8 +451,10 @@ export default function PantallaRutina({ route, navigation }) {
                   // AÑADIR
                   const nuevo = {
                     id: Date.now().toString(),
-                    nombre: ejercicioEnEdicion.nombre,
+                    nombre: ejercicioEnEdicion.nombre || ejercicioEnEdicion.name,
                     animacion: ejercicioEnEdicion.animacion,
+                    image: ejercicioEnEdicion.image,
+                    gif: ejercicioEnEdicion.gif,
                     descripcion: descripcionEjercicio,
                     series,
                     repeticiones: repeticionesEjercicio,
