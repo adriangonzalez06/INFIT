@@ -1,3 +1,6 @@
+import Ingredient from "./Ingredient";
+import Dish from "./Dish";
+
 const DAYS_OF_WEEK = [
   'Monday',
   'Tuesday',
@@ -30,19 +33,52 @@ export default class Diet {
   }
 
   // Reconstruir Diet desde un objeto plano (p.ej. route params / JSON) al pasar objetos por route paramsse convierten a planos
-  static from(obj) {
-    // Si no hay instancia crea una instancia
-    if (!obj) return new Diet();
-    // Si ya es instancia
-    if (obj instanceof Diet) return obj;
-    const src = obj.diet ?? obj;
-    // Asegurar weeklyDishes y convertir platos a instancias de Dish si vienen como objetos planos
-    const weekly = (src.weeklyDishes || Array(7).fill(null).map(() => [])).map(day =>
-      (day || []).map(d => require('./Dish').default.from ? require('./Dish').default.from(d) : d)
-    );
-    
-    return new Diet(src.id, src.name, src.description, src.imgUrl, weekly);
+static from(obj) {
+
+  if (!obj) {
+    return new Diet(null, null, null, null, []);
   }
+
+  const diet = new Diet(
+    obj.id,
+    obj.name,
+    obj.description,
+    obj.imgUrl,
+    obj.weeklyDishes
+      ? obj.weeklyDishes.map(day =>
+          (day || []).map(dishObj => {
+            const ingredients = (dishObj.ingredients || []).map(item => {
+              const ingr = new Ingredient(
+                item.ingredient?.id,
+                item.ingredient?.name,
+                item.ingredient?.calories,
+                item.ingredient?.fiber,
+                item.ingredient?.carbohydrates,
+                item.ingredient?.fat,
+                item.ingredient?.protein,
+                item.ingredient?.imgUrl
+              );
+              return { ingredient: ingr, grams: item.grams || 0 };
+            });
+
+            return new Dish(
+              dishObj.id,
+              dishObj.name,
+              dishObj.imgUrl,
+              ingredients,
+              dishObj.vegetarian,
+              dishObj.vegan,
+              dishObj.gluten_free
+            );
+          })
+        )
+      : []
+  );
+
+  return diet;
+}
+
+
 
   getAllDishes() {
     return this.weeklyDishes;
@@ -90,6 +126,10 @@ export default class Diet {
 
   getUrl() {
     return this.imgUrl;
+  }
+
+  setUrl(url) {
+    url = this.imgUrl;
   }
 
 }

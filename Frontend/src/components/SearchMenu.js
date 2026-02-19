@@ -8,31 +8,43 @@ import {
   FlatList,
   Dimensions,
   PanResponder,
-  StyleSheet
+  StyleSheet,
+  SafeAreaView
 } from 'react-native';
+import { useRoute, useNavigation } from '@react-navigation/native';
 import style from '../../views/stylesheet'
 
   const { height } = Dimensions.get("window");
 
-
 export const SearchMenu = forwardRef(({
   data = [],
+  data2 = [],
+  viewButtons = false,
+  dataButton = 'Data 1',
+  dataButton2 = 'Data 2',
   title = 'Disponibles',
   searchFields = ['nombre', 'name'],
   onSelectItem = () => {},
   renderCustomItem = null,
   searchPlaceholder = 'Buscar...',
-  height: propHeight
+  height: propHeight,
+  numColumns = 0,
+  columnWrapperStyle = null,
+  contentContainerStyle = null
 }, ref) => {
 
   const windowHeight = propHeight || Dimensions.get('window').height;
   const [visible, setVisible] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [tipo, setTipo] = useState(null);
+  const [selectedData, setSelectedData] = useState(data);
+  const [showCreateButton, setShowCreateButton] = useState(true);
+
+  const navigation = useNavigation();
 
   const slideAnim = useRef(new Animated.Value(windowHeight)).current;
 
-  // pan responder para arrastrar el sheet
+  {/*}pan responder para arrastrar el sheet*/}
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 5,
@@ -89,11 +101,11 @@ export const SearchMenu = forwardRef(({
 
   const filteredData = useMemo(() => {
     const q = searchText.trim().toLowerCase();
-    if (!q) return data;
-    return data.filter(item =>
+    if (!q) return selectedData;
+    return selectedData.filter(item =>
       searchFields.some(f => String(item[f] ?? '').toLowerCase().includes(q))
     );
-  }, [data, searchText, searchFields]);
+  }, [selectedData, searchText, searchFields]);
 
   const renderDefaultItem = ({ item }) => (
     <TouchableOpacity onPress={() => handleSelect(item)}>
@@ -108,6 +120,52 @@ export const SearchMenu = forwardRef(({
     </TouchableOpacity>
   );
 
+  const renderCategoryButtons = (viewButtons) => {
+
+    if (!viewButtons) return null;
+
+      return (
+        <View>
+          <View style={[style.middleRowElementsContainer]}>
+
+              <TouchableOpacity 
+                style={style.grayButton} 
+                onPress={() => {setSelectedData(data); setShowCreateButton(true)}}
+              >
+
+                <Text>{dataButton}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={style.grayButton} 
+                onPress={() => {setSelectedData(data2); setShowCreateButton(false)}}
+              >
+
+                <Text>{dataButton2}</Text>
+              </TouchableOpacity>
+
+          </View>
+
+          <View style={style.dayButtons}>
+              {renderCreateButton(showCreateButton)}
+          </View>
+
+        </View>
+      );
+  };
+
+  const renderCreateButton = (showCreateButton) => {
+    if (showCreateButton) return null;
+
+    return (
+      <TouchableOpacity
+      style={style.createDishButton}
+      onPress={() => navigation.navigate('CreateDishMenu')}
+      >
+        <Text>+ Crear plato</Text>
+      </TouchableOpacity>
+    )
+  };
 
   return (
     <>
@@ -126,12 +184,20 @@ export const SearchMenu = forwardRef(({
             onChangeText={setSearchText}
           />
 
-          <FlatList
-            data={filteredData}
-            keyExtractor={(item) => String(item.id)}
-            renderItem={renderCustomItem || renderDefaultItem}
-            keyboardShouldPersistTaps="handled"
-          />
+          <View style={{paddingBottom: 100}}>
+            
+            {renderCategoryButtons(viewButtons)}
+
+            <FlatList
+              data={filteredData}
+              keyExtractor={(item) => String(item.id)}
+              renderItem={renderCustomItem || renderDefaultItem}
+              keyboardShouldPersistTaps="handled"
+              numColumns={numColumns}
+              columnWrapperStyle={columnWrapperStyle}
+              contentContainerStyle={contentContainerStyle}
+            />
+          </View>
 
         </Animated.View>
       )}
@@ -154,14 +220,20 @@ const styles = StyleSheet.create({
   },
   buttonText: { color: "#fff", fontSize: 18, fontWeight: "bold" },
   bottomSheet: {
+    flex: 1,
     position: "absolute",
     left: 0,
     right: 0,
-    height: height * 0.8, // más grande
+    bottom: 0,
+    marginBottom: 0,
+    height: height * 0.8,
     backgroundColor: "#fff",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    padding: 16,
+    paddingTop: 16,
+    paddingLeft: 16,
+    paddingRight: 16,
+    paddingBottom: 0,
     elevation: 10
   },
   dragIndicator: {

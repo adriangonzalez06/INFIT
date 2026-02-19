@@ -40,7 +40,7 @@ export default function DietView({ route }) {
       try {
         const meals = await getAllMeals();
         if (meals && meals.length > 0) {
-          const dishesFromDB = meals.map((meal, index) => 
+          const dishesFromDB = meals.map((meal, index) =>
             new Dish(
               meal.id || index,
               meal.name,
@@ -54,10 +54,10 @@ export default function DietView({ route }) {
             )
           );
           setAllAvailableDishes(dishesFromDB);
-          
+
           // Obtener platos de la dieta
           let dietDishes = diet.getAllDishes ? diet.getAllDishes() : dishesFromDB.slice(0, 3);
-          
+
           // Enriquecer platos de Firestore con imgUrl buscando en dishesFromDB
           if (dietDishes.length > 0) {
             dietDishes = dietDishes.map(dishFromDiet => {
@@ -80,7 +80,7 @@ export default function DietView({ route }) {
               return dishFromDiet;
             });
           }
-          
+
           setDishes(dietDishes.length > 0 ? dietDishes : dishesFromDB.slice(0, 3));
           console.log('✅ Platos cargados en DietView:', dishesFromDB.length);
         } else {
@@ -124,12 +124,6 @@ export default function DietView({ route }) {
             <Text style={styles.text}>{diet?.description ?? ''}</Text>
 
             <Text style={styles.grupoTitulo}>Platos</Text>
-
-            {/*componente*/}
-            <WeeklyItemsMenu
-              object={diet}
-              allAvailableDishes={dishes}
-            />
 
           </View>
         </SafeAreaView>
