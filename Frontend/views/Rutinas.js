@@ -9,6 +9,7 @@ import Header from '../src/components/Header';
 import { StatusBar } from 'expo-status-bar';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import axios from 'axios';
+import { BACKEND_URL } from '../src/config';
 
 
 const SUGERENCIAS = {
@@ -114,9 +115,8 @@ export default function Rutinas() {
       const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
         if (firebaseUser) {
           try {
-            const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
             const resp = await axios.get(
-              `http://${host}:8082/api/usuarios/buscar/email/${encodeURIComponent(firebaseUser.email)}`,
+              `${BACKEND_URL}/api/usuarios/buscar/email/${encodeURIComponent(firebaseUser.email)}`,
               { timeout: 5000 }
             );
             if (resp.data && resp.data.nombre) {

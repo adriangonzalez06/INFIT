@@ -21,6 +21,7 @@ import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import axios from 'axios';
 import * as ImagePicker from 'expo-image-picker';
+import { BACKEND_URL } from '../src/config';
 
 
 
@@ -119,9 +120,8 @@ export default function ProfileScreen() {
 
           // Obtener datos del backend buscando por email (como WelcomeScreen)
           try {
-            const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
             const resp = await axios.get(
-              `http://${host}:8082/api/usuarios/buscar/email/${encodeURIComponent(firebaseUser.email)}`,
+              `${BACKEND_URL}/api/usuarios/buscar/email/${encodeURIComponent(firebaseUser.email)}`,
               { timeout: 5000 }
             );
 
@@ -140,7 +140,7 @@ export default function ProfileScreen() {
               await ReactNativeAsyncStorage.setItem('userDocId', documentId);  // Guardar el ID real
 
               // Actualizar el estado con el avatar del backend si existe
-              const backendAvatar = resp.data.photoURL ? { uri: resp.data.photoURL } : require('../assets/avatar.png');
+              const backendAvatar = resp.data.photo ? { uri: resp.data.photo } : require('../assets/avatar.png');
 
               setUser({
                 nombre: nombreUser,
@@ -274,8 +274,7 @@ export default function ProfileScreen() {
     setIsSaving(true);
     try {
       // Actualizar en el backend
-      const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
-      const url = `http://${host}:8082/api/usuarios/${userId}`;
+      const url = `${BACKEND_URL}/api/usuarios/${userId}`;
 
       console.log('Enviando petición a:', url);
       console.log('Datos:', { weight: newPeso, height: newAltura });
@@ -462,6 +461,12 @@ export default function ProfileScreen() {
               onPress={async () => {
                 closeAvatarModal();
 
+                // Guardia: asegurarse de que tenemos userId antes de empezar
+                if (!userId) {
+                  Alert.alert('Error', 'No se encontró tu ID de usuario. Vuelve a iniciar sesión.');
+                  return;
+                }
+
                 const choice = await chooseAvatarSource();
                 if (choice === 'cancel') return;
 
@@ -471,40 +476,67 @@ export default function ProfileScreen() {
 
                 if (!asset) return;
 
-                // 1) Pide firma a tu backend (axios)
-                const host = Platform.OS === "android" ? "10.0.2.2" : "localhost";
-                const sig = await axios.post(`http://${host}:8082/cloudinary/signature`).then(r => r.data);
-
-                // 2) Sube a Cloudinary (axios + FormData)
-                const fileToUpload = {
-                  uri: asset.uri,
-                  type: asset.type || 'image/jpeg',
-                  name: asset.fileName || 'avatar.jpg',
-                };
-
-                const form = new FormData();
-                form.append('file', fileToUpload);
-                form.append('api_key', sig.apiKey);
-                form.append('timestamp', String(sig.timestamp));
-                form.append('signature', sig.signature);
-                form.append('folder', sig.folder);
-
-                const up = await axios.post(
-                  `https://api.cloudinary.com/v1_1/${sig.cloudName}/image/upload`,
-                  form,
-                  { headers: { 'Content-Type': 'multipart/form-data' } }
-                );
-
-                const url = up.data.secure_url;
-
-                // 3) Actualiza visualmente el avatar 
-                setUser(prev => prev ? { ...prev, avatar: { uri: url } } : prev);
-
-                // 4) Guardar en backend
+                setIsSaving(true);
                 try {
-                  await axios.put(`http://${host}:8082/api/usuarios/${userId}`, { photoURL: url });
-                } catch (err) {
-                  console.error('Error actualizando foto en backend:', err);
+                  // 1) Pedir firma segura al backend
+                  let sig;
+                  try {
+                    const sigResp = await axios.post(
+                      `${BACKEND_URL}/cloudinary/signature`,
+                      {},
+                      { timeout: 8000 }
+                    );
+                    sig = sigResp.data;
+                  } catch (sigErr) {
+                    console.error('[Avatar] Error obteniendo firma Cloudinary:', sigErr?.message || sigErr);
+                    Alert.alert('Error', 'No se pudo conectar con el servidor. ¿Está el backend arrancado?');
+                    return;
+                  }
+
+                  // 2) Subir imagen a Cloudinary
+                  const form = new FormData();
+                  form.append('file', {
+                    uri: asset.uri,
+                    type: asset.mimeType || asset.type || 'image/jpeg',
+                    name: asset.fileName || 'avatar.jpg',
+                  });
+                  form.append('api_key', sig.apiKey);
+                  form.append('timestamp', String(sig.timestamp));
+                  form.append('signature', sig.signature);
+                  form.append('folder', sig.folder);
+
+                  let cloudinaryUrl;
+                  try {
+                    const upResp = await axios.post(
+                      `https://api.cloudinary.com/v1_1/${sig.cloudName}/image/upload`,
+                      form,
+                      { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 30000 }
+                    );
+                    cloudinaryUrl = upResp.data?.secure_url;
+                    if (!cloudinaryUrl) throw new Error('Cloudinary no devolvió URL');
+                  } catch (upErr) {
+                    console.error('[Avatar] Error subiendo a Cloudinary:', upErr?.response?.data || upErr?.message || upErr);
+                    Alert.alert('Error', 'No se pudo subir la imagen a Cloudinary. Revisa tus credenciales en el .env del backend.');
+                    return;
+                  }
+
+                  // 3) Actualizar visualmente en la app
+                  setUser(prev => prev ? { ...prev, avatar: { uri: cloudinaryUrl } } : prev);
+
+                  // 4) Guardar URL en Firestore via backend
+                  try {
+                    await axios.put(
+                      `${BACKEND_URL}/api/usuarios/${userId}`,
+                      { photoURL: cloudinaryUrl },
+                      { timeout: 8000 }
+                    );
+                  } catch (saveErr) {
+                    console.error('[Avatar] Error guardando URL en backend:', saveErr?.response?.data || saveErr?.message || saveErr);
+                    Alert.alert('Advertencia', 'La foto se subió pero no se pudo guardar en la base de datos. Inténtalo de nuevo.');
+                  }
+
+                } finally {
+                  setIsSaving(false);
                 }
               }}
             >

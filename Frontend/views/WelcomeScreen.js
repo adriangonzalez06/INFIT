@@ -17,7 +17,7 @@ import { useNavigation } from '@react-navigation/native';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { Platform } from 'react-native';
+import { BACKEND_URL } from '../src/config';
 
 
 const PRIMARY = '#ef2b2d';
@@ -113,33 +113,32 @@ export default function WelcomeScreen() {
         // Si no hay displayName en Firebase, intentar obtener del backend
         if (!name) {
           try {
-            const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
             const resp = await axios.get(
-              `http://${host}:8082/api/usuarios/buscar/email/${encodeURIComponent(user.email)}`,
+              `${BACKEND_URL}/api/usuarios/buscar/email/${encodeURIComponent(user.email)}`,
               { timeout: 5000 }
             );
             const nombreBackend = resp?.data?.nombre;
             streakVal = resp?.data?.streak || streakVal; // { changed code }} usa backend si existe, sino usa AsyncStorage
             if (nombreBackend) {
-               name = nombreBackend;
-               await AsyncStorage.setItem('userName', nombreBackend);
-               await AsyncStorage.setItem('streak', streakVal.toString());
-             }
-           } catch (e) {
-             console.warn('No se pudo obtener nombre del backend:', e?.message || e);
-             // Aquí streakVal sigue siendo el valor de AsyncStorage
-           }
-         }
+              name = nombreBackend;
+              await AsyncStorage.setItem('userName', nombreBackend);
+              await AsyncStorage.setItem('streak', streakVal.toString());
+            }
+          } catch (e) {
+            console.warn('No se pudo obtener nombre del backend:', e?.message || e);
+            // Aquí streakVal sigue siendo el valor de AsyncStorage
+          }
+        }
 
-         setUserName(name || user.email || user.uid);
-         setStreak(streakVal);
-       } else {
-         setUserName(null);
-         setStreak(0);
-       }
-     });
-     return () => unsub();
-   }, []);
+        setUserName(name || user.email || user.uid);
+        setStreak(streakVal);
+      } else {
+        setUserName(null);
+        setStreak(0);
+      }
+    });
+    return () => unsub();
+  }, []);
 
   const messages = useMemo(
     () => [
@@ -181,45 +180,45 @@ export default function WelcomeScreen() {
       overScrollMode="never"
       showsVerticalScrollIndicator={false}
     >
-        <StatusBar hidden={true} />
+      <StatusBar hidden={true} />
 
-        <ImageBackground source={require('../assets/images/Blur_mancuernas.jpg')} style={styles.headerImage}>
-             <Animated.View
-               style={[
-                 styles.header,
-                 { borderBottomColor: theme.hairline, transform: [{ translateY: mountTranslate }], opacity: mountOpacity },
-               ]}
-             >
+      <ImageBackground source={require('../assets/images/Blur_mancuernas.jpg')} style={styles.headerImage}>
+        <Animated.View
+          style={[
+            styles.header,
+            { borderBottomColor: theme.hairline, transform: [{ translateY: mountTranslate }], opacity: mountOpacity },
+          ]}
+        >
 
-               <Image source={require('../assets/avatar.png')} style={styles.avatar} />
-               <Text style={[styles.greeting, { color: theme.primary }]}>¡Hola, {userName ?? 'usuario'}!</Text>
-               <Text style={[styles.subtitle, { color: theme.card }]}>{message}</Text>
+          <Image source={require('../assets/avatar.png')} style={styles.avatar} />
+          <Text style={[styles.greeting, { color: theme.primary }]}>¡Hola, {userName ?? 'usuario'}!</Text>
+          <Text style={[styles.subtitle, { color: theme.card }]}>{message}</Text>
 
 
 
-               <Pressable
-                 onPressIn={() => animateIn(scaleHeaderCTA)}
-                 onPressOut={() => animateOut(scaleHeaderCTA)}
-                 onPress={() => navigation.navigate('Rutinas')}
-                 accessibilityRole="button"
-                 accessibilityLabel="Empezar rutina"
-               >
-                 <Animated.View
-                   style={[
-                     styles.startButton,
-                     {
-                       backgroundColor: theme.primary,
-                       shadowColor: '#000',
-                       transform: [{ scale: scaleHeaderCTA }],
-                     },
-                   ]}
-                 >
-                   <Text style={styles.startButtonText}>Empezar rutina</Text>
-                 </Animated.View>
-               </Pressable>
-             </Animated.View>
+          <Pressable
+            onPressIn={() => animateIn(scaleHeaderCTA)}
+            onPressOut={() => animateOut(scaleHeaderCTA)}
+            onPress={() => navigation.navigate('Rutinas')}
+            accessibilityRole="button"
+            accessibilityLabel="Empezar rutina"
+          >
+            <Animated.View
+              style={[
+                styles.startButton,
+                {
+                  backgroundColor: theme.primary,
+                  shadowColor: '#000',
+                  transform: [{ scale: scaleHeaderCTA }],
+                },
+              ]}
+            >
+              <Text style={styles.startButtonText}>Empezar rutina</Text>
+            </Animated.View>
+          </Pressable>
+        </Animated.View>
 
-       </ImageBackground>
+      </ImageBackground>
 
       <Pressable onPress={() => navigation.navigate('Rutinas')}>
         <Animated.View
@@ -384,13 +383,13 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   challengeHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  dot: { width: 10, height: 10, borderRadius: 5, marginRight: 10},
+  dot: { width: 10, height: 10, borderRadius: 5, marginRight: 10 },
   challengeTitle: { fontSize: 18, fontWeight: '800' },
   challengeSubtitle: { fontSize: 14, fontWeight: '600', marginBottom: 14 },
   cta: { alignSelf: 'flex-start', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 8 },
   ctaText: { color: '#fff', fontWeight: '800', fontSize: 14 },
 
   headerImage: {
-    top:'-5%'
+    top: '-5%'
   }
 });

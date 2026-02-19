@@ -14,6 +14,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
 import colors from './colors';
+import { BACKEND_URL } from '../src/config';
 import MainTabs from './MainTabs';
 import { NavigationContainer } from '@react-navigation/native';
 import {
@@ -64,13 +65,7 @@ function RegisterScreen({ navigation }) {
     };
 
     try {
-      // Ajustar host según plataforma/emulador
-      const host =
-        Platform.OS === 'android'
-          ? '10.0.2.2' // Android emulator (AVD). Genymotion usar 10.0.3.2
-          : 'localhost'; // iOS simulator o web
-      // Si pruebas en un dispositivo físico, reemplaza host por la IP de tu PC, e.g. '192.168.1.42'
-      const backendUrl = `http://${host}:8082/api/usuarios/POST`;
+      const backendUrl = `${BACKEND_URL}/api/usuarios/POST`;
 
       // Crear usuario en Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
