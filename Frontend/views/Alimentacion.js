@@ -138,32 +138,10 @@ export default function Alimentacion() {
     let r4 = new Diet(4, "Dieta Mediterránea", "descripcion", require('../assets/images/images_diet/diet_01.jpg'), [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
     let r5 = new Diet(5, "Dieta Alta en Proteínas", "descripcion", require('../assets/images/images_diet/diet_01.jpg'), [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
     let r6 = new Diet(6, "Dieta Baja en Carbohidratos", "descripcion", require('../assets/images/images_diet/diet_01.jpg'), [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
-  //id, name, imgUrl, calories, fiber, carbohydrates, fat, protein)
-  let in1 = new Ingredient(1, "Manzana", 30, 2, 12, 2, 3);
-  let in2 = new Ingredient(2, "Carne", 40, 4, 14, 3, 1);
-
-  let ingredients = [
-    { ingredient: in1, grams: 100 },
-    { ingredient: in2, grams: 100 }
-  ];
-
-  {/*platos placeholder, leer los datos de la base de datos*/ }
-  let plato1 = new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), ingredients, true, true, false);
-  let plato2 = new Dish(2, "Carne", require('../assets/images/images_dish/dish_02.jpg'), ingredients, false, false, true);
-  let plato3 = new Dish(3, "Postre", require('../assets/images/images_dish/dish_03.jpg'), ingredients, true, false, false);
-  let plato4 = new Dish(4, "Pescado", require('../assets/images/images_dish/dish_04.jpg'), ingredients, false, false, true);
-  let plato5 = new Dish(5, "Sopa", require('../assets/images/images_dish/dish_05.jpg'), ingredients, true, true, false);
-  let plato6 = new Dish(6, "Pasta", require('../assets/images/images_dish/dish_06.jpg'), ingredients, false, true, false);
-
-  {/* diets de prueba*/ }
-  let r1 = new Diet(1, "Dieta Balanceada", "descripcion", require('../assets/images/images_diet/diet_02.jpg'), [[plato2, plato3, plato6], [plato6, plato4, plato5], [plato5, plato4, plato6], [plato2, plato3], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato3]]);
-  let r2 = new Diet(2, "Dieta Vegana", "descripcion", require('../assets/images/images_diet/diet_02.jpg'), [[plato2, plato3, plato6], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato2, plato3], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato3]]);
-  let r3 = new Diet(3, "Dieta Cetogénica", "descripcion", require('../assets/images/images_diet/diet_01.jpg'), [[plato2, plato3, plato6], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato2, plato3], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato3]]);
-  let r4 = new Diet(4, "Dieta Mediterránea", "descripcion", require('../assets/images/images_diet/diet_01.jpg'), [[plato2, plato3, plato6], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato2, plato3], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato3]]);
-  let r5 = new Diet(5, "Dieta Alta en Proteínas", "descripcion", require('../assets/images/images_diet/diet_01.jpg'), [[plato2, plato3, plato6], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato2, plato3], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato3]]);
-  let r6 = new Diet(6, "Dieta Baja en Carbohidratos", "descripcion", require('../assets/images/images_diet/diet_01.jpg'), [[plato2, plato3, plato6], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato2, plato3], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato3]]);
+  
     return [r1, r2, r3, r4, r5, r6];
   };
+
 
   // Inicializar con solo dietas por defecto
   const defaultDiets = createDefaultDiets();

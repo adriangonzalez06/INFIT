@@ -28,7 +28,7 @@ export default function AddDietMenu({ route }) {
   const navigation = useNavigation();
   const { height } = Dimensions.get('window');
 
-  {/*id, name, imgUrl, calories, fiber, carbohydrates, fat, protein)*/}
+  /* id, name, imgUrl, calories, fiber, carbohydrates, fat, protein) */
   let in1 = new Ingredient(1, "Manzana", 30, 2, 12, 2, 3);
   let in2 = new Ingredient(2, "Carne", 40, 4, 14, 3, 1);
 
@@ -36,6 +36,14 @@ export default function AddDietMenu({ route }) {
     { ingredient: in1, grams: 100 },
     { ingredient: in2, grams: 100 }
   ];
+
+    {/*platos placeholder, leer los datos de la base de datos*/ }
+  let dish1 = new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), ingredients, true, true, false);
+  let dish2 = new Dish(2, "Carne", require('../assets/images/images_dish/dish_02.jpg'), ingredients, false, false, true);
+
+
+  /* array que almacena los platos creados por el usuario (ventana mis platos del menu de busqueda*/
+  const myDishes = [dish1, dish2];
 
   const images = [
     {
@@ -91,30 +99,22 @@ export default function AddDietMenu({ route }) {
 
   ];
 
-  {/*platos placeholder, leer los datos de la base de datos*/ }
-  let dish1 = new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), ingredients, true, true, false);
-  let dish2 = new Dish(2, "Carne", require('../assets/images/images_dish/dish_02.jpg'), ingredients, false, false, true);
-  let dish3 = new Dish(3, "Postre", require('../assets/images/images_dish/dish_03.jpg'), ingredients, true, false, false);
-  let dish4 = new Dish(4, "Pescado", require('../assets/images/images_dish/dish_04.jpg'), ingredients, false, false, true);
-  let dish5 = new Dish(5, "Sopa", require('../assets/images/images_dish/dish_05.jpg'), ingredients, true, true, false);
-  let dish6 = new Dish(6, "Pasta", require('../assets/images/images_dish/dish_06.jpg'), ingredients, false, true, false);
-
-  {/*array de dietas al que añadir la dieta*/ }
-  {/*Asegurarse de que addingGroup sea siempre un array (maneja route.params undefined/null y valores no array)*/}
+  /* array de dietas al que añadir la dieta */
+  /* Asegurarse de que addingGroup sea siempre un array (maneja route.params undefined/null y valores no array) */
   const addingGroup = Array.isArray(route?.params?.recipes) ? route.params.recipes : [];
 
-  {/*Rehydrate route.params.diet into a Diet instance so instance methods work*/}
+  /* Rehydrate route.params.diet into a Diet instance so instance methods work */
   const diet = useMemo(() => Diet.from(route?.params?.diet), [route?.params?.diet]);
   console.log('diet:', diet.getName ? diet.getName() : diet);
 
-  {/* If getName is null it means that we are creating a recipe*/ }
+  /* If getName is null it means that we are creating a recipe */
   let creatingRecipe = false;
   if (diet.getName() == null) creatingRecipe = true;
 
-  {/*array de todos los platos desde Firestore*/ }
+  /* array de todos los platos desde Firestore */
   const [allAvailableDishes, setAllAvailableDishes] = useState([]);
 
-  {/*cargar platos desde Firestore al montar el componente*/ }
+  /* cargar platos desde Firestore al montar el componente */
   useEffect(() => {
     const loadMeals = async () => {
       try {
@@ -146,6 +146,8 @@ export default function AddDietMenu({ route }) {
             new Dish(6, "Pasta", require('../assets/images/images_dish/dish_06.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, false, false, false),
           ];
           setAllAvailableDishes(fallbackDishes);
+
+          
           console.log('⚠️  Usando platos de fallback');
         }
       } catch (error) {
@@ -162,40 +164,37 @@ export default function AddDietMenu({ route }) {
 
     loadMeals();
   }, []);
-  {/*array de todos los platos*/ }
-  const allAvailableDishes = [dish1, dish2, dish3, dish4, dish5, dish6];
-  const myDishes = [dish1, dish3];
 
-  {/*datos de la dieta*/ }
-  {/*selectedDay: 0 = Lunes, 1 = Martes, ... 6 = Domingo*/ }
+  /* datos de la dieta */
+  /* selectedDay: 0 = Lunes, 1 = Martes, ... 6 = Domingo */
   const [selectedDay, setSelectedDay] = useState(0);
   const [dishes, setDishes] = useState(diet.getDishesForDay(0));
   const [dietName, setDietName] = useState('');
   const [dietDescription, setDietDescription] = useState('');
   const [selectedUri, setSelectedUri] = useState(route?.params?.diet?.imgUrl || images[0].url || null);
 
-  {/*all dishes of all days*/ }
+  /* all dishes of all days */
   const [allDishes, setAllDishes] = useState(diet.getAllDishes());
 
-  {/*Totales de la diet*/ }
+  /* Totales de la diet */
   const totalCalories = (dishes.reduce((sum, p) => sum + (p?.calories || 0), 0));
   const totalFiber = (dishes.reduce((sum, p) => sum + (p?.fiber || 0), 0));
   const totalCarbs = (dishes.reduce((sum, p) => sum + (p?.carbohydrates || 0), 0));
   const totalFat = (dishes.reduce((sum, p) => sum + (p?.fat || 0), 0));
   const totalProtein = (dishes.reduce((sum, p) => sum + (p?.protein || 0), 0));
 
-  {/*modal ingredients*/ }
+  /* modal ingredients */
   const [visible, setModalVisible] = useState(false);
   const [selectedIngredients, setSelectedIngredients] = useState([]);
 
-  {/*button color*/ }
+  /* button color */
   const [bttId, setBttId] = useState(0);
 
-  {/*titulo crear dieta o nombre de la dieta*/}
+  /* titulo crear dieta o nombre de la dieta */
   const screenTitle = diet.getName() || "Crear una dieta";
 
-  {/*gestion de imagenes locales y remotas*/ }
-  {/*comprobar de donde vienen*/ }
+  /* gestion de imagenes locales y remotas */
+  /* comprobar de donde vienen */
   const getImageSource = (imgUrl) => {
     if (!imgUrl) return null;
 
@@ -204,13 +203,13 @@ export default function AddDietMenu({ route }) {
       : { uri: imgUrl };
   };
 
-  {/*-------CONSTANTES MENU DESPLEGABLE--------*/ }
-  {/*SearchMenu ref para abrirlo desde el boton*/ }
+  /* -------CONSTANTES MENU DESPLEGABLE-------- */
+  /* SearchMenu ref para abrirlo desde el boton */
   const searchMenuRef = useRef(null);
   const imgMenuRef = useRef(null);
 
-  {/*-------FUNCIONES DE MENU DESPLEGABLE--------*/ }
-  {/*componente personalizado para renderizar items en el SearchMenu*/ }
+  /* -------FUNCIONES DE MENU DESPLEGABLE-------- */
+  /* componente personalizado para renderizar items en el SearchMenu */
   const renderDishItemMenu = ({ item }) => (
     <TouchableOpacity onPress={() => { handleAddDish(item); searchMenuRef.current?.cerrarMenu?.(); }}>
       <View style={[styles.dishContainer]}>
@@ -221,7 +220,7 @@ export default function AddDietMenu({ route }) {
         <View style={{ marginLeft: 10, flex: 1 }}>
           <Text style={[styles.dishTitle, { fontSize: 14 }]}>{item.name}</Text>
           <Text style={styles.dishText}>{item.getTotalCalories()} kcal</Text>
-          {/*render labels vegano vegetariano*/}
+          {/* render labels vegano vegetariano */}
           <RenderLabels dish={item} />
         </View>
       </View>
@@ -244,40 +243,40 @@ export default function AddDietMenu({ route }) {
   const handleSetImage = (url) => {
     setSelectedUri(url);
     diet.setUrl(url);
-  }
+  };
 
-  {/*-------FUNCIONES DE LOS PLATOS--------*/ }
-  {/*funcion para agregar un plato a la dieta*/ }
+  /* -------FUNCIONES DE LOS PLATOS-------- */
+  /* funcion para agregar un plato a la dieta */
   const handleAddDish = (selectedDish) => {
 
-    {/*evitar añadir el mismo plato varias veces al día*/ }
+    /* evitar añadir el mismo plato varias veces al día */
     const dayDishes = diet.getDishesForDay(selectedDay);
     if (dayDishes.some(d => d.id === selectedDish.id)) {
       ToastAndroid.show('Este plato ya está en el día seleccionado.', ToastAndroid.SHORT);
       return;
     };
 
-    {/*Añade el plato al día seleccionado dentro de newDiet*/ }
+    /* Añade el plato al día seleccionado dentro de newDiet */
     diet.addDishToDay(selectedDay, selectedDish);
-    {/*Actualiza el estado local para re-renderizar la lista del día*/ }
+    /* Actualiza el estado local para re-renderizar la lista del día */
     setDishes([...diet.getDishesForDay(selectedDay)]);
     setAllDishes([...diet.getAllDishes()]);
   };
 
-  {/*funcion para eliminar un plato a la dieta*/ }
+  /* funcion para eliminar un plato a la dieta */
   const handleDeleteDish = (index) => {
-    {/*borra por índice del día seleccionado*/ }
+    /* borra por índice del día seleccionado */
     diet.weeklyDishes[selectedDay].splice(index, 1);
     setDishes([...diet.getDishesForDay(selectedDay)]);
     setAllDishes([...diet.getAllDishes()]);
   };
 
-  {/*funcion para renderizar la list de dishes*/ }
+  /* funcion para renderizar la list de dishes */
   const renderDishList = () => {
     return (dishes || []).map((dish, idx) => renderPlato(dish, idx));
   };
 
-  {/*funcion para renderizar cada dish de la diet*/ }
+  /* funcion para renderizar cada dish de la diet */
   const renderPlato = (dish, index) => {
 
     console.log("tiene id?", dish);
@@ -294,7 +293,7 @@ export default function AddDietMenu({ route }) {
             <Text style={styles.dishSubtitle}>Calorías</Text>
             <Text style={styles.dishText}>{calculateDishTotals(dish).totalCalories} kcal</Text>
 
-            {/*etiquetas de vegetariano, vegano y sin gluten*/}
+            {/* etiquetas de vegetariano, vegano y sin gluten */}
             <RenderLabels dish={dish} />
 
           </View>
@@ -406,9 +405,9 @@ export default function AddDietMenu({ route }) {
 
   };
 
-  {/*-------FUNCIONES DE LOS TOTALES--------*/ }
+  /* -------FUNCIONES DE LOS TOTALES-------- */
 
-  {/*funcion para calcular los totales diarios*/ }
+  /* funcion para calcular los totales diarios */
   const calculateDailyTotals = (selectedDay) => {
     let totalCalories = 0;
     let totalFiber = 0;
@@ -438,7 +437,7 @@ export default function AddDietMenu({ route }) {
   };
 
 
-  {/*funcion para calcular los totales semanales*/ }
+  /* funcion para calcular los totales semanales */
   const calculateWeeklyTotals = () => {
     let totalCalories = 0;
     let totalFiber = 0;
@@ -469,11 +468,11 @@ export default function AddDietMenu({ route }) {
     return { totalCalories, totalFiber, totalCarbs, totalFat, totalProtein };
   };
 
-  {/*redondear numeros para evitar que aparezcan muchos decimales*/ }
+  /* redondear numeros para evitar que aparezcan muchos decimales */
   const roundNums = (num) => {
     let roundedNum = Math.round(num * 100) / 100
     return roundedNum.toFixed(2);
-  }
+  };
 
   const saveDiet = async () => {
     try {
@@ -517,13 +516,12 @@ export default function AddDietMenu({ route }) {
       });
 
       // Preparar datos para enviar a la API
-      const dietData = {
       const dietToSave = {
         id: diet.id,
         name: diet.name,
         description: diet.description,
         imgUrl: diet.imgUrl,
-        weeklyDishes: diet.weeklyDishes
+        weeklyDishes: diet.weeklyDishes,
         userID: userDocId,
         weeklyDishes: serializedWeeklyDishes,
         imgUrl: 'https://via.placeholder.com/300x300?text=Dieta+Personalizada',
@@ -560,7 +558,7 @@ export default function AddDietMenu({ route }) {
         }
         console.error('❌ Error response:', errorMessage, errorDetails);
         throw new Error(`${errorMessage}${errorDetails ? ': ' + errorDetails : ''}`);
-      }
+      };
 
       const result = await response.json();
       console.log('✅ Dieta guardada:', result);
@@ -585,7 +583,7 @@ export default function AddDietMenu({ route }) {
     }
   };
 
-  {/*botones y otros elementos*/ }
+  /* botones y otros elementos */
   const renderNameInput = (creatingRecipe) => {
     if (creatingRecipe) {
       return (
@@ -625,7 +623,7 @@ export default function AddDietMenu({ route }) {
 
       )
     }
-  }
+  };
 
 
   return (
@@ -658,7 +656,7 @@ export default function AddDietMenu({ route }) {
 
           <Text style={styles.grupoTitulo}>Totales</Text>
 
-          {/*DIARIO*/}
+          {/* DIARIO */}
           <Text style={styles.title_2}>Diario</Text>
           <View style={styles.totalsContainer}>
             <Text style={styles.title_3}>Calorías</Text>
@@ -685,7 +683,7 @@ export default function AddDietMenu({ route }) {
             <Text style={styles.text}>{calculateDailyTotals(selectedDay).totalProtein} g</Text>
           </View>
 
-          {/*SEMANAL*/}
+          {/* SEMANAL */}
           <Text style={styles.title_2}>Semanal</Text>
 
           <View style={styles.totalsContainer}>
@@ -739,7 +737,7 @@ export default function AddDietMenu({ route }) {
 
       {renderIngredientsModal()}
 
-      {/*menu buscar platos*/}
+      {/* menu buscar platos */}
       <SearchMenu
         ref={searchMenuRef}
         data={allAvailableDishes}
@@ -756,7 +754,7 @@ export default function AddDietMenu({ route }) {
         numColumns={1}
       />
 
-      {/*menu buscar imagenes*/}
+      {/* menu buscar imagenes */}
       <SearchMenu
         ref={imgMenuRef}
         data={images}
