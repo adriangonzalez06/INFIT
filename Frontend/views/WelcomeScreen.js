@@ -17,7 +17,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { Platform } from 'react-native';
+import { BACKEND_URL } from '../src/config';
 
 
 const PRIMARY = '#ef2b2d';
@@ -135,9 +135,8 @@ export default function WelcomeScreen() {
         // Si no hay displayName en Firebase, intentar obtener del backend
         if (!name) {
           try {
-            const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
             const resp = await axios.get(
-              `http://${host}:8082/api/usuarios/buscar/email/${encodeURIComponent(user.email)}`,
+              `${BACKEND_URL}/api/usuarios/buscar/email/${encodeURIComponent(user.email)}`,
               { timeout: 5000 }
             );
             const nombreBackend = resp?.data?.nombre;

@@ -9,6 +9,7 @@ import Header from '../src/components/Header';
 import { StatusBar } from 'expo-status-bar';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import axios from 'axios';
+import { BACKEND_URL } from '../src/config';
 
 
 const SUGERENCIAS = {
@@ -64,12 +65,14 @@ const rutinasPredefinidas = [
 export default function Rutinas() {
   const navigation = useNavigation();
   const [rutinas, setRutinas] = useState({ grupo1: [] });
+  const [predefinidas, setPredefinidas] = useState([]); // ← separadas del estado de rutinas de usuario
   const [modalVisible, setModalVisible] = useState(false);
   const [grupoActivo, setGrupoActivo] = useState(null);
   const [nombreRutina, setNombreRutina] = useState('');
   const [sugerencias, setSugerencias] = useState([]);
   const [dificultad, setDificultad] = useState(null);
   const [userName, setUserName] = useState('');
+  const [userId, setUserId] = useState(null); // ← ID del usuario en Firestore
   const [opcionesVisible, setOpcionesVisible] = useState(false);
   const [rutinaSeleccionada, setRutinaSeleccionada] = useState(null);
   const [darkMode, setDarkMode] = useState(false);
@@ -86,36 +89,66 @@ export default function Rutinas() {
   );
 
   useEffect(() => {
-    // 1. Cargar rutinas de AsyncStorage
+    // 1a. Cargar rutinas del usuario — primero caché local, luego Firestore
     const cargarRutinas = async () => {
       try {
-        const data = await AsyncStorage.getItem('rutinas');
-        const parsed = data ? JSON.parse(data) : { grupo1: [], predefinidas: rutinasPredefinidas };
+        // Caché instantánea para que la UI no parpadee
+        const cached = await AsyncStorage.getItem('rutinas');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          setRutinas({ grupo1: parsed.grupo1 || [] });
+        }
 
-        // Sincronizar predefinidas para incluir nuevas imágenes/animaciones
-        const syncPredefinidas = rutinasPredefinidas.map(original => {
-          const saved = (parsed.predefinidas || []).find(p => p.id === original.id);
-          if (!saved) return original;
-
-          // Mezclar ejercicios: mantener series/reps/peso del usuario, pero usar imagen/animación de la constante
-          const mergedEjercicios = original.ejercicios.map(oe => {
-            const se = saved.ejercicios.find(e => e.id === oe.id || e.nombre === oe.nombre);
-            if (!se) return oe;
-            return { ...oe, ...se, image: oe.image, animacion: oe.animacion };
-          });
-
-          return { ...saved, ejercicios: mergedEjercicios };
-        });
-
-        setRutinas({
-          grupo1: parsed.grupo1 || [],
-          predefinidas: syncPredefinidas
-        });
+        // Intentar obtener del backend para tener la versión más reciente
+        const uid = await AsyncStorage.getItem('userId');
+        if (uid) {
+          setUserId(uid);
+          try {
+            const resp = await axios.get(`${BACKEND_URL}/api/routines/${uid}`, { timeout: 8000 });
+            const fromServer = resp.data || [];
+            // El backend devuelve { id, name, exercises, ... } — adaptamos al formato frontend
+            const grupo1 = fromServer.map(r => ({
+              id: r.id,
+              nombre: r.name || r.nombre || 'Sin nombre',
+              ejercicios: r.exercises || r.ejercicios || [],
+              dificultad: r.dificultad || 'Sin definir',
+              color: r.color || '#264653',
+            }));
+            const nuevas = { grupo1 };
+            setRutinas(nuevas);
+            await AsyncStorage.setItem('rutinas', JSON.stringify(nuevas));
+          } catch (netErr) {
+            console.warn('[Rutinas] Error cargando rutinas del backend (usando caché):', netErr.message);
+          }
+        }
       } catch (e) {
         console.error('Error cargando rutinas:', e);
       }
     };
     cargarRutinas();
+
+    // 1b. Cargar rutinas predefinidas — caché AsyncStorage primero, luego backend
+    const cargarPredefinidas = async () => {
+      try {
+        const cached = await AsyncStorage.getItem('predefinedRoutines');
+        if (cached) {
+          // Usar caché: mezclar animaciones/imágenes locales sobre datos de Firestore
+          const fromCache = JSON.parse(cached);
+          setPredefinidas(mergeWithLocalAssets(fromCache));
+          return; // no hacemos petición de red
+        }
+        // Sin caché → pedir al backend
+        const resp = await axios.get(`${BACKEND_URL}/api/routines/predefined`, { timeout: 8000 });
+        const fromServer = resp.data || [];
+        await AsyncStorage.setItem('predefinedRoutines', JSON.stringify(fromServer));
+        setPredefinidas(mergeWithLocalAssets(fromServer));
+      } catch (e) {
+        console.warn('[Rutinas] No se pudieron cargar las predefinidas del backend, usando locales:', e.message);
+        // Fallback a las constantes locales si el backend no responde
+        setPredefinidas(rutinasPredefinidas);
+      }
+    };
+    cargarPredefinidas();
 
     // 2. Cargar nombre de usuario (Quick cache + Firebase listener)
     const setupIdentidad = async () => {
@@ -126,9 +159,8 @@ export default function Rutinas() {
       const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
         if (firebaseUser) {
           try {
-            const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
             const resp = await axios.get(
-              `http://${host}:8082/api/usuarios/buscar/email/${encodeURIComponent(firebaseUser.email)}`,
+              `${BACKEND_URL}/api/usuarios/buscar/email/${encodeURIComponent(firebaseUser.email)}`,
               { timeout: 5000 }
             );
             if (resp.data && resp.data.nombre) {
@@ -175,20 +207,41 @@ export default function Rutinas() {
     if (!nombreRutina.trim()) return;
 
     const nuevaRutina = {
-      id: Date.now().toString(),
+      id: Date.now().toString(), // ID temporal local
       nombre: nombreRutina.trim(),
       ejercicios: sugerencias,
       dificultad: dificultad || 'Sin definir',
       color: '#264653',
     };
 
+    // Guardar en el estado y en el caché local inmediatamente
     const nuevasRutinas = {
       ...rutinas,
       [grupoActivo]: [...(rutinas[grupoActivo] || []), nuevaRutina],
     };
-
     setRutinas(nuevasRutinas);
     await guardarEnStorage(nuevasRutinas);
+
+    // Persistir en Firestore en background
+    if (userId) {
+      try {
+        await axios.post(
+          `${BACKEND_URL}/api/routines/${userId}`,
+          {
+            name: nuevaRutina.nombre,
+            exercises: nuevaRutina.ejercicios,
+            dificultad: nuevaRutina.dificultad,
+            color: nuevaRutina.color,
+          },
+          { timeout: 8000 }
+        );
+        console.log('[Rutinas] Rutina guardada en Firestore ✅');
+      } catch (e) {
+        console.warn('[Rutinas] Error guardando rutina en Firestore (guardada solo local):', e.message);
+      }
+    } else {
+      console.warn('[Rutinas] Sin userId — rutina guardada solo en local');
+    }
 
     setNombreRutina('');
     setSugerencias([]);
@@ -227,6 +280,20 @@ export default function Rutinas() {
     };
     setRutinas(nuevasRutinas);
     await guardarEnStorage(nuevasRutinas);
+
+    // Eliminar del backend
+    if (userId && rutinaSeleccionada.id) {
+      try {
+        await axios.delete(
+          `${BACKEND_URL}/api/routines/${userId}/${rutinaSeleccionada.id}`,
+          { timeout: 8000 }
+        );
+        console.log('[Rutinas] Rutina eliminada de Firestore ✅');
+      } catch (e) {
+        console.warn('[Rutinas] Error eliminando rutina del backend:', e.message);
+      }
+    }
+
     setOpcionesVisible(false);
   };
 
@@ -238,7 +305,41 @@ export default function Rutinas() {
     };
     setRutinas(nuevasRutinas);
     await guardarEnStorage(nuevasRutinas);
+
+    // Guardar copia en el backend
+    if (userId) {
+      try {
+        await axios.post(
+          `${BACKEND_URL}/api/routines/${userId}`,
+          {
+            name: copia.nombre,
+            exercises: copia.ejercicios,
+            dificultad: copia.dificultad,
+            color: copia.color,
+          },
+          { timeout: 8000 }
+        );
+        console.log('[Rutinas] Rutina duplicada en Firestore ✅');
+      } catch (e) {
+        console.warn('[Rutinas] Error duplicando rutina en Firestore:', e.message);
+      }
+    }
+
     setOpcionesVisible(false);
+  };
+
+  // Mezcla datos de Firestore con animaciones/imágenes definidas localmente
+  const mergeWithLocalAssets = (serverRoutines) => {
+    return serverRoutines.map(sr => {
+      const local = rutinasPredefinidas.find(r => r.id === sr.id);
+      if (!local) return sr;
+      const mergedEjercicios = (sr.ejercicios || []).map(se => {
+        const le = local.ejercicios.find(e => e.id === se.id || e.nombre === se.nombre);
+        if (!le) return se;
+        return { ...se, image: le.image, animacion: le.animacion };
+      });
+      return { ...local, ...sr, ejercicios: mergedEjercicios };
+    });
   };
 
   const renderGrupo = (titulo, rutinasGrupo, grupoKey) => {
@@ -275,12 +376,12 @@ export default function Rutinas() {
     <View style={styles.grupoContainer}>
       <Text style={[styles.grupoTitulo, darkMode && styles.darkText]}>Rutinas recomendadas</Text>
       <View style={styles.rutinasRow}>
-        {(rutinas.predefinidas || rutinasPredefinidas).map((rutina) => (
+        {(predefinidas.length > 0 ? predefinidas : rutinasPredefinidas).map((rutina) => (
           <TouchableOpacity
             key={rutina.id}
             style={[styles.rutinaCard, { backgroundColor: rutina.color }]}
             onPress={() => handleEntrarRutina(rutina, 'predefinidas')}
-            onLongPress={() => handleLongPress(rutina)}
+          // onLongPress desactivado en rutinas predefinidas
           >
             <Ionicons name="barbell" size={24} color="#fff" />
             <Text style={styles.rutinaTexto}>{rutina.nombre}</Text>

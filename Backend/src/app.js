@@ -45,7 +45,16 @@ try {
   const cloudinaryRouter = require('./routes/cloudinary');
   app.use('/cloudinary', cloudinaryRouter);
 } catch (e) {
-  console.error('Error cargando routes/users.routes:', e);
+  console.error('Error cargando routes:', e);
+}
+
+// Cloudinary fuera del try/catch para que un fallo de otras rutas no lo tape
+try {
+  const cloudinaryRouter = require(path.join(__dirname, '../routes/cloudinary.routes'));
+  app.use('/cloudinary', cloudinaryRouter);
+  console.log('[app] ✅ Ruta /cloudinary/signature montada');
+} catch (e) {
+  console.error('[app] ❌ Error cargando cloudinary.routes:', e.message);
 }
 
 module.exports = app;

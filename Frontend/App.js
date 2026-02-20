@@ -44,6 +44,7 @@ import CreateDishMenu from "./views/CreateDishMenu";
 
 import { initializeApp, getApps } from 'firebase/app';
 import { firebaseConfig } from './firebaseConfig';
+import { BACKEND_URL } from './src/config';
 
 const Stack = createNativeStackNavigator();
 
@@ -76,7 +77,7 @@ function LoginScreen({ navigation }) {
       const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
       const user = userCredential.user;
 
-      const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+
 
       // { changed code }} Declarar variables antes del try
       let userId = null;
@@ -85,7 +86,7 @@ function LoginScreen({ navigation }) {
 
       try {
         const resp = await axios.get(
-          `http://${host}:8082/api/usuarios/buscar/email/${encodeURIComponent(user.email.trim())}`,
+          `${BACKEND_URL}/api/usuarios/buscar/email/${encodeURIComponent(user.email.trim())}`,
           { timeout: 5000 }
         );
         userId = resp.data?.id;

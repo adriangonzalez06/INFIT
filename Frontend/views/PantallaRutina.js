@@ -18,6 +18,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import LottieView from 'lottie-react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BACKEND_URL } from '../src/config';
 
 export default function PantallaRutina({ route, navigation }) {
   const { rutina, grupoKey, actualizarRutina } = route.params;
@@ -33,11 +34,8 @@ export default function PantallaRutina({ route, navigation }) {
   const [backendExercises, setBackendExercises] = useState({}); // { [grupo]: [ejercicios] }
   const [userId, setUserId] = useState(null);
 
-  // Helper para URL
-  const getBackendUrl = (path) => {
-    const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
-    return `http://${host}:8082/api${path}`;
-  };
+  const getBackendUrl = (path) => `${BACKEND_URL}/api${path}`;
+
   // Modal de detalles
   const [detallesVisible, setDetallesVisible] = useState(false);
   const [ejercicioEnEdicion, setEjercicioEnEdicion] = useState(null);
