@@ -32,6 +32,8 @@ import {
   serverTimestamp,
   doc,
   updateDoc,
+  deleteDoc,
+  getDocs,
   arrayUnion,
   arrayRemove,
   increment,
@@ -100,16 +102,31 @@ export default function Feed() {
     try {
       let uid = await AsyncStorage.getItem('userId');
       let name = await AsyncStorage.getItem('userName');
-      let avatar = await AsyncStorage.getItem('userAvatar');
+      let email = await AsyncStorage.getItem('userEmail');
+      let avatar = null;
 
-      // Fallback a Firebase Auth si AsyncStorage no tiene datos
-      if (!uid || !name) {
+      // Fallback a Firebase Auth
+      if (!uid) {
         const auth = getAuth();
         const firebaseUser = auth.currentUser;
         if (firebaseUser) {
-          uid = uid || firebaseUser.uid;
+          uid = firebaseUser.uid;
           name = name || firebaseUser.displayName || firebaseUser.email;
-          avatar = avatar || firebaseUser.photoURL || null;
+          email = email || firebaseUser.email;
+        }
+      }
+
+      // Cargar foto de perfil desde el backend (igual que profile.js)
+      if (email) {
+        try {
+          const resp = await axios.get(
+            `${BACKEND_URL}/api/usuarios/buscar/email/${encodeURIComponent(email)}`,
+            { timeout: 5000 }
+          );
+          if (resp.data?.photo) avatar = resp.data.photo;
+          if (resp.data?.nombre && !name) name = resp.data.nombre;
+        } catch (e) {
+          console.warn('[Feed] No se pudo cargar foto del backend:', e?.message);
         }
       }
 
@@ -117,7 +134,7 @@ export default function Feed() {
       if (name) setUsername(name);
       if (avatar) setAvatarUri(avatar);
     } catch (error) {
-      console.error("Error al obtener usuario:", error);
+      console.error('Error al obtener usuario:', error);
     }
   };
 
@@ -227,6 +244,49 @@ export default function Feed() {
     }
   };
 
+  // ── Eliminar publicación (cascade: borra comentarios primero) ─────────────
+  const deletePost = async (postId) => {
+    Alert.alert(
+      'Eliminar publicación',
+      '¿Estás seguro? Esta acción no se puede deshacer.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              // 1. Borrar todos los comentarios de la subcolección
+              const comentariosRef = collection(db, 'publicaciones', postId, 'comentarios');
+              const comentariosSnap = await getDocs(comentariosRef);
+              const deletePromises = comentariosSnap.docs.map(c => deleteDoc(c.ref));
+              await Promise.all(deletePromises);
+
+              // 2. Borrar el documento padre
+              await deleteDoc(doc(db, 'publicaciones', postId));
+            } catch (e) {
+              console.error('Error al eliminar publicación:', e);
+              Alert.alert('Error', 'No se pudo eliminar la publicación.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // ── Menú de opciones del post (solo dueño) ────────────────────────────────
+  const openPostOptions = (post) => {
+    if (post.userId !== userId) return; // solo el dueño ve opciones
+    Alert.alert(
+      'Opciones',
+      null,
+      [
+        { text: 'Eliminar publicación', style: 'destructive', onPress: () => deletePost(post.id) },
+        { text: 'Cancelar', style: 'cancel' },
+      ]
+    );
+  };
+
   // ── Abrir comentarios ─────────────────────────────────────────────────────
   const openComments = (postId) => {
     setSelectedPostId(postId);
@@ -255,9 +315,12 @@ export default function Feed() {
               {createdAt.toLocaleDateString()} · {createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </Text>
           </View>
-          <TouchableOpacity style={styles.moreOptions}>
-            <Ionicons name="ellipsis-horizontal" size={20} color={darkMode ? "#aaa" : "#666"} />
-          </TouchableOpacity>
+          {/* Solo visible para el dueño del post */}
+          {item.userId === userId && (
+            <TouchableOpacity style={styles.moreOptions} onPress={() => openPostOptions(item)}>
+              <Ionicons name="ellipsis-horizontal" size={20} color={darkMode ? "#aaa" : "#666"} />
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Body: contenido */}
