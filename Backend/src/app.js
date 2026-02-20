@@ -42,6 +42,8 @@ try {
   app.use('/api/exercises', exercisesRouter);
   const routinesRouter = require('./routes/routines');
   app.use('/api/routines', routinesRouter);
+  const cloudinaryRouter = require('./routes/cloudinary');
+  app.use('/cloudinary', cloudinaryRouter);
 } catch (e) {
   console.error('Error cargando routes/users.routes:', e);
 }

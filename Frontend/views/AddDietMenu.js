@@ -46,46 +46,6 @@ export default function AddDietMenu({ route }) {
       name: 'bascula perder peso',
       url: 'https://images.pexels.com/photos/53404/scale-diet-fat-health-53404.jpeg'
     },
-    {
-      id: 3,
-      name: 'Comida fitness fruta',
-      url: 'https://img.freepik.com/foto-gratis/lay-flat-ensalada-botella-jugo_23-2148262146.jpg?semt=ais_hybrid&w=740&q=80'
-    },
-    {
-      id: 4,
-      name: 'pollo arroz',
-      url: 'https://images.pexels.com/photos/105588/pexels-photo-105588.jpeg'
-    },
-    {
-      id: 5,
-      name: 'pollo arroz',
-      url: 'https://images.pexels.com/photos/35367044/pexels-photo-35367044.jpeg'
-    },
-    {
-      id: 6,
-      name: 'huevo codorniz',
-      url: 'https://images.pexels.com/photos/6701181/pexels-photo-6701181.jpeg'
-    },
-    {
-      id: 7,
-      name: 'proteina pescado carne huevos proteico',
-      url: 'https://img.freepik.com/foto-gratis/vista-arriba-verdadera-piramide-alimentaria_23-2150238929.jpg'
-    },
-    {
-      id: 8,
-      name: 'gym gimnasio pesa fuerza musculo',
-      url: 'https://img.freepik.com/foto-gratis/pesos-ejercicio-pesas-fuerte-atletica_1139-709.jpg'
-    },
-    {
-      id: 9,
-      name: 'perder peso',
-      url: 'https://img.freepik.com/foto-gratis/mujer-midiendo-su-barriga-peso_53876-13564.jpg'
-    },
-    {
-      id: 10,
-      name: 'perder peso',
-      url: 'https://img.freepik.com/foto-gratis/vista-angulo-alto-vegetales-crudos-pesas-sobre-fondo-madera_23-2147882042.jpg'
-    },
 
   ];
 
