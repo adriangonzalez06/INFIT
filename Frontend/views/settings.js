@@ -8,6 +8,7 @@ import {
   Alert,
   Switch,
   ScrollView,
+  Platform,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -25,6 +26,23 @@ export default function SettingsScreen({ navigation }) {
   const [units, setUnits] = useState("kg/cm");
   const [language, setLanguage] = useState("es");
 
+  // Cargar preferencia al montar el componente
+  React.useEffect(() => {
+    const loadTheme = async () => {
+      const savedTheme = await ReactNativeAsyncStorage.getItem("darkMode");
+      if (savedTheme !== null) {
+        setDarkMode(savedTheme === "true");
+      }
+    };
+    loadTheme();
+  }, []);
+
+  // Función para cambiar y guardar el tema
+  const toggleDarkMode = async (value) => {
+    setDarkMode(value);
+    await ReactNativeAsyncStorage.setItem("darkMode", String(value));
+  };
+
   const confirmAction = (message, action) => {
     Alert.alert("Confirmación", message, [
       { text: "Cancelar", style: "cancel" },
@@ -34,178 +52,221 @@ export default function SettingsScreen({ navigation }) {
 
   const handleLogout = async () => {
     try {
-      // 1. Cerrar sesión en Firebase
       await signOut(auth);
-      console.log("✅ Sesión cerrada en Firebase");
-
-      // 2. Eliminar datos guardados en AsyncStorage
       await ReactNativeAsyncStorage.removeItem("userUID");
       await ReactNativeAsyncStorage.removeItem("userName");
       await ReactNativeAsyncStorage.removeItem("userEmail");
       await ReactNativeAsyncStorage.removeItem("idToken");
-      console.log("✅ Datos locales eliminados");
-
-      // 3. Redirigir a la pantalla de Welcome/Login
-      Alert.alert("Éxito", "Sesión cerrada correctamente");
-      navigation.navigate("Login"); // Navegar a la pantalla Login
+      navigation.navigate("Login");
     } catch (error) {
       console.error("Error al cerrar sesión:", error);
       Alert.alert("Error", "Error al cerrar sesión: " + error.message);
     }
   };
 
+  // Color dinámico para iconos y textos secundarios
+  const iconColor = darkMode ? "#bbb" : "#333";
+  const textColor = darkMode ? "#fff" : "#333";
+  const sectionHeaderColor = darkMode ? "#ef2b2d" : "#555";
+
+
   return (
-    <SafeAreaView style={[styles.container, darkMode && styles.darkContainer]}>
+    <View style={[styles.container, darkMode && styles.darkContainer]}>
       <ScrollView>
         {/* Encabezado */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
           </TouchableOpacity>
-          <Text style={styles.title}>Ajustes</Text>
+          <Text style={[styles.title, darkMode && styles.darkText]}>Ajustes</Text>
         </View>
 
         {/* Sección Cuenta */}
-        <Text style={styles.section}>Cuenta</Text>
+        <Text style={[styles.section, { color: sectionHeaderColor }]}>Cuenta</Text>
+
         <Pressable
-          style={styles.option}
+          style={[styles.option, darkMode && styles.darkOption]}
           onPress={() => navigation.navigate("ChangePassword")}
         >
-          <Ionicons name="key-outline" size={20} color="#333" />
-          <Text style={styles.optionText}>Cambiar contraseña</Text>
+          <View style={styles.optionLeft}>
+            <Ionicons name="key-outline" size={20} color={iconColor} />
+            <Text style={[styles.optionText, darkMode && styles.darkText]}>Cambiar contraseña</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={darkMode ? "#444" : "#ccc"} />
         </Pressable>
+
         <Pressable
-          style={styles.option}
+          style={[styles.option, darkMode && styles.darkOption]}
           onPress={() => navigation.navigate("EditProfile")}
         >
-          <Ionicons name="person-circle-outline" size={20} color="#333" />
-          <Text style={styles.optionText}>Editar perfil</Text>
+          <View style={styles.optionLeft}>
+            <Ionicons name="person-circle-outline" size={20} color={iconColor} />
+            <Text style={[styles.optionText, darkMode && styles.darkText]}>Editar perfil</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={darkMode ? "#444" : "#ccc"} />
         </Pressable>
+
         <Pressable
-          style={styles.option}
+          style={[styles.option, darkMode && styles.darkOption]}
           onPress={() => navigation.navigate("ChangeEmail")}
         >
-          <Ionicons name="mail-outline" size={20} color="#333" />
-          <Text style={styles.optionText}>Cambiar correo electrónico</Text>
+          <View style={styles.optionLeft}>
+            <Ionicons name="mail-outline" size={20} color={iconColor} />
+            <Text style={[styles.optionText, darkMode && styles.darkText]}>Cambiar correo electrónico</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={darkMode ? "#444" : "#ccc"} />
         </Pressable>
+
         <Pressable
-          style={styles.option}
+          style={[styles.option, darkMode && styles.darkOption]}
           onPress={() => confirmAction("¿Deseas cerrar sesión?", handleLogout)}
         >
-          <Ionicons name="log-out-outline" size={20} color="#333" />
-          <Text style={styles.optionText}>Cerrar sesión</Text>
+          <View style={styles.optionLeft}>
+            <Ionicons name="log-out-outline" size={20} color={iconColor} />
+            <Text style={[styles.optionText, darkMode && styles.darkText]}>Cerrar sesión</Text>
+          </View>
         </Pressable>
 
         {/* Sección Preferencias */}
-        <Text style={styles.section}>Preferencias</Text>
-        <View style={styles.option}>
-          <Ionicons name="moon-outline" size={20} color="#333" />
-          <Text style={styles.optionText}>Modo oscuro</Text>
-          <Switch value={darkMode} onValueChange={setDarkMode} />
+        <Text style={[styles.section, { color: sectionHeaderColor }]}>Preferencias</Text>
+
+        <View style={[styles.option, darkMode && styles.darkOption]}>
+          <View style={styles.optionLeft}>
+            <Ionicons name="moon-outline" size={20} color={iconColor} />
+            <Text style={[styles.optionText, darkMode && styles.darkText]}>Modo oscuro</Text>
+          </View>
+          <Switch
+            value={darkMode}
+            onValueChange={toggleDarkMode}
+            trackColor={{ false: "#ddd", true: "#ef2b2d" }}
+            thumbColor={Platform.OS === "ios" ? undefined : (darkMode ? "#fff" : "#f4f3f4")}
+          />
         </View>
+
         <Pressable
-          style={styles.option}
+          style={[styles.option, darkMode && styles.darkOption]}
           onPress={() => setUnits(units === "kg/cm" ? "lb/in" : "kg/cm")}
         >
-          <Ionicons name="scale-outline" size={20} color="#333" />
-          <Text style={styles.optionText}>Unidades: {units}</Text>
+          <View style={styles.optionLeft}>
+            <Ionicons name="scale-outline" size={20} color={iconColor} />
+            <Text style={[styles.optionText, darkMode && styles.darkText]}>Unidades: {units}</Text>
+          </View>
         </Pressable>
+
         <Pressable
-          style={styles.option}
+          style={[styles.option, darkMode && styles.darkOption]}
           onPress={() => setLanguage(language === "es" ? "en" : "es")}
         >
-          <Ionicons name="language-outline" size={20} color="#333" />
-          <Text style={styles.optionText}>Idioma: {language}</Text>
+          <View style={styles.optionLeft}>
+            <Ionicons name="language-outline" size={20} color={iconColor} />
+            <Text style={[styles.optionText, darkMode && styles.darkText]}>Idioma: {language}</Text>
+          </View>
         </Pressable>
 
         {/* Sección Sistema */}
-        <Text style={styles.section}>Sistema</Text>
+        <Text style={[styles.section, { color: sectionHeaderColor }]}>Sistema</Text>
+
         <Pressable
-          style={styles.option}
-          onPress={() =>
-            confirmAction("¿Deseas borrar la caché?", () => {
-              /* aqui hay que hacer el codigo borrar caché */
-            })
-          }
+          style={[styles.option, darkMode && styles.darkOption]}
+          onPress={() => confirmAction("¿Deseas borrar la caché?", () => { })}
         >
-          <Ionicons name="trash-outline" size={20} color="#333" />
-          <Text style={styles.optionText}>Borrar caché</Text>
+          <View style={styles.optionLeft}>
+            <Ionicons name="trash-outline" size={20} color={iconColor} />
+            <Text style={[styles.optionText, darkMode && styles.darkText]}>Borrar caché</Text>
+          </View>
         </Pressable>
+
         <Pressable
-          style={styles.option}
-          onPress={() =>
-            confirmAction("¿Deseas borrar todos los datos?", () => {
-              /* hay qye hacer el codigo para eliminar la cuenta*/
-            })
-          }
+          style={[styles.option, darkMode && styles.darkOption]}
+          onPress={() => confirmAction("¿Deseas borrar todos los datos?", () => { })}
         >
-          <Ionicons name="warning-outline" size={20} color="#ef2b2d" />
-          <Text style={styles.optionText}>Borrar todos los datos</Text>
+          <View style={styles.optionLeft}>
+            <Ionicons name="warning-outline" size={20} color="#ef2b2d" />
+            <Text style={[styles.optionText, { color: "#ef2b2d" }]}>Borrar todos los datos</Text>
+          </View>
         </Pressable>
 
         {/* Sección Legal */}
-        <Text style={styles.section}>Legal</Text>
+        <Text style={[styles.section, { color: sectionHeaderColor }]}>Legal</Text>
         <Pressable
-          style={styles.option}
+          style={[styles.option, darkMode && styles.darkOption]}
           onPress={() => navigation.navigate("PrivacyPolicy")}
         >
-          <Ionicons name="document-text-outline" size={20} color="#333" />
-          <Text style={styles.optionText}>Política de privacidad</Text>
+          <View style={styles.optionLeft}>
+            <Ionicons name="document-text-outline" size={20} color={iconColor} />
+            <Text style={[styles.optionText, darkMode && styles.darkText]}>Política de privacidad</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={darkMode ? "#444" : "#ccc"} />
         </Pressable>
 
-        {/* Información de la app */}
         <Text style={styles.version}>Versión 1.0.0</Text>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#eeeeee",
+    backgroundColor: "#ffffff",
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 60,
   },
   darkContainer: {
-    backgroundColor: "#222",
+    backgroundColor: "#121212",
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 30,
+  },
+  backButton: {
+    padding: 5,
   },
   title: {
     fontSize: 28,
     fontWeight: "bold",
-    marginLeft: 10,
+    marginLeft: 15,
     color: "#333",
   },
+  darkText: {
+    color: "#ffffff",
+  },
   section: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginTop: 20,
+    fontSize: 14,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    marginTop: 25,
     marginBottom: 10,
-    color: "#555",
+    letterSpacing: 1,
   },
   option: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
+    paddingVertical: 15,
     borderBottomWidth: 1,
-    borderBottomColor: "#ccc",
+    borderBottomColor: "#f0f0f0",
     justifyContent: "space-between",
   },
+  darkOption: {
+    borderBottomColor: "#222",
+  },
+  optionLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
   optionText: {
-    marginLeft: 10,
+    marginLeft: 15,
     fontSize: 16,
     color: "#333",
-    flex: 1,
   },
   version: {
     textAlign: "center",
-    marginTop: 30,
+    marginTop: 40,
+    marginBottom: 40,
     fontSize: 14,
     color: "#999",
   },
 });
+

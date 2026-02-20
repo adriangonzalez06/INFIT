@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -16,7 +16,7 @@ import {
   Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import axios from 'axios';
@@ -97,6 +97,18 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+
+  // Cargar preferencia de modo oscuro cada vez que la pantalla gana foco
+  useFocusEffect(
+    useCallback(() => {
+      const loadTheme = async () => {
+        const savedTheme = await ReactNativeAsyncStorage.getItem("darkMode");
+        setDarkMode(savedTheme === "true");
+      };
+      loadTheme();
+    }, [])
+  );
 
   // Estados para modal y campos de edición
   const [modalVisible, setModalVisible] = useState(false);
@@ -138,6 +150,10 @@ export default function ProfileScreen() {
               await ReactNativeAsyncStorage.setItem('userWeight', String(pesoGuardado));
               await ReactNativeAsyncStorage.setItem('userHeight', String(alturaGuardada));
               await ReactNativeAsyncStorage.setItem('userDocId', documentId);  // Guardar el ID real
+
+              if (resp.data.photoURL) {
+                await ReactNativeAsyncStorage.setItem('userAvatar', resp.data.photoURL);
+              }
 
               // Actualizar el estado con el avatar del backend si existe
               const backendAvatar = resp.data.photoURL ? { uri: resp.data.photoURL } : require('../assets/avatar.png');
@@ -338,12 +354,12 @@ export default function ProfileScreen() {
   const imc = (user.altura > 0) ? (user.peso / (user.altura * user.altura)).toFixed(1) : '0';
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={[styles.container, darkMode && styles.darkContainer]}>
       {/* Cabecera normal (no sticky) */}
-      <View style={styles.headerContent}>
+      <View style={[styles.headerContent, darkMode && styles.darkHeaderContent]}>
         <View style={{ flex: 1 }} />
         <TouchableOpacity onPress={() => navigation.navigate('Ajustes')}>
-          <Ionicons name="settings-outline" size={28} color="#333" />
+          <Ionicons name="settings-outline" size={28} color={darkMode ? "#fff" : "#333"} />
         </TouchableOpacity>
       </View>
 
@@ -354,13 +370,13 @@ export default function ProfileScreen() {
             style={styles.avatarPerfil}
           />
         </TouchableOpacity>
-        <Text style={styles.nombre}>{user.nombre}</Text>
+        <Text style={[styles.nombre, darkMode && styles.darkText]}>{user.nombre}</Text>
       </View>
 
       <View style={styles.statsContainer}>
-        <Stat label="Peso" value={`${user.peso} kg`} />
-        <Stat label="Altura" value={`${user.altura} m`} />
-        <Stat label="IMC" value={imc} />
+        <Stat label="Peso" value={`${user.peso} kg`} darkMode={darkMode} />
+        <Stat label="Altura" value={`${user.altura} m`} darkMode={darkMode} />
+        <Stat label="IMC" value={imc} darkMode={darkMode} />
       </View>
 
       {/* Botón para abrir modal */}
@@ -499,6 +515,7 @@ export default function ProfileScreen() {
 
                 // 3) Actualiza visualmente el avatar 
                 setUser(prev => prev ? { ...prev, avatar: { uri: url } } : prev);
+                await ReactNativeAsyncStorage.setItem('userAvatar', url);
 
                 // 4) Guardar en backend
                 try {
@@ -514,11 +531,11 @@ export default function ProfileScreen() {
         </View>
       </Modal>
 
-      <Text style={styles.sectionTitle}>Últimos registros</Text>
+      <Text style={[styles.sectionTitle, darkMode && styles.darkTextSecondary]}>Últimos registros</Text>
       {user.registros.map((registro, index) => (
-        <View key={index} style={styles.registroBox}>
-          <Text style={styles.registroTipo}>{registro.tipo}</Text>
-          <Text style={styles.registroDetalle}>{registro.detalle}</Text>
+        <View key={index} style={[styles.registroBox, darkMode && styles.darkRegistroBox]}>
+          <Text style={[styles.registroTipo, darkMode && styles.darkText]}>{registro.tipo}</Text>
+          <Text style={[styles.registroDetalle, darkMode && styles.darkTextSecondary]}>{registro.detalle}</Text>
           <Text style={styles.registroFecha}>{registro.fecha}</Text>
         </View>
       ))}
@@ -533,11 +550,11 @@ export default function ProfileScreen() {
   );
 }
 
-function Stat({ label, value }) {
+function Stat({ label, value, darkMode }) {
   return (
     <View style={styles.statBox}>
-      <Text style={styles.statLabel}>{label}</Text>
-      <Text style={styles.statValue}>{value}</Text>
+      <Text style={[styles.statLabel, darkMode && styles.darkTextSecondary]}>{label}</Text>
+      <Text style={[styles.statValue, darkMode && styles.darkText]}>{value}</Text>
     </View>
   );
 }
@@ -582,17 +599,24 @@ const styles = StyleSheet.create({
     paddingBottom: 60,
     backgroundColor: '#f9f9f9',
   },
+  darkContainer: {
+    backgroundColor: '#121212',
+  },
   headerContent: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
     alignItems: 'center',
-    paddingTop: 40,
+    paddingTop: 60,
     paddingHorizontal: 20,
     paddingBottom: 10,
     backgroundColor: '#f9f9f9',
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
     marginBottom: 30,
+  },
+  darkHeaderContent: {
+    backgroundColor: '#121212',
+    borderBottomColor: '#222',
   },
   profileSection: {
     alignItems: 'center',
@@ -611,6 +635,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333',
     textAlign: 'center',
+  },
+  darkText: {
+    color: '#fff',
+  },
+  darkTextSecondary: {
+    color: '#aaa',
   },
   statsContainer: {
     flexDirection: 'row',
@@ -704,6 +734,11 @@ const styles = StyleSheet.create({
     elevation: 2,
     borderLeftWidth: 3,
     borderLeftColor: '#ef2b2d',
+  },
+  darkRegistroBox: {
+    backgroundColor: '#1e1e1e',
+    shadowColor: '#000',
+    elevation: 0,
   },
   registroTipo: {
     fontWeight: 'bold',

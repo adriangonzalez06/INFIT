@@ -1,5 +1,5 @@
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,8 +10,8 @@ import {
   LayoutAnimation,
   UIManager,
   SafeAreaView,
-  useColorScheme,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -129,8 +129,18 @@ const TABS = ['Diarios', 'Semanales', 'Mensuales'];
 
 export default function ChallengesScreen() {
   const navigation = useNavigation();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const [isDark, setIsDark] = useState(false);
+
+  // Cargar preferencia cada vez que entramos
+  useFocusEffect(
+    useCallback(() => {
+      const loadTheme = async () => {
+        const savedTheme = await AsyncStorage.getItem("darkMode");
+        setIsDark(savedTheme === "true");
+      };
+      loadTheme();
+    }, [])
+  );
 
   const [activeTab, setActiveTab] = useState('Diarios');
   const [filter, setFilter] = useState('Todos');
@@ -183,7 +193,7 @@ export default function ChallengesScreen() {
   /* -------- Mutadores -------- */
 
 
-//video youtube
+  //video youtube
   const toggleDaily = async (id) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     const next = { ...dailyState, [id]: !dailyState[id] };
@@ -191,7 +201,7 @@ export default function ChallengesScreen() {
     await AsyncStorage.setItem(STORAGE_KEYS.daily(dailyKey), JSON.stringify(next));
   };
 
-//video youtube
+  //video youtube
   const incrementWeekly = async (id, delta) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     const target = WEEKLY_CHALLENGES.find((c) => c.id === id)?.target ?? 1;
@@ -202,7 +212,7 @@ export default function ChallengesScreen() {
     await AsyncStorage.setItem(STORAGE_KEYS.weekly(weekKeyState), JSON.stringify(next));
   };
 
-//video youtube
+  //video youtube
 
 
   const dailyMetrics = useMemo(() => {
@@ -275,7 +285,7 @@ export default function ChallengesScreen() {
         <View style={styles.cardHeader}>
           <Text style={styles.icon}>{item.icon}</Text>
           <Text style={[styles.cardTitle, isDark && styles.textDark]}>{item.title}</Text>
-          <View style={styles.pointsBadge}>
+          <View style={[styles.pointsBadge, isDark && styles.darkPointsBadge]}>
             <Text style={styles.pointsText}>+{item.points} XP</Text>
           </View>
         </View>
@@ -312,7 +322,7 @@ export default function ChallengesScreen() {
         <View style={styles.cardHeader}>
           <Text style={styles.icon}>{item.icon}</Text>
           <Text style={[styles.cardTitle, isDark && styles.textDark]}>{item.title}</Text>
-          <View style={styles.pointsBadge}>
+          <View style={[styles.pointsBadge, isDark && styles.darkPointsBadge]}>
             <Text style={styles.pointsText}>+{item.points} XP</Text>
           </View>
         </View>
@@ -328,9 +338,9 @@ export default function ChallengesScreen() {
         <View style={styles.cardActions}>
           <Pressable
             onPress={() => incrementWeekly(item.id, -1)}
-            style={({ pressed }) => [styles.secondaryBtn, pressed && { opacity: 0.8 }]}
+            style={({ pressed }) => [styles.secondaryBtn, isDark && styles.darkSecondaryBtn, pressed && { opacity: 0.8 }]}
           >
-            <Text style={styles.secondaryBtnText}>−</Text>
+            <Text style={[styles.secondaryBtnText, isDark && styles.darkSecondaryBtnText]}>−</Text>
           </Pressable>
           <Pressable
             onPress={() => incrementWeekly(item.id, +1)}
@@ -354,10 +364,10 @@ export default function ChallengesScreen() {
   return (
     <SafeAreaView style={[styles.safe, isDark && styles.safeDark]}>
       <View style={styles.container}>
-       <Text style={styles.title}>Mis rutinas</Text>
-             <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-               <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
-             </TouchableOpacity>
+        <Text style={styles.title}>Mis rutinas</Text>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
+        </TouchableOpacity>
         <Text style={[styles.title, isDark && styles.textDark]}>Retos</Text>
         <Text style={[styles.subtitle, isDark && styles.textDark]}>
           {activeTab === 'Diarios'
@@ -377,10 +387,12 @@ export default function ChallengesScreen() {
               }}
               style={[
                 styles.tab,
+                isDark && styles.tabDark,
                 activeTab === t && styles.tabActive,
+                activeTab === t && isDark && styles.tabActiveDark,
               ]}
             >
-              <Text style={[styles.tabText, activeTab === t && styles.tabTextActive]}>{t}</Text>
+              <Text style={[styles.tabText, isDark && styles.textDark, activeTab === t && styles.tabTextActive]}>{t}</Text>
             </Pressable>
           ))}
         </View>
@@ -425,6 +437,8 @@ const styles = StyleSheet.create({
     borderColor: '#DDD', alignItems: 'center', backgroundColor: '#FFF',
   },
   tabActive: { borderColor: '#4CAF50', backgroundColor: '#E8F5E9' },
+  tabActiveDark: { backgroundColor: '#1b3b20', borderColor: '#4CAF50' },
+  tabDark: { backgroundColor: '#1e1e1e', borderColor: '#333' },
   tabText: { fontSize: 14, color: '#555', fontWeight: '600' },
   tabTextActive: { color: '#2E7D32' },
 
@@ -447,7 +461,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#E0E0E0', borderRadius: 14, padding: 12, marginBottom: 12,
     elevation:
-    0,
+      0,
   },
   cardDark: { backgroundColor: '#1A1A1A' },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
@@ -458,6 +472,10 @@ const styles = StyleSheet.create({
   pointsBadge: {
     paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999,
     backgroundColor: '#FFF3E0', borderWidth: 1, borderColor: '#FFE0B2',
+  },
+  darkPointsBadge: {
+    backgroundColor: '#2d1b00',
+    borderColor: '#4d3b10',
   },
   pointsText: { fontSize: 12, color: '#FB8C00', fontWeight: '700' },
 
@@ -478,6 +496,8 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   secondaryBtnText: { fontSize: 20, fontWeight: '800', color: '#333' },
+  darkSecondaryBtn: { backgroundColor: '#333' },
+  darkSecondaryBtnText: { color: '#eee' },
 
   statusText: { marginTop: 8, fontSize: 13, fontWeight: '700' },
   statusDone: { color: '#2E7D32' },
@@ -496,13 +516,13 @@ const styles = StyleSheet.create({
   textDark: { color: '#EEE' },
 
 
-title: {
-      fontSize: 28,
-      fontWeight: 'bold',
-      color: '#ef2b2d',
-      marginBottom: 20,
-      textAlign: 'center',
-    }
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#ef2b2d',
+    marginBottom: 20,
+    textAlign: 'center',
+  }
 }
 
 );

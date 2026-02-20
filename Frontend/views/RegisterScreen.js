@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,10 +12,11 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import colors from './colors';
 import MainTabs from './MainTabs';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, useFocusEffect } from '@react-navigation/native';
 import {
   getAuth,
   getReactNativePersistence,
@@ -39,6 +40,18 @@ function RegisterScreen({ navigation }) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [darkMode, setDarkMode] = useState(false);
+
+  // Cargar preferencia cada vez que entramos
+  useFocusEffect(
+    useCallback(() => {
+      const loadTheme = async () => {
+        const savedTheme = await AsyncStorage.getItem("darkMode");
+        setDarkMode(savedTheme === "true");
+      };
+      loadTheme();
+    }, [])
+  );
 
 
   const handleRegister = async () => {
@@ -131,45 +144,59 @@ function RegisterScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar style="auto" />
+    <View style={[styles.safeArea, darkMode && styles.darkSafeArea]}>
+      <StatusBar style={darkMode ? "light" : "auto"} />
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <Text style={styles.title}>Crear cuenta</Text>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.headerRow}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.backButton}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
+            </TouchableOpacity>
+            <Text style={[styles.title, darkMode && styles.darkText]}>Crear cuenta</Text>
+          </View>
 
           <TextInput
-            style={styles.input}
+            style={[styles.input, darkMode && styles.darkInput]}
             placeholder="Nombre completo"
+            placeholderTextColor={darkMode ? "#666" : "#999"}
             value={nombre}
             onChangeText={setNombre}
           />
           <TextInput
-            style={styles.input}
+            style={[styles.input, darkMode && styles.darkInput]}
             placeholder="Correo electrónico"
+            placeholderTextColor={darkMode ? "#666" : "#999"}
             keyboardType="email-address"
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
           />
           <TextInput
-            style={styles.input}
+            style={[styles.input, darkMode && styles.darkInput]}
             placeholder="Nombre de usuario"
+            placeholderTextColor={darkMode ? "#666" : "#999"}
             value={usuario}
             onChangeText={setUsuario}
           />
           <TextInput
-            style={styles.input}
+            style={[styles.input, darkMode && styles.darkInput]}
             placeholder="Contraseña"
+            placeholderTextColor={darkMode ? "#666" : "#999"}
             secureTextEntry
             value={password}
             onChangeText={setPassword}
           />
           <TextInput
-            style={styles.input}
+            style={[styles.input, darkMode && styles.darkInput]}
             placeholder="Confirmar contraseña"
+            placeholderTextColor={darkMode ? "#666" : "#999"}
             secureTextEntry
             value={confirmPassword}
             onChangeText={setConfirmPassword}
@@ -181,12 +208,12 @@ function RegisterScreen({ navigation }) {
             <Text style={styles.botonTexto}>Registrarse</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.boton} onPress={() => navigation.navigate('Login')}>
-            <Text style={styles.botonTexto}>¿Ya tienes cuenta? Inicia sesión</Text>
+          <TouchableOpacity style={styles.botonSecundario} onPress={() => navigation.navigate('Login')}>
+            <Text style={styles.botonTextoSecundario}>¿Ya tienes cuenta? Inicia sesión</Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -197,21 +224,37 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.bg_gray,
   },
+  darkSafeArea: {
+    backgroundColor: '#121212',
+  },
   container: {
     flex: 1,
   },
   scrollContainer: {
-    paddingTop: 40,
+    paddingTop: 60,
     paddingHorizontal: 20,
     paddingBottom: 60,
     alignItems: 'center',
   },
   title: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
     color: '#333',
+    flex: 1,
+    textAlign: 'center',
+    marginRight: 40, // Para compensar el espacio de la flecha y que el texto quede centrado
+  },
+  darkText: {
+    color: '#fff',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 30,
+  },
+  backButton: {
+    padding: 8,
   },
   input: {
     marginVertical: 8,
@@ -224,6 +267,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: '#fff',
   },
+  darkInput: {
+    backgroundColor: '#1e1e1e',
+    borderColor: '#444',
+    color: '#fff',
+  },
   boton: {
     backgroundColor: '#ef2b2d',
     padding: 15,
@@ -235,6 +283,22 @@ const styles = StyleSheet.create({
   botonTexto: {
     color: '#fff',
     fontWeight: 'bold',
+    fontSize: 16,
+  },
+  botonSecundario: {
+    backgroundColor: 'transparent',
+    padding: 15,
+    borderRadius: 10,
+    marginTop: 15,
+    alignItems: 'center',
+    width: '100%',
+    borderWidth: 2,
+    borderColor: '#ef2b2d',
+  },
+  botonTextoSecundario: {
+    color: '#ef2b2d',
+    fontWeight: '700',
+    fontSize: 15,
   },
   link: {
     marginTop: 20,

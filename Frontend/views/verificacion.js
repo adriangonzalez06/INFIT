@@ -1,10 +1,24 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function VerificationScreen({ route, navigation }) {
   const [code, setCode] = useState(['', '', '', '', '']);
+  const [darkMode, setDarkMode] = useState(false);
   const inputs = useRef([]);
+
+  // Cargar preferencia cada vez que entramos
+  useFocusEffect(
+    useCallback(() => {
+      const loadTheme = async () => {
+        const savedTheme = await AsyncStorage.getItem("darkMode");
+        setDarkMode(savedTheme === "true");
+      };
+      loadTheme();
+    }, [])
+  );
 
   const handleChange = (text, index) => {
     if (/^\d$/.test(text)) {
@@ -42,13 +56,18 @@ export default function VerificationScreen({ route, navigation }) {
   const email = route?.params?.email || 'ex****@g********';
 
   return (
-    <View style={styles.container}>
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
-      </TouchableOpacity>
-
-      <Text style={styles.title}>Verificación</Text>
-      <Text style={styles.subtitle}>
+    <View style={[styles.container, darkMode && styles.darkContainer]}>
+      <View style={styles.headerRow}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
+        </TouchableOpacity>
+        <Text style={[styles.title, darkMode && styles.darkText]}>Verificación</Text>
+      </View>
+      <Text style={[styles.subtitle, darkMode && styles.darkTextSecondary]}>
         Introduce el número de 5 dígitos que se ha enviado al correo {email}
       </Text>
 
@@ -57,7 +76,7 @@ export default function VerificationScreen({ route, navigation }) {
           <TextInput
             key={index}
             ref={(ref) => (inputs.current[index] = ref)}
-            style={styles.codeInput}
+            style={[styles.codeInput, darkMode && styles.darkCodeInput]}
             keyboardType="numeric"
             maxLength={1}
             value={digit}
@@ -71,7 +90,7 @@ export default function VerificationScreen({ route, navigation }) {
       </TouchableOpacity>
 
       <TouchableOpacity onPress={handleResend}>
-        <Text style={styles.resendText}>¿No has recibido el correo? Reenviar correo</Text>
+        <Text style={[styles.resendText, darkMode && { color: '#64b5f6' }]}>¿No has recibido el correo? Reenviar correo</Text>
       </TouchableOpacity>
     </View>
   );
@@ -81,21 +100,35 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#dddbd1',
-    justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
+    paddingHorizontal: 20,
+    paddingTop: 60,
+  },
+  darkContainer: {
+    backgroundColor: '#121212',
   },
   backButton: {
-    position: 'absolute',
-    top: 40,
-    left: 20,
-    zIndex: 1,
+    padding: 8,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 30,
   },
   title: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 10,
     color: '#111114',
+    flex: 1,
+    textAlign: 'center',
+    marginRight: 40,
+  },
+  darkText: {
+    color: '#fff',
+  },
+  darkTextSecondary: {
+    color: '#aaa',
   },
   subtitle: {
     fontSize: 14,
@@ -119,6 +152,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 20,
     color: '#111114',
+  },
+  darkCodeInput: {
+    backgroundColor: '#1e1e1e',
+    borderColor: '#444',
+    color: '#fff',
   },
   button: {
     backgroundColor: '#ef2b2d',

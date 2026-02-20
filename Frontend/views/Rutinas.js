@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput, Platform,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Header from '../src/components/Header';
@@ -72,6 +72,18 @@ export default function Rutinas() {
   const [userName, setUserName] = useState('');
   const [opcionesVisible, setOpcionesVisible] = useState(false);
   const [rutinaSeleccionada, setRutinaSeleccionada] = useState(null);
+  const [darkMode, setDarkMode] = useState(false);
+
+  // Cargar preferencia de modo oscuro cada vez que la pantalla gana foco
+  useFocusEffect(
+    useCallback(() => {
+      const loadTheme = async () => {
+        const savedTheme = await AsyncStorage.getItem("darkMode");
+        setDarkMode(savedTheme === "true");
+      };
+      loadTheme();
+    }, [])
+  );
 
   useEffect(() => {
     // 1. Cargar rutinas de AsyncStorage
@@ -232,7 +244,7 @@ export default function Rutinas() {
   const renderGrupo = (titulo, rutinasGrupo, grupoKey) => {
     return (
       <View style={styles.grupoContainer}>
-        <Text style={styles.grupoTitulo}>{titulo}</Text>
+        <Text style={[styles.grupoTitulo, darkMode && styles.darkText]}>{titulo}</Text>
         <View style={styles.rutinasRow}>
           {(rutinasGrupo || []).map((rutina) => (
             <TouchableOpacity
@@ -249,7 +261,7 @@ export default function Rutinas() {
             </TouchableOpacity>
           ))}
           <TouchableOpacity
-            style={styles.addCard}
+            style={[styles.addCard, darkMode && styles.darkAddCard]}
             onPress={() => handleAddRutina(grupoKey)}
           >
             <Ionicons name="add" size={32} color="#ef2b2d" />
@@ -261,7 +273,7 @@ export default function Rutinas() {
 
   const renderPredefinidas = () => (
     <View style={styles.grupoContainer}>
-      <Text style={styles.grupoTitulo}>Rutinas recomendadas</Text>
+      <Text style={[styles.grupoTitulo, darkMode && styles.darkText]}>Rutinas recomendadas</Text>
       <View style={styles.rutinasRow}>
         {(rutinas.predefinidas || rutinasPredefinidas).map((rutina) => (
           <TouchableOpacity
@@ -282,13 +294,13 @@ export default function Rutinas() {
   );
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="auto" />
+    <View style={[styles.container, darkMode && styles.darkContainer]}>
+      <StatusBar style={darkMode ? "light" : "auto"} />
       <Header title="Rutinas" showBackButton={false} />
 
       <View style={styles.greetingContainer}>
-        <Text style={styles.greetingText}>Hola {userName || 'usuario'},</Text>
-        <Text style={styles.subGreetingText}>¿listo para entrenar?</Text>
+        <Text style={[styles.greetingText, darkMode && styles.darkText]}>Hola {userName || 'usuario'},</Text>
+        <Text style={[styles.subGreetingText, darkMode && styles.darkTextSecondary]}>¿listo para entrenar?</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -386,6 +398,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     backgroundColor: '#fff',
   },
+  darkContainer: {
+    backgroundColor: '#121212',
+  },
   greetingContainer: {
     paddingVertical: 15,
     marginBottom: 10,
@@ -396,6 +411,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
     textAlign: 'center',
+  },
+  darkText: {
+    color: '#fff',
+  },
+  darkTextSecondary: {
+    color: '#aaa',
   },
   subGreetingText: {
     fontSize: 18,
@@ -415,11 +436,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 10,
     color: '#333',
+    textAlign: 'center',
   },
   rutinasRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
+    justifyContent: 'center',
   },
   rutinaCard: {
     width: 140,
@@ -450,6 +473,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#fff',
+  },
+  darkAddCard: {
+    backgroundColor: '#1e1e1e',
   },
   modalOverlay: {
     flex: 1,

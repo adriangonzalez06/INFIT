@@ -1,4 +1,4 @@
-import React, { useState, useRef, useImperativeHandle, forwardRef, useMemo } from 'react';
+import React, { useState, useRef, useImperativeHandle, forwardRef, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,10 +11,11 @@ import {
   StyleSheet,
   SafeAreaView
 } from 'react-native';
-import { useRoute, useNavigation } from '@react-navigation/native';
+import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import style from '../../views/stylesheet'
 
-  const { height } = Dimensions.get("window");
+const { height } = Dimensions.get("window");
 
 export const SearchMenu = forwardRef(({
   data = [],
@@ -24,7 +25,7 @@ export const SearchMenu = forwardRef(({
   dataButton2 = 'Data 2',
   title = 'Disponibles',
   searchFields = ['nombre', 'name'],
-  onSelectItem = () => {},
+  onSelectItem = () => { },
   renderCustomItem = null,
   searchPlaceholder = 'Buscar...',
   height: propHeight,
@@ -41,10 +42,22 @@ export const SearchMenu = forwardRef(({
   const [showCreateButton, setShowCreateButton] = useState(true);
 
   const navigation = useNavigation();
+  const [isDark, setIsDark] = useState(false);
+
+  // Cargar preferencia cada vez que entramos
+  useFocusEffect(
+    useCallback(() => {
+      const loadTheme = async () => {
+        const savedTheme = await AsyncStorage.getItem("darkMode");
+        setIsDark(savedTheme === "true");
+      };
+      loadTheme();
+    }, [])
+  );
 
   const slideAnim = useRef(new Animated.Value(windowHeight)).current;
 
-  {/*}pan responder para arrastrar el sheet*/}
+  {/*}pan responder para arrastrar el sheet*/ }
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 5,
@@ -109,11 +122,11 @@ export const SearchMenu = forwardRef(({
 
   const renderDefaultItem = ({ item }) => (
     <TouchableOpacity onPress={() => handleSelect(item)}>
-      <View style={styles.itemContainer}>
-        <Text style={styles.itemName}>{item.nombre || item.name || 'Sin nombre'}</Text>
+      <View style={[styles.itemContainer, isDark && styles.darkItemBorder]}>
+        <Text style={[styles.itemName, isDark && styles.darkText]}>{item.nombre || item.name || 'Sin nombre'}</Text>
         {Object.entries(item).map(([k, v]) => (
           k !== 'id' && k !== 'nombre' && k !== 'name' ? (
-            <Text key={k} style={styles.itemDetails}>{`${k}: ${v}`}</Text>
+            <Text key={k} style={[styles.itemDetails, isDark && styles.darkTextSecondary]}>{`${k}: ${v}`}</Text>
           ) : null
         ))}
       </View>
@@ -124,34 +137,34 @@ export const SearchMenu = forwardRef(({
 
     if (!viewButtons) return null;
 
-      return (
-        <View>
-          <View style={[style.middleRowElementsContainer]}>
+    return (
+      <View>
+        <View style={[style.middleRowElementsContainer]}>
 
-              <TouchableOpacity 
-                style={style.grayButton} 
-                onPress={() => {setSelectedData(data); setShowCreateButton(true)}}
-              >
+          <TouchableOpacity
+            style={[style.grayButton, isDark && { backgroundColor: '#333', borderColor: '#444' }]}
+            onPress={() => { setSelectedData(data); setShowCreateButton(true) }}
+          >
 
-                <Text>{dataButton}</Text>
-              </TouchableOpacity>
+            <Text style={[isDark && { color: '#fff' }]}>{dataButton}</Text>
+          </TouchableOpacity>
 
-              <TouchableOpacity 
-                style={style.grayButton} 
-                onPress={() => {setSelectedData(data2); setShowCreateButton(false)}}
-              >
+          <TouchableOpacity
+            style={[style.grayButton, isDark && { backgroundColor: '#333', borderColor: '#444' }]}
+            onPress={() => { setSelectedData(data2); setShowCreateButton(false) }}
+          >
 
-                <Text>{dataButton2}</Text>
-              </TouchableOpacity>
-
-          </View>
-
-          <View style={style.dayButtons}>
-              {renderCreateButton(showCreateButton)}
-          </View>
+            <Text style={[isDark && { color: '#fff' }]}>{dataButton2}</Text>
+          </TouchableOpacity>
 
         </View>
-      );
+
+        <View style={style.dayButtons}>
+          {renderCreateButton(showCreateButton)}
+        </View>
+
+      </View>
+    );
   };
 
   const renderCreateButton = (showCreateButton) => {
@@ -159,10 +172,10 @@ export const SearchMenu = forwardRef(({
 
     return (
       <TouchableOpacity
-      style={style.createDishButton}
-      onPress={() => navigation.navigate('CreateDishMenu')}
+        style={[style.createDishButton, isDark && { borderColor: '#444' }]}
+        onPress={() => navigation.navigate('CreateDishMenu')}
       >
-        <Text>+ Crear plato</Text>
+        <Text style={[isDark && { color: '#fff' }]}>+ Crear plato</Text>
       </TouchableOpacity>
     )
   };
@@ -171,21 +184,22 @@ export const SearchMenu = forwardRef(({
     <>
       {visible && (
         <Animated.View
-          style={[styles.bottomSheet, { top: slideAnim }]}
+          style={[styles.bottomSheet, isDark && styles.darkBottomSheet, { top: slideAnim }]}
           {...panResponder.panHandlers}
         >
-          <View style={styles.dragIndicator} />
-          <Text style={styles.sheetTitle}>{title}</Text>
+          <View style={[styles.dragIndicator, isDark && { backgroundColor: '#444' }]} />
+          <Text style={[styles.sheetTitle, isDark && styles.darkText]}>{title}</Text>
 
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, isDark && styles.darkInput]}
             placeholder={searchPlaceholder}
+            placeholderTextColor={isDark ? "#666" : "#999"}
             value={searchText}
             onChangeText={setSearchText}
           />
 
-          <View style={{paddingBottom: 100}}>
-            
+          <View style={{ paddingBottom: 100 }}>
+
             {renderCategoryButtons(viewButtons)}
 
             <FlatList
@@ -231,10 +245,22 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingTop: 16,
-    paddingLeft: 16,
     paddingRight: 16,
     paddingBottom: 0,
     elevation: 10
+  },
+  darkBottomSheet: {
+    backgroundColor: "#1e1e1e",
+  },
+  darkText: { color: "#fff" },
+  darkTextSecondary: { color: "#aaa" },
+  darkInput: {
+    backgroundColor: "#2a2a2a",
+    borderColor: "#000",
+    color: "#fff",
+  },
+  darkItemBorder: {
+    borderBottomColor: "#000",
   },
   dragIndicator: {
     width: 50,

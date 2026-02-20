@@ -1,13 +1,14 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput,
-  SafeAreaView, Image, ImageBackground, Dimensions
+  SafeAreaView, Image, ImageBackground, Dimensions, Platform, StatusBar
 } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
+import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import styles from './stylesheet';
-import { useRoute } from '@react-navigation/native';
+import { useRoute, useFocusEffect } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Diet from '../src/objects/Diet';
 import Dish from '../src/objects/Dish';
 import Alimentacion from './Alimentacion';
@@ -17,8 +18,19 @@ const { height } = Dimensions.get('window');
 
 
 export default function DietView({ route }) {
-
   const navigation = useNavigation();
+  const [darkMode, setDarkMode] = useState(false);
+
+  // Cargar preferencia cada vez que entramos
+  useFocusEffect(
+    useCallback(() => {
+      const loadTheme = async () => {
+        const savedTheme = await AsyncStorage.getItem("darkMode");
+        setDarkMode(savedTheme === "true");
+      };
+      loadTheme();
+    }, [])
+  );
 
   {/*-------CONSTANTES MENU DESPLEGABLE--------*/ }
   {/*SearchMenu ref para abrirlo desde el boton*/ }
@@ -36,27 +48,25 @@ export default function DietView({ route }) {
   const [dishes] = useState(diet.getAllDishes ? diet.getAllDishes() : [dish1, dish2, dish3]);
   const [allAvailableDishes] = useState([dish1, dish2, dish3]);
 
-
-
   return (
 
-    <View style={styles.container}>
-      <StatusBar style="auto" />
+    <View style={[styles.container, darkMode && { backgroundColor: '#000', marginTop: 0, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }]}>
+      <ExpoStatusBar style={darkMode ? "light" : "auto"} backgroundColor={darkMode ? "#000" : "transparent"} translucent={true} />
       {/* go back button */}
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
         <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
       </TouchableOpacity>
 
       {/* title */}
-      <Text style={styles.title}>{diet?.name ?? 'Dieta'}</Text>
+      <Text style={[styles.title, darkMode && { color: '#fff' }]}>{diet?.name ?? 'Dieta'}</Text>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.scrollContent, darkMode && { backgroundColor: '#000' }]} showsVerticalScrollIndicator={false}>
         <SafeAreaView>
           <View style={styles.grupoContainer}>
 
-            <Text style={styles.text}>{diet?.description ?? ''}</Text>
+            <Text style={[styles.text, darkMode && { color: '#fff' }]}>{diet?.description ?? ''}</Text>
 
-            <Text style={styles.grupoTitulo}>Platos</Text>
+            <Text style={[styles.grupoTitulo, darkMode && { color: '#ef2b2d' }]}>Platos</Text>
 
           </View>
         </SafeAreaView>

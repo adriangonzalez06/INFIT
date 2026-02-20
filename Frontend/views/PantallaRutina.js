@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,8 @@ import {
   Platform,
   Alert
 } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { useFocusEffect } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LottieView from 'lottie-react-native';
 import axios from 'axios';
@@ -46,6 +48,18 @@ export default function PantallaRutina({ route, navigation }) {
 
   // NUEVO: modo edición
   const [modoEdicion, setModoEdicion] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+
+  // Cargar preferencia cada vez que entramos
+  useFocusEffect(
+    useCallback(() => {
+      const loadTheme = async () => {
+        const savedTheme = await AsyncStorage.getItem("darkMode");
+        setDarkMode(savedTheme === "true");
+      };
+      loadTheme();
+    }, [])
+  );
 
   // Ejercicios predefinidos
   const ejerciciosPredefinidos = {
@@ -166,7 +180,8 @@ export default function PantallaRutina({ route, navigation }) {
   };
 
   return (
-    <View style={styles.rutinaContainer}>
+    <View style={[styles.rutinaContainer, darkMode && styles.darkContainer]}>
+      <StatusBar style={darkMode ? "light" : "auto"} backgroundColor={darkMode ? "#121212" : "transparent"} translucent={true} />
       {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
@@ -190,7 +205,7 @@ export default function PantallaRutina({ route, navigation }) {
               setOpcionesVisible(true);
             }}
           >
-            <View style={styles.ejercicioItem}>
+            <View style={[styles.ejercicioItem, darkMode && styles.darkItemBorder]}>
               {item.animacion ? (
                 <LottieView
                   source={item.animacion}
@@ -208,14 +223,14 @@ export default function PantallaRutina({ route, navigation }) {
                     onError={(e) => console.log(`Error loading image for ${item.nombre}:`, e.nativeEvent.error)}
                   />
                 ) : (
-                  <Ionicons name="barbell-outline" size={40} color="#555" />
+                  <Ionicons name="barbell-outline" size={40} color={darkMode ? "#aaa" : "#555"} />
                 )}
 
               <View style={styles.rowBetween}>
-                <Text style={styles.ejercicioTexto}>{item.nombre}</Text>
+                <Text style={[styles.ejercicioTexto, darkMode && styles.darkText]}>{item.nombre}</Text>
 
                 {item.series && item.repeticiones && item.peso && (
-                  <Text style={styles.datosEjercicio}>
+                  <Text style={[styles.datosEjercicio, darkMode && styles.darkTextSecondary]}>
                     {item.series}x{item.repeticiones}x{item.peso}
                   </Text>
                 )}
@@ -231,10 +246,11 @@ export default function PantallaRutina({ route, navigation }) {
       {/* MODAL BUSCADOR */}
       <Modal visible={buscadorVisible} transparent animationType="fade">
         <View style={styles.overlay}>
-          <View style={styles.buscadorContainer}>
+          <View style={[styles.buscadorContainer, darkMode && styles.darkModalContent]}>
             <TextInput
-              style={styles.input}
+              style={[styles.input, darkMode && styles.darkInput]}
               placeholder="Buscar ejercicio..."
+              placeholderTextColor={darkMode ? "#888" : "#999"}
               value={filtro}
               onChangeText={setFiltro}
             />
@@ -289,7 +305,7 @@ export default function PantallaRutina({ route, navigation }) {
                           ) : (
                             <Ionicons name="fitness" size={40} color="#ef2b2d" />
                           )}
-                          <Text style={{ flex: 1, flexWrap: 'wrap' }}>{ejercicio.name || ejercicio.nombre}</Text>
+                          <Text style={[{ flex: 1, flexWrap: 'wrap' }, darkMode && styles.darkText]}>{ejercicio.name || ejercicio.nombre}</Text>
                         </View>
                       </TouchableOpacity>
                     ))}
@@ -316,12 +332,12 @@ export default function PantallaRutina({ route, navigation }) {
       {/* MODAL OPCIONES */}
       <Modal visible={opcionesVisible} transparent animationType="fade">
         <View style={styles.optionsOverlay}>
-          <View style={styles.optionsCard}>
-            <Text style={styles.optionsTitle}>Opciones del ejercicio</Text>
+          <View style={[styles.optionsCard, darkMode && styles.darkModalContent]}>
+            <Text style={[styles.optionsTitle, darkMode && styles.darkText]}>Opciones del ejercicio</Text>
 
             {/* BOTÓN EDITAR */}
             <TouchableOpacity
-              style={styles.optionButton2}
+              style={[styles.optionButton2, darkMode && styles.darkOptionButton]}
               onPress={() => {
                 setOpcionesVisible(false);
                 setModoEdicion(true);
@@ -336,7 +352,7 @@ export default function PantallaRutina({ route, navigation }) {
               }}
             >
               <Ionicons name="create-outline" size={22} color="#ef2b2d" />
-              <Text style={styles.optionText}>Editar ejercicio</Text>
+              <Text style={[styles.optionText, darkMode && styles.darkText]}>Editar ejercicio</Text>
             </TouchableOpacity>
 
             {/* DUPLICAR */}
@@ -418,8 +434,9 @@ export default function PantallaRutina({ route, navigation }) {
             />
 
             <TextInput
-              style={styles.input}
+              style={[styles.input, darkMode && styles.darkInput]}
               placeholder="Series"
+              placeholderTextColor={darkMode ? "#888" : "#999"}
               keyboardType="numeric"
               value={series}
               onChangeText={setSeries}
@@ -427,7 +444,7 @@ export default function PantallaRutina({ route, navigation }) {
 
             {/* GUARDAR */}
             <TouchableOpacity
-              style={styles.optionButton}
+              style={[styles.optionButton, darkMode && { backgroundColor: '#27894940' }]}
               onPress={() => {
                 if (modoEdicion) {
                   // EDITAR
@@ -475,7 +492,7 @@ export default function PantallaRutina({ route, navigation }) {
                 size={22}
                 color="#3a9238ff"
               />
-              <Text style={styles.optionText}>Guardar ejercicio</Text>
+              <Text style={[styles.optionText, darkMode && styles.darkText]}>Guardar ejercicio</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -500,7 +517,10 @@ const styles = StyleSheet.create({
   rutinaContainer: {
     flex: 1,
     paddingTop: 60,
-    marginTop: 20,
+    backgroundColor: '#fff',
+  },
+  darkContainer: {
+    backgroundColor: '#121212',
   },
   header: {
     flexDirection: 'row',
@@ -523,9 +543,18 @@ const styles = StyleSheet.create({
     borderBottomColor: '#eee',
     paddingHorizontal: 20,
   },
+  darkItemBorder: {
+    borderBottomColor: '#333',
+  },
   ejercicioTexto: {
     fontSize: 16,
     color: '#111',
+  },
+  darkText: {
+    color: '#fff',
+  },
+  darkTextSecondary: {
+    color: '#aaa',
   },
   datosEjercicio: {
     fontSize: 16,
@@ -563,6 +592,11 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 15,
     backgroundColor: '#fff',
+  },
+  darkInput: {
+    backgroundColor: '#2a2a2a',
+    color: '#fff',
+    borderColor: '#444',
   },
   inputDescripcion: {
     borderRadius: 8,
@@ -619,6 +653,9 @@ const styles = StyleSheet.create({
     padding: 20,
     elevation: 10,
   },
+  darkModalContent: {
+    backgroundColor: '#1e1e1e',
+  },
   optionsTitle: {
     fontSize: 20,
     fontWeight: '700',
@@ -645,6 +682,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#a6a6a620',
     marginBottom: 12,
     gap: 10,
+  },
+  darkOptionButton: {
+    backgroundColor: '#44444440',
   },
   optionText: {
     fontSize: 16,

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -56,6 +56,15 @@ const auth = getAuth(app, {
 function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [darkMode, setDarkMode] = useState(false);
+
+  useEffect(() => {
+    const loadTheme = async () => {
+      const savedTheme = await AsyncStorage.getItem("darkMode");
+      setDarkMode(savedTheme === "true");
+    };
+    loadTheme();
+  }, []);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -122,34 +131,36 @@ function LoginScreen({ navigation }) {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, darkMode && styles.darkContainer]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <StatusBar hidden={true} />
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <Image
           style={styles.logo}
-          source={require('./assets/logos/logo_white_bg.svg')}
+          source={darkMode ? require('./assets/logos/logo_red_bg.svg') : require('./assets/logos/logo_white_bg.svg')}
         />
         <SafeAreaView>
           <TextInput
-            style={styles.input}
+            style={[styles.input, darkMode && styles.darkInput]}
             placeholder="Correo electrónico"
+            placeholderTextColor={darkMode ? "#666" : "#999"}
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
           />
           <TextInput
-            style={styles.input}
+            style={[styles.input, darkMode && styles.darkInput]}
             placeholder="Contraseña"
+            placeholderTextColor={darkMode ? "#666" : "#999"}
             secureTextEntry
             value={password}
             onChangeText={setPassword}
           />
 
           <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-            <Text style={styles.link}>¿Has olvidado tu contraseña?</Text>
+            <Text style={[styles.link, darkMode && { color: '#64b5f6' }]}>¿Has olvidado tu contraseña?</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.boton} onPress={handleLogin}>
@@ -157,13 +168,13 @@ function LoginScreen({ navigation }) {
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => navigation.navigate('Registro')}>
-            <Text style={styles.link}>¿No tienes cuenta todavía? Regístrate</Text>
+            <Text style={[styles.link, darkMode && { color: '#64b5f6' }]}>¿No tienes cuenta todavía? Regístrate</Text>
           </TouchableOpacity>
 
-          <Text style={styles.dividerText}>─── O inicia sesión con ───</Text>
+          <Text style={[styles.dividerText, darkMode && { color: '#aaa' }]}>─── O inicia sesión con ───</Text>
 
 
-          <TouchableOpacity style={styles.google}>
+          <TouchableOpacity style={[styles.google, darkMode && styles.darkGoogle]}>
             <Image
               source={require('./assets/logos/google.png')}
               style={{ width: 60, height: 30 }}
@@ -171,16 +182,16 @@ function LoginScreen({ navigation }) {
             />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.google2}>
+          <TouchableOpacity style={[styles.google2, darkMode && styles.darkGoogle]}>
             <Image
               source={require('./assets/logos/google2.png')}
               style={{ width: 50, height: 25, justifyContent: 'center', alignSelf: 'center', marginLeft: -20 }}
               resizeMode="contain"
             />
-            <Text style={styles.googletext}>Google</Text>
+            <Text style={[styles.googletext, darkMode && { color: '#fff' }]}>Google</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.google3}>
+          <TouchableOpacity style={[styles.google3, darkMode && styles.darkGoogle]}>
             <Image
               source={require('./assets/logos/google2.png')}
               style={{ width: 24, height: 24 }}
@@ -252,6 +263,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.bg_gray,
   },
+  darkContainer: {
+    backgroundColor: '#121212',
+  },
   scrollContainer: {
     paddingTop: 60,
     paddingHorizontal: 20,
@@ -278,6 +292,11 @@ const styles = StyleSheet.create({
     width: 250,
     alignSelf: 'center',
   },
+  darkInput: {
+    backgroundColor: '#1e1e1e',
+    borderColor: '#444',
+    color: '#fff',
+  },
   boton: {
     backgroundColor: colors.primary,
     padding: 15,
@@ -291,7 +310,7 @@ const styles = StyleSheet.create({
   },
   link: {
     marginTop: 20,
-    color: '#007AFF',
+    color: colors.blue,
     textAlign: 'center',
   },
   dividerText: {

@@ -4,10 +4,25 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Image } fr
 import { useNavigation } from '@react-navigation/native';
 import { getAuth, signOut } from 'firebase/auth';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
 
 const RuedaSettings = () => {
   const navigation = useNavigation();
   const [user, setUser] = useState(null);
+  const [darkMode, setDarkMode] = useState(false);
+
+  // Cargar preferencia cada vez que entramos
+  useFocusEffect(
+    useCallback(() => {
+      const loadTheme = async () => {
+        const savedTheme = await AsyncStorage.getItem("darkMode");
+        setDarkMode(savedTheme === "true");
+      };
+      loadTheme();
+    }, [])
+  );
 
   useEffect(() => {
     const auth = getAuth();
@@ -56,7 +71,7 @@ const RuedaSettings = () => {
   ];
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={[styles.container, darkMode && styles.darkContainer]}>
       {/* Cabecera tipo Strava */}
       <View style={styles.header}>
         <Image
@@ -64,31 +79,31 @@ const RuedaSettings = () => {
           style={styles.avatar}
         />
         <View style={styles.userInfo}>
-          <Text style={styles.userName}>{user?.displayName || 'Usuario'}</Text>
-          <Text style={styles.userEmail}>{user?.email}</Text>
+          <Text style={[styles.userName, darkMode && styles.darkText]}>{user?.displayName || 'Usuario'}</Text>
+          <Text style={[styles.userEmail, darkMode && styles.darkTextSecondary]}>{user?.email}</Text>
         </View>
       </View>
 
       {/* Estadísticas tipo Strava */}
-      <View style={styles.statsContainer}>
+      <View style={[styles.statsContainer, darkMode && styles.darkCard]}>
         {estadisticas.map((item, index) => (
           <View key={index} style={styles.statBox}>
             <Text style={styles.statValue}>{item.value}</Text>
-            <Text style={styles.statLabel}>{item.label}</Text>
+            <Text style={[styles.statLabel, darkMode && styles.darkTextSecondary]}>{item.label}</Text>
           </View>
         ))}
       </View>
 
       {/* Opciones de ajustes */}
-      <Text style={styles.sectionTitle}>Tu cuenta</Text>
-      <View style={styles.card}>
+      <Text style={[styles.sectionTitle, darkMode && styles.darkText]}>Tu cuenta</Text>
+      <View style={[styles.card, darkMode && styles.darkCard]}>
         {ajustes.map((item, index) => (
-          <TouchableOpacity key={index} style={styles.option} onPress={item.action}>
+          <TouchableOpacity key={index} style={[styles.option, darkMode && styles.darkOption]} onPress={item.action}>
             <View style={styles.optionContent}>
               <Ionicons name={item.icon} size={22} color="#FF5A5F" style={styles.icon} />
-              <Text style={styles.optionText}>{item.label}</Text>
+              <Text style={[styles.optionText, darkMode && styles.darkText]}>{item.label}</Text>
             </View>
-            <Ionicons name="chevron-forward-outline" size={20} color="#ccc" />
+            <Ionicons name="chevron-forward-outline" size={20} color={darkMode ? "#555" : "#ccc"} />
           </TouchableOpacity>
         ))}
       </View>
@@ -101,6 +116,9 @@ const styles = StyleSheet.create({
     paddingVertical: 30,
     paddingHorizontal: 20,
     backgroundColor: '#fff',
+  },
+  darkContainer: {
+    backgroundColor: '#121212',
   },
   header: {
     flexDirection: 'row',
@@ -125,6 +143,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#777',
     marginTop: 4,
+  },
+  darkText: {
+    color: '#fff',
+  },
+  darkTextSecondary: {
+    color: '#aaa',
   },
   statsContainer: {
     flexDirection: 'row',
@@ -160,6 +184,13 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 5,
     elevation: 1,
+  },
+  darkCard: {
+    backgroundColor: '#1e1e1e',
+    elevation: 0,
+  },
+  darkOption: {
+    borderBottomColor: '#333',
   },
   option: {
     flexDirection: 'row',

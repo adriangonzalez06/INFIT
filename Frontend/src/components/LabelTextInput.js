@@ -13,16 +13,18 @@ export const LabelTextInput = forwardRef(({
     onChangeText = "",
     value = {},
     keyboardType = "text",
+    darkMode = false,
 }, ref) => {
 
     return (
         <>
             <View>
-                <Text style={styles.smallText}>{label}</Text>
+                <Text style={[styles.smallText, darkMode && { color: '#aaa' }]}>{label}</Text>
 
                 <TextInput
-                    style={styles.input}
+                    style={[styles.input, darkMode && { backgroundColor: '#1e1e1e', borderColor: '#000', color: '#fff' }]}
                     placeholder={placeholder}
+                    placeholderTextColor={darkMode ? "#666" : "#999"}
                     onChangeText={onChangeText}
                     value={value}
                     keyboardType={keyboardType}

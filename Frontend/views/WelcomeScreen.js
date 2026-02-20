@@ -1,5 +1,5 @@
 // WelcomeScreen.jsx
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,7 @@ import {
   FlatList,
   ImageBackground,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
@@ -29,7 +29,19 @@ const lightTheme = {
   title: '#333333',
   subtle: '#666666',
   hairline: '#cccccc',
-  challengeBg: ['#ffe8e8', '#e8fff1', '#e8f0ff', '#fff4e8']
+  challengeBg: ['#ffe8e8', '#e8fff1', '#e8f0ff', '#fff4e8'],
+  cardShadow: '#000'
+};
+
+const darkTheme = {
+  bg: '#121212',
+  primary: '#ef2b2d',
+  card: '#1e1e1e',
+  title: '#ffffff',
+  subtle: '#aaaaaa',
+  hairline: '#222222',
+  challengeBg: ['#2c1515', '#152c1d', '#151c2c', '#2c2215'],
+  cardShadow: '#000'
 };
 
 
@@ -86,9 +98,19 @@ function ChallengeCard({ item, theme, onPress }) {
 
 export default function WelcomeScreen() {
   const navigation = useNavigation();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const [isDark, setIsDark] = useState(false);
   const theme = isDark ? darkTheme : lightTheme;
+
+  // Cargar preferencia cada vez que entramos
+  useFocusEffect(
+    useCallback(() => {
+      const loadTheme = async () => {
+        const savedTheme = await AsyncStorage.getItem("darkMode");
+        setIsDark(savedTheme === "true");
+      };
+      loadTheme();
+    }, [])
+  );
 
   const [userName, setUserName] = useState(null);
   const [streak, setStreak] = useState(0);
@@ -121,25 +143,25 @@ export default function WelcomeScreen() {
             const nombreBackend = resp?.data?.nombre;
             streakVal = resp?.data?.streak || streakVal; // { changed code }} usa backend si existe, sino usa AsyncStorage
             if (nombreBackend) {
-               name = nombreBackend;
-               await AsyncStorage.setItem('userName', nombreBackend);
-               await AsyncStorage.setItem('streak', streakVal.toString());
-             }
-           } catch (e) {
-             console.warn('No se pudo obtener nombre del backend:', e?.message || e);
-             // Aquí streakVal sigue siendo el valor de AsyncStorage
-           }
-         }
+              name = nombreBackend;
+              await AsyncStorage.setItem('userName', nombreBackend);
+              await AsyncStorage.setItem('streak', streakVal.toString());
+            }
+          } catch (e) {
+            console.warn('No se pudo obtener nombre del backend:', e?.message || e);
+            // Aquí streakVal sigue siendo el valor de AsyncStorage
+          }
+        }
 
-         setUserName(name || user.email || user.uid);
-         setStreak(streakVal);
-       } else {
-         setUserName(null);
-         setStreak(0);
-       }
-     });
-     return () => unsub();
-   }, []);
+        setUserName(name || user.email || user.uid);
+        setStreak(streakVal);
+      } else {
+        setUserName(null);
+        setStreak(0);
+      }
+    });
+    return () => unsub();
+  }, []);
 
   const messages = useMemo(
     () => [
@@ -181,45 +203,45 @@ export default function WelcomeScreen() {
       overScrollMode="never"
       showsVerticalScrollIndicator={false}
     >
-        <StatusBar hidden={true} />
+      <StatusBar hidden={true} />
 
-        <ImageBackground source={require('../assets/images/Blur_mancuernas.jpg')} style={styles.headerImage}>
-             <Animated.View
-               style={[
-                 styles.header,
-                 { borderBottomColor: theme.hairline, transform: [{ translateY: mountTranslate }], opacity: mountOpacity },
-               ]}
-             >
+      <ImageBackground source={require('../assets/images/Blur_mancuernas.jpg')} style={styles.headerImage}>
+        <Animated.View
+          style={[
+            styles.header,
+            { borderBottomColor: theme.hairline, transform: [{ translateY: mountTranslate }], opacity: mountOpacity },
+          ]}
+        >
 
-               <Image source={require('../assets/avatar.png')} style={styles.avatar} />
-               <Text style={[styles.greeting, { color: theme.primary }]}>¡Hola, {userName ?? 'usuario'}!</Text>
-               <Text style={[styles.subtitle, { color: theme.card }]}>{message}</Text>
+          <Image source={require('../assets/avatar.png')} style={styles.avatar} />
+          <Text style={[styles.greeting, { color: theme.primary }]}>¡Hola, {userName ?? 'usuario'}!</Text>
+          <Text style={[styles.subtitle, { color: theme.card }]}>{message}</Text>
 
 
 
-               <Pressable
-                 onPressIn={() => animateIn(scaleHeaderCTA)}
-                 onPressOut={() => animateOut(scaleHeaderCTA)}
-                 onPress={() => navigation.navigate('Rutinas')}
-                 accessibilityRole="button"
-                 accessibilityLabel="Empezar rutina"
-               >
-                 <Animated.View
-                   style={[
-                     styles.startButton,
-                     {
-                       backgroundColor: theme.primary,
-                       shadowColor: '#000',
-                       transform: [{ scale: scaleHeaderCTA }],
-                     },
-                   ]}
-                 >
-                   <Text style={styles.startButtonText}>Empezar rutina</Text>
-                 </Animated.View>
-               </Pressable>
-             </Animated.View>
+          <Pressable
+            onPressIn={() => animateIn(scaleHeaderCTA)}
+            onPressOut={() => animateOut(scaleHeaderCTA)}
+            onPress={() => navigation.navigate('Rutinas')}
+            accessibilityRole="button"
+            accessibilityLabel="Empezar rutina"
+          >
+            <Animated.View
+              style={[
+                styles.startButton,
+                {
+                  backgroundColor: theme.primary,
+                  shadowColor: '#000',
+                  transform: [{ scale: scaleHeaderCTA }],
+                },
+              ]}
+            >
+              <Text style={styles.startButtonText}>Empezar rutina</Text>
+            </Animated.View>
+          </Pressable>
+        </Animated.View>
 
-       </ImageBackground>
+      </ImageBackground>
 
       <Pressable onPress={() => navigation.navigate('Rutinas')}>
         <Animated.View
@@ -227,7 +249,7 @@ export default function WelcomeScreen() {
             styles.card,
             {
               backgroundColor: theme.card,
-              shadowColor: isDark ? 'transparent' : '#000',
+              shadowColor: theme.cardShadow,
               transform: [{ translateY: mountTranslate }],
               opacity: mountOpacity,
             },
@@ -245,7 +267,7 @@ export default function WelcomeScreen() {
             styles.card,
             {
               backgroundColor: theme.card,
-              shadowColor: isDark ? 'transparent' : '#000',
+              shadowColor: theme.cardShadow,
               transform: [{ translateY: mountTranslate }],
               opacity: mountOpacity,
             },
@@ -384,13 +406,13 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   challengeHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  dot: { width: 10, height: 10, borderRadius: 5, marginRight: 10},
+  dot: { width: 10, height: 10, borderRadius: 5, marginRight: 10 },
   challengeTitle: { fontSize: 18, fontWeight: '800' },
   challengeSubtitle: { fontSize: 14, fontWeight: '600', marginBottom: 14 },
   cta: { alignSelf: 'flex-start', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 8 },
   ctaText: { color: '#fff', fontWeight: '800', fontSize: 14 },
 
   headerImage: {
-    top:'-5%'
+    top: '-5%'
   }
 });
