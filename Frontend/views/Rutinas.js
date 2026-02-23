@@ -250,6 +250,26 @@ export default function Rutinas() {
   };
 
   const handleEntrarRutina = (rutina, grupoKey) => {
+    // ── Registrar rutina reciente en AsyncStorage ──────────────────────────
+    (async () => {
+      try {
+        const raw = await AsyncStorage.getItem('recentRoutines');
+        const prev = raw ? JSON.parse(raw) : [];
+        const entry = {
+          id: rutina.id,
+          nombre: rutina.nombre,
+          dificultad: rutina.dificultad || 'Sin definir',
+          color: rutina.color || '#264653',
+          openedAt: Date.now(),
+        };
+        // Eliminar si ya estaba y poner al principio (más reciente primero)
+        const updated = [entry, ...prev.filter(r => r.id !== rutina.id)].slice(0, 5);
+        await AsyncStorage.setItem('recentRoutines', JSON.stringify(updated));
+      } catch (e) {
+        console.warn('[Rutinas] No se pudo guardar rutina reciente:', e.message);
+      }
+    })();
+
     navigation.navigate('PantallaRutina', {
       rutina,
       grupoKey,
@@ -267,6 +287,7 @@ export default function Rutinas() {
       },
     });
   };
+
 
   const handleLongPress = (rutina) => {
     setRutinaSeleccionada(rutina);

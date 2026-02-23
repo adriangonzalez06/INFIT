@@ -99,6 +99,7 @@ export default function ProfileScreen() {
   const [userId, setUserId] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [recentRoutines, setRecentRoutines] = useState([]); // ←← rutinas recientes
 
   // Cargar preferencia de modo oscuro cada vez que la pantalla gana foco
   useFocusEffect(
@@ -108,6 +109,16 @@ export default function ProfileScreen() {
         setDarkMode(savedTheme === "true");
       };
       loadTheme();
+    }, [])
+  );
+
+  // Cargar rutinas recientes cada vez que se muestra la pantalla
+  useFocusEffect(
+    useCallback(() => {
+      ReactNativeAsyncStorage.getItem('recentRoutines').then(raw => {
+        if (raw) setRecentRoutines(JSON.parse(raw));
+        else setRecentRoutines([]);
+      }).catch(() => { });
     }, [])
   );
 
@@ -164,11 +175,6 @@ export default function ProfileScreen() {
                 avatar: backendAvatar,
                 peso: pesoGuardado ? parseFloat(String(pesoGuardado)) : 80,
                 altura: alturaGuardada ? parseFloat(String(alturaGuardada)) : 1.9,
-                registros: [
-                  { tipo: 'Ejercicio', detalle: '30 min de cardio', fecha: '22/10/2025' },
-                  { tipo: 'Alimentación', detalle: 'Desayuno saludable', fecha: '22/10/2025' },
-                  { tipo: 'Sueño', detalle: 'Dormido 7h 45min', fecha: '21/10/2025' },
-                ],
               });
             }
           } catch (e) {
@@ -194,11 +200,6 @@ export default function ProfileScreen() {
             avatar: require('../assets/avatar.png'),
             peso: 80,
             altura: 1.9,
-            registros: [
-              { tipo: 'Ejercicio', detalle: '30 min de cardio', fecha: '22/10/2025' },
-              { tipo: 'Alimentación', detalle: 'Desayuno saludable', fecha: '22/10/2025' },
-              { tipo: 'Sueño', detalle: 'Dormido 7h 45min', fecha: '21/10/2025' },
-            ],
           });
         } finally {
           setLoading(false);
@@ -562,14 +563,37 @@ export default function ProfileScreen() {
         </View>
       </Modal>
 
-      <Text style={[styles.sectionTitle, darkMode && styles.darkTextSecondary]}>Últimos registros</Text>
-      {user.registros.map((registro, index) => (
-        <View key={index} style={[styles.registroBox, darkMode && styles.darkRegistroBox]}>
-          <Text style={[styles.registroTipo, darkMode && styles.darkText]}>{registro.tipo}</Text>
-          <Text style={[styles.registroDetalle, darkMode && styles.darkTextSecondary]}>{registro.detalle}</Text>
-          <Text style={styles.registroFecha}>{registro.fecha}</Text>
-        </View>
-      ))}
+      <Text style={[styles.sectionTitle, darkMode && styles.darkTextSecondary]}>Rutinas recientes</Text>
+      {recentRoutines.length === 0 ? (
+        <TouchableOpacity onPress={() => navigation.navigate('Rutinas')} style={styles.emptyRoutinesBox}>
+          <Ionicons name="barbell-outline" size={28} color="#ef2b2d" />
+          <Text style={styles.emptyRoutinesText}>No has abierto ninguna rutina todavía.</Text>
+          <Text style={styles.emptyRoutinesLink}>Ir a Rutinas →</Text>
+        </TouchableOpacity>
+      ) : (
+        recentRoutines.map((r, i) => {
+          const when = new Date(r.openedAt);
+          const fechaStr = when.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+          const horaStr = when.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+          return (
+            <TouchableOpacity
+              key={r.id + i}
+              style={[styles.recentRutinaBox, { borderLeftColor: r.color || '#ef2b2d' }]}
+              onPress={() => navigation.navigate('Rutinas')}
+              activeOpacity={0.75}
+            >
+              <View style={styles.recentRutinaRow}>
+                <Ionicons name="barbell" size={20} color={r.color || '#ef2b2d'} />
+                <View style={{ flex: 1, marginLeft: 10 }}>
+                  <Text style={styles.recentRutinaNombre}>{r.nombre}</Text>
+                  <Text style={styles.recentRutinaDetalle}>{r.dificultad}</Text>
+                </View>
+                <Text style={styles.recentRutinaFecha}>{fechaStr} {horaStr}</Text>
+              </View>
+            </TouchableOpacity>
+          );
+        })
+      )}
 
       <TouchableOpacity
         style={styles.boton}
@@ -786,6 +810,63 @@ const styles = StyleSheet.create({
     color: '#999',
     marginTop: 2,
   },
+
+  // ── Rutinas recientes ──────────────────────────────────────────────────────
+  recentRutinaBox: {
+    backgroundColor: '#fff',
+    marginHorizontal: 20,
+    marginBottom: 10,
+    borderRadius: 10,
+    borderLeftWidth: 4,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  recentRutinaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  recentRutinaNombre: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#222',
+  },
+  recentRutinaDetalle: {
+    fontSize: 13,
+    color: '#777',
+    marginTop: 2,
+  },
+  recentRutinaFecha: {
+    fontSize: 11,
+    color: '#bbb',
+    marginLeft: 8,
+    textAlign: 'right',
+    flexShrink: 0,
+  },
+  emptyRoutinesBox: {
+    marginHorizontal: 20,
+    marginBottom: 10,
+    padding: 20,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
+    alignItems: 'center',
+    gap: 6,
+  },
+  emptyRoutinesText: {
+    fontSize: 14,
+    color: '#888',
+    textAlign: 'center',
+  },
+  emptyRoutinesLink: {
+    fontSize: 14,
+    color: '#ef2b2d',
+    fontWeight: '600',
+  },
+
   boton: {
     backgroundColor: '#ef2b2d',
     padding: 15,

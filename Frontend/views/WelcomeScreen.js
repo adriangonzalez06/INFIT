@@ -13,6 +13,7 @@ import {
   FlatList,
   ImageBackground,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -204,42 +205,16 @@ export default function WelcomeScreen() {
     >
       <StatusBar hidden={true} />
 
-      <ImageBackground source={require('../assets/images/Blur_mancuernas.jpg')} style={styles.headerImage}>
-        <Animated.View
-          style={[
-            styles.header,
-            { borderBottomColor: theme.hairline, transform: [{ translateY: mountTranslate }], opacity: mountOpacity },
-          ]}
-        >
-
-          <Image source={require('../assets/avatar.png')} style={styles.avatar} />
-          <Text style={[styles.greeting, { color: theme.primary }]}>¡Hola, {userName ?? 'usuario'}!</Text>
-          <Text style={[styles.subtitle, { color: theme.card }]}>{message}</Text>
-
-
-
-          <Pressable
-            onPressIn={() => animateIn(scaleHeaderCTA)}
-            onPressOut={() => animateOut(scaleHeaderCTA)}
-            onPress={() => navigation.navigate('Rutinas')}
-            accessibilityRole="button"
-            accessibilityLabel="Empezar rutina"
-          >
-            <Animated.View
-              style={[
-                styles.startButton,
-                {
-                  backgroundColor: theme.primary,
-                  shadowColor: '#000',
-                  transform: [{ scale: scaleHeaderCTA }],
-                },
-              ]}
-            >
-              <Text style={styles.startButtonText}>Empezar rutina</Text>
-            </Animated.View>
-          </Pressable>
-        </Animated.View>
-
+      {/* ── Dumbbell banner ─────────────────────────────────────────── */}
+      <ImageBackground
+        source={require('../assets/images/dumbbell_header.png')}
+        style={styles.dumbbellBanner}
+        resizeMode="cover"
+      >
+        {/* Texto centrado entre las dos mancuernas */}
+        <View style={styles.bannerTextWrap} pointerEvents="none">
+          <Text style={styles.bannerText}>Rutinas</Text>
+        </View>
       </ImageBackground>
 
       <Pressable onPress={() => navigation.navigate('Rutinas')}>
@@ -312,7 +287,7 @@ export default function WelcomeScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 32,
+    paddingVertical: 0,
     paddingHorizontal: 0,
   },
   header: {
@@ -410,6 +385,88 @@ const styles = StyleSheet.create({
   challengeSubtitle: { fontSize: 14, fontWeight: '600', marginBottom: 14 },
   cta: { alignSelf: 'flex-start', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 8 },
   ctaText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+
+  // ── Dumbbell Banner ────────────────────────────────────────────────────────
+  dumbbellBanner: {
+    width: '100%',
+    height: 160,
+    backgroundColor: '#f7f7f7',
+    overflow: 'hidden',
+    position: 'relative',
+    marginBottom: 8,
+  },
+  // blobs izquierda
+  blobLeft: {
+    position: 'absolute',
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    backgroundColor: '#264653',
+    top: -40,
+    left: -30,
+    opacity: 0.92,
+  },
+  glowLeft: {
+    position: 'absolute',
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: '#e76f51',
+    top: 10,
+    left: 20,
+    opacity: 0.55,
+  },
+  // blobs derecha
+  blobRight: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#264653',
+    top: -20,
+    right: -20,
+    opacity: 0.92,
+  },
+  glowRight: {
+    position: 'absolute',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#e76f51',
+    top: 30,
+    right: 20,
+    opacity: 0.55,
+  },
+  // mancuernas
+  dumbbellLeft: {
+    position: 'absolute',
+    bottom: 10,
+    left: 10,
+  },
+  dumbbellRight: {
+    position: 'absolute',
+    top: 8,
+    right: 14,
+  },
+  // texto central
+  bannerTextWrap: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: '30%',
+    right: '30%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bannerText: {
+    fontSize: 32,
+    fontWeight: '900',
+    color: '#264653',
+    letterSpacing: 1,
+    textShadowColor: 'rgba(255,255,255,0.7)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
 
   headerImage: {
     top: '-5%'
