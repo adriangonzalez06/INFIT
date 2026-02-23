@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput,
+  View, Text, TouchableOpacity, ScrollView,
   SafeAreaView,
   ImageBackground,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { useRoute, useNavigation } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import styles from './stylesheet.js';
-import colors from './colors.js';
 import Dish from '../src/objects/Dish.js';
 import Diet from '../src/objects/Diet.js';
 import DietGroup from '../src/objects/DietGroup.js';
@@ -55,8 +54,6 @@ export default function Alimentacion() {
   const [diets, setDiet] = useState([]);
 
   const renderGrupo = (group) => (
-
-
     <View style={styles.grupoContainer}>
       {/* group title */}
       <Text style={styles.grupoTitulo}>{group.name}</Text>
@@ -74,7 +71,7 @@ export default function Alimentacion() {
             style={styles.seeMoreCard}
             onPress={() => handleEnterGrupoCompleto(group)}>
             <Ionicons name="arrow-forward" size={24} color="#111114" />
-            <Text style={{ color: '##111114', fontWeight: '600' }}>Ver más</Text>
+            <Text style={{ color: '#111114', fontWeight: '600' }}>Ver más</Text>
           </TouchableOpacity>
 
         </ScrollView>
@@ -106,7 +103,7 @@ export default function Alimentacion() {
     console.log("showAddCard: ", group)
     if (show) {
       return (
-        <TouchableOpacity style={[styles.addCard]} onPress={() => handleCreateNewDiet(group)}>
+        <TouchableOpacity style={styles.addCard} onPress={() => handleCreateNewDiet(group)}>
           <Ionicons name="add" size={32} color="#ef2b2d" />
         </TouchableOpacity>
       );
@@ -139,10 +136,9 @@ export default function Alimentacion() {
   }
 
   return (
-
     <View style={styles.container}>
       <StatusBar style="auto" />
-      
+
       <Header title="Alimentación" showBackButton={false} />
 
       {/* render groups */}
@@ -151,11 +147,8 @@ export default function Alimentacion() {
           {renderGrupo(recipesGroups.g1)}
           {renderGrupo(recipesGroups.g2)}
           {renderGrupo(recipesGroups.g3)}
-          {renderGrupo(recipesGroups.g1)}
         </SafeAreaView>
       </ScrollView>
     </View>
-
   );
 }
-
