@@ -19,7 +19,7 @@ import Header from '../src/components/Header';
 import style from './stylesheet';
 import colors from './colors';
 import Ingredient from '../src/objects/Ingredient';
-import RenderLabels from '../src/components/RenderLabels.js';
+import RenderLabels from '../src/components/RenderLabels.js'; 
 import { LabelTextInput } from '../src/components/LabelTextInput';
 
 

@@ -51,7 +51,7 @@ export default function Alimentacion() {
           if (!response.ok) {
             throw new Error('Error al cargar dietas personalizadas');
           }
-
+ 
           const diets = await response.json();
           console.log('✅ Dietas personalizadas cargadas:', diets.length);
 
