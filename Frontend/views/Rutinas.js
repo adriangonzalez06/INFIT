@@ -425,7 +425,7 @@ export default function Rutinas() {
         <Text style={[styles.subGreetingText, darkMode && styles.darkTextSecondary]}>¿listo para entrenar?</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.scrollContent, darkMode && { backgroundColor: '#121212' }]} showsVerticalScrollIndicator={false}>
         {renderPredefinidas()}
         {renderGrupo('Mis rutinas personalizadas', rutinas.grupo1, 'grupo1')}
       </ScrollView>
@@ -433,33 +433,35 @@ export default function Rutinas() {
       {/* Modal para crear rutina */}
       <Modal visible={modalVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Crear rutina</Text>
+          <View style={[styles.modalContent, darkMode && styles.darkModal]}>
+            <Text style={[styles.modalTitle, darkMode && styles.darkText]}>Crear rutina</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, darkMode && { borderColor: '#444', backgroundColor: '#1e1e1e', color: '#fff' }]}
               placeholder="Ej. Piernas explosivas"
+              placeholderTextColor={darkMode ? '#888' : '#aaa'}
               value={nombreRutina}
               onChangeText={setNombreRutina}
             />
             {sugerencias.length > 0 && (
               <View style={styles.sugerenciasContainer}>
-                <Text style={styles.sugerenciasTitulo}>Ejercicios sugeridos:</Text>
+                <Text style={[styles.sugerenciasTitulo, darkMode && styles.darkText]}>Ejercicios sugeridos:</Text>
                 <View style={styles.chipsContainer}>
                   {sugerencias.map((ejercicio, index) => (
-                    <View key={index} style={styles.chip}>
-                      <Text style={styles.chipText}>{ejercicio}</Text>
+                    <View key={index} style={[styles.chip, darkMode && { borderColor: '#555' }]}>
+                      <Text style={[styles.chipText, darkMode && styles.darkText]}>{ejercicio}</Text>
                     </View>
                   ))}
                 </View>
               </View>
             )}
-            <Text style={styles.sugerenciasTitulo}>Dificultad:</Text>
+            <Text style={[styles.sugerenciasTitulo, darkMode && styles.darkText]}>Dificultad:</Text>
             <View style={styles.chipsContainer}>
               {DIFICULTADES.map((nivel) => (
                 <TouchableOpacity
                   key={nivel}
                   style={[
                     styles.chip,
+                    darkMode && { borderColor: '#555' },
                     dificultad === nivel && styles.chipSelected,
                   ]}
                   onPress={() => setDificultad(nivel)}
@@ -467,6 +469,7 @@ export default function Rutinas() {
                   <Text
                     style={[
                       styles.chipText,
+                      darkMode && styles.darkText,
                       dificultad === nivel && styles.chipTextSelected,
                     ]}
                   >
@@ -490,21 +493,21 @@ export default function Rutinas() {
       {/* Modal de opciones (long press) */}
       <Modal visible={opcionesVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Opciones</Text>
+          <View style={[styles.modalContent, darkMode && styles.darkModal]}>
+            <Text style={[styles.modalTitle, darkMode && styles.darkText]}>Opciones</Text>
             <TouchableOpacity onPress={() => {
               if (rutinaSeleccionada) handleEntrarRutina(rutinaSeleccionada, 'grupo1');
             }}>
-              <Text style={styles.modalButtonText}>Editar</Text>
+              <Text style={[styles.modalButtonText, { color: darkMode ? '#ccc' : '#333', marginBottom: 12 }]}>Editar</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={handleDuplicarRutina}>
-              <Text style={styles.modalButtonText}>Duplicar</Text>
+              <Text style={[styles.modalButtonText, { color: darkMode ? '#ccc' : '#333', marginBottom: 12 }]}>Duplicar</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={handleEliminarRutina}>
-              <Text style={styles.modalButtonText}>Eliminar</Text>
+              <Text style={[styles.modalButtonText, { color: '#ef2b2d', marginBottom: 12 }]}>Eliminar</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setOpcionesVisible(false)}>
-              <Text style={styles.modalButtonText}>Cancelar</Text>
+              <Text style={[styles.modalButtonText, { color: darkMode ? '#888' : '#666' }]}>Cancelar</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -610,6 +613,9 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 12,
     width: '85%',
+  },
+  darkModal: {
+    backgroundColor: '#1e1e1e',
   },
   modalTitle: {
     fontSize: 20,

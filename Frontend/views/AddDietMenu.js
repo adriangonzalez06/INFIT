@@ -1,26 +1,22 @@
 import React, { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput,
-  SafeAreaView, Image, ImageBackground, Animated, Dimensions, FlatList, Alert, ToastAndroid, Platform, StatusBar
+  View, Text, TouchableOpacity, ScrollView, Modal, TextInput,
+  SafeAreaView, Image, ImageBackground, Dimensions, Alert, ToastAndroid
 } from 'react-native';
-import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
-import { useNavigation } from '@react-navigation/native';
+import { StatusBar } from 'expo-status-bar';
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import styles from './stylesheet';
-import { useRoute, useFocusEffect } from '@react-navigation/native';
 import Diet from '../src/objects/Diet';
 import Dish from '../src/objects/Dish';
 import { SearchMenu } from '../src/components/SearchMenu';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Alimentacion from './Alimentacion';
-import { getAllMeals } from '../src/services/MealsService';
-
 import Header from '../src/components/Header';
-import style from './stylesheet';
 import colors from './colors';
 import Ingredient from '../src/objects/Ingredient';
 import RenderLabels from '../src/components/RenderLabels.js';
 import { LabelTextInput } from '../src/components/LabelTextInput';
+import { BACKEND_URL } from '../src/config';
 
 
 export default function AddDietMenu({ route }) {
@@ -122,49 +118,27 @@ export default function AddDietMenu({ route }) {
   useEffect(() => {
     const loadMeals = async () => {
       try {
-        const meals = await getAllMeals();
-        if (meals && meals.length > 0) {
-          const dishesFromDB = meals.map((meal, index) =>
-            new Dish(
-              meal.id || index,
-              meal.name,
-              meal.imgUrl || require('../assets/images/images_dish/dish_01.jpg'),
-              meal.macronutrients || 0,
-              meal.ingredients || [],
-              meal.calories || 0,
-              meal.vegetarian || false,
-              meal.vegan || false,
-              meal.gluten_free || false
-            )
-          );
-          setAllAvailableDishes(dishesFromDB);
-          console.log('✅ Platos cargados en AddDietMenu:', dishesFromDB.length);
-        } else {
-          // Si no hay platos de Firestore, usar fallback
-          const fallbackDishes = [
-            new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, true, true, false),
-            new Dish(2, "Carne", require('../assets/images/images_dish/dish_02.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, false, false, false),
-            new Dish(3, "Postre", require('../assets/images/images_dish/dish_03.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, false, false, false),
-            new Dish(4, "Pescado", require('../assets/images/images_dish/dish_04.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, false, false, false),
-            new Dish(5, "Sopa", require('../assets/images/images_dish/dish_05.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, true, true, false),
-            new Dish(6, "Pasta", require('../assets/images/images_dish/dish_06.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, false, false, false),
-          ];
-          setAllAvailableDishes(fallbackDishes);
-
-
-          console.log('⚠️  Usando platos de fallback');
-        }
-      } catch (error) {
-        console.error('❌ Error cargando platos:', error);
-        // Fallback en caso de error
         const fallbackDishes = [
-          new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, true, true, false),
-          new Dish(2, "Carne", require('../assets/images/images_dish/dish_02.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, false, false, false),
-          new Dish(3, "Postre", require('../assets/images/images_dish/dish_03.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, false, false, false),
+          new Dish(1, 'Ensalada', require('../assets/images/images_dish/dish_01.jpg'), [], true, true, false),
+          new Dish(2, 'Carne', require('../assets/images/images_dish/dish_02.jpg'), [], false, false, false),
+          new Dish(3, 'Postre', require('../assets/images/images_dish/dish_03.jpg'), [], false, false, false),
+          new Dish(4, 'Pescado', require('../assets/images/images_dish/dish_04.jpg'), [], false, false, false),
+          new Dish(5, 'Sopa', require('../assets/images/images_dish/dish_05.jpg'), [], true, true, false),
+          new Dish(6, 'Pasta', require('../assets/images/images_dish/dish_06.jpg'), [], false, false, false),
         ];
         setAllAvailableDishes(fallbackDishes);
+      } catch (error) {
+        console.error('❌ Error cargando platos:', error);
       }
     };
+    loadMeals();
+  }, []);
+
+  /* mis platos favoritos */
+  const myDishes = [
+    new Dish(1, 'Ensalada', require('../assets/images/images_dish/dish_01.jpg'), [], true, true, false),
+    new Dish(3, 'Postre', require('../assets/images/images_dish/dish_03.jpg'), [], false, false, false),
+  ];
 
   {/*datos de la dieta*/ }
   {/*selectedDay: 0 = Lunes, 1 = Martes, ... 6 = Domingo*/ }
@@ -203,7 +177,7 @@ export default function AddDietMenu({ route }) {
   {/*button color*/ }
   const [bttId, setBttId] = useState(0);
 
-  {/*titulo crear dieta o nombre de la dieta*/}
+  {/*titulo crear dieta o nombre de la dieta*/ }
   const screenTitle = diet.getName() || "Crear una dieta";
 
   {/*gestion de imagenes locales y remotas*/ }
@@ -488,29 +462,70 @@ export default function AddDietMenu({ route }) {
 
   const saveDiet = async () => {
     try {
+      const userDocId = await AsyncStorage.getItem('userDocId');
+      if (!userDocId) {
+        Alert.alert('Error', 'No se pudo obtener la información del usuario. Por favor inicia sesión nuevamente.');
+        return;
+      }
+      if (!dietName || dietName.trim() === '') {
+        Alert.alert('Error', 'Por favor ingresa un nombre para la dieta');
+        return;
+      }
+
       diet.id = Date.now();
-      diet.name = dietName || `Dieta ${new Date().toLocaleDateString()}`;
-      diet.description = dietDescription || '';
+      diet.name = dietName.trim();
+      diet.description = dietDescription?.trim() || '';
       diet.imgUrl = selectedUri;
+
+      // Serializar weeklyDishes (Firestore no admite arrays anidados)
+      const serializedWeeklyDishes = {};
+      diet.weeklyDishes.forEach((dayDishes, dayIndex) => {
+        serializedWeeklyDishes[dayIndex.toString()] = (dayDishes || []).map(dish => ({
+          id: dish.id,
+          name: dish.name,
+          imgUrl: dish.imgUrl,
+          calories: dish.calories || 0,
+          ingredients: dish.ingredients || [],
+          vegetarian: dish.vegetarian || false,
+          vegan: dish.vegan || false,
+          gluten_free: dish.gluten_free || false,
+        }));
+      });
 
       const dietToSave = {
         id: diet.id,
         name: diet.name,
         description: diet.description,
-        imgUrl: diet.imgUrl,
-        weeklyDishes: diet.weeklyDishes
+        userID: userDocId,
+        weeklyDishes: serializedWeeklyDishes,
+        imgUrl: selectedUri || 'https://via.placeholder.com/300x300?text=Dieta',
+        type_diet: 'personalizada',
+        number_meals: 5,
       };
 
-      addingGroup.push(dietToSave);
+      const url = `${BACKEND_URL}/api/infopersonalizeddiet`;
+      console.log('📤 Enviando dieta a:', url);
 
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dietToSave),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Error HTTP ${response.status}`);
+      }
+
+      console.log('✅ Dieta guardada');
       setDietName('');
       setDietDescription('');
       setAllDishes([...diet.getAllDishes()]);
-
-      Alert.alert('Guardado', 'La dieta se ha guardado correctamente.');
+      Alert.alert('¡Éxito!', 'La dieta personalizada se ha guardado correctamente.');
+      navigation.goBack();
     } catch (err) {
-      console.error('Error saving diet:', err);
-      Alert.alert('Error', 'No se pudo guardar la dieta.');
+      console.error('❌ Error saving diet:', err);
+      Alert.alert('Error', err.message || 'No se pudo guardar la dieta. Verifica la conexión al servidor.');
     }
   };
 
@@ -558,26 +573,24 @@ export default function AddDietMenu({ route }) {
 
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="auto" />
+    <View style={[styles.container, darkMode && { backgroundColor: '#111' }]}>
+      <StatusBar style={darkMode ? 'light' : 'auto'} backgroundColor={darkMode ? '#111' : 'transparent'} translucent={true} />
 
-      <Header title={screenTitle} showBackButton={true} />
+      <Header title={screenTitle} showBackButton={true} darkMode={darkMode} />
 
-
-
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.scrollContent, darkMode && { backgroundColor: '#111' }]} showsVerticalScrollIndicator={false}>
         <View style={styles.grupoContainer}>
 
           {renderNameInput(creatingRecipe)}
 
           <View style={styles.daysContainer}>
-            <TouchableOpacity style={[styles.dayButton, { backgroundColor: 0 === bttId ? colors.light_gray : colors.white }]} onPress={() => { setSelectedDay(0); setDishes(diet.getDishesForDay(0)); setBttId(0); }}><Text>L</Text></TouchableOpacity>
-            <TouchableOpacity style={[styles.dayButton, { backgroundColor: 1 === bttId ? colors.light_gray : colors.white }]} onPress={() => { setSelectedDay(1); setDishes(diet.getDishesForDay(1)); setBttId(1) }}><Text>M</Text></TouchableOpacity>
-            <TouchableOpacity style={[styles.dayButton, { backgroundColor: 2 === bttId ? colors.light_gray : colors.white }]} onPress={() => { setSelectedDay(2); setDishes(diet.getDishesForDay(2), setBttId(2)); }}><Text>X</Text></TouchableOpacity>
-            <TouchableOpacity style={[styles.dayButton, { backgroundColor: 3 === bttId ? colors.light_gray : colors.white }]} onPress={() => { setSelectedDay(3); setDishes(diet.getDishesForDay(3), setBttId(3)); }}><Text>J</Text></TouchableOpacity>
-            <TouchableOpacity style={[styles.dayButton, { backgroundColor: 4 === bttId ? colors.light_gray : colors.white }]} onPress={() => { setSelectedDay(4); setDishes(diet.getDishesForDay(4), setBttId(4)); }}><Text>V</Text></TouchableOpacity>
-            <TouchableOpacity style={[styles.dayButton, { backgroundColor: 5 === bttId ? colors.light_gray : colors.white }]} onPress={() => { setSelectedDay(5); setDishes(diet.getDishesForDay(5), setBttId(5)); }}><Text>S</Text></TouchableOpacity>
-            <TouchableOpacity style={[styles.dayButton, { backgroundColor: 6 === bttId ? colors.light_gray : colors.white }]} onPress={() => { setSelectedDay(6); setDishes(diet.getDishesForDay(6), setBttId(6)); }}><Text>D</Text></TouchableOpacity>
+            <TouchableOpacity style={[styles.dayButton, { backgroundColor: 0 === bttId ? colors.light_gray : (darkMode ? '#333' : colors.white) }]} onPress={() => { setSelectedDay(0); setDishes(diet.getDishesForDay(0)); setBttId(0); }}><Text style={darkMode && { color: '#fff' }}>L</Text></TouchableOpacity>
+            <TouchableOpacity style={[styles.dayButton, { backgroundColor: 1 === bttId ? colors.light_gray : (darkMode ? '#333' : colors.white) }]} onPress={() => { setSelectedDay(1); setDishes(diet.getDishesForDay(1)); setBttId(1); }}><Text style={darkMode && { color: '#fff' }}>M</Text></TouchableOpacity>
+            <TouchableOpacity style={[styles.dayButton, { backgroundColor: 2 === bttId ? colors.light_gray : (darkMode ? '#333' : colors.white) }]} onPress={() => { setSelectedDay(2); setDishes(diet.getDishesForDay(2)); setBttId(2); }}><Text style={darkMode && { color: '#fff' }}>X</Text></TouchableOpacity>
+            <TouchableOpacity style={[styles.dayButton, { backgroundColor: 3 === bttId ? colors.light_gray : (darkMode ? '#333' : colors.white) }]} onPress={() => { setSelectedDay(3); setDishes(diet.getDishesForDay(3)); setBttId(3); }}><Text style={darkMode && { color: '#fff' }}>J</Text></TouchableOpacity>
+            <TouchableOpacity style={[styles.dayButton, { backgroundColor: 4 === bttId ? colors.light_gray : (darkMode ? '#333' : colors.white) }]} onPress={() => { setSelectedDay(4); setDishes(diet.getDishesForDay(4)); setBttId(4); }}><Text style={darkMode && { color: '#fff' }}>V</Text></TouchableOpacity>
+            <TouchableOpacity style={[styles.dayButton, { backgroundColor: 5 === bttId ? colors.light_gray : (darkMode ? '#333' : colors.white) }]} onPress={() => { setSelectedDay(5); setDishes(diet.getDishesForDay(5)); setBttId(5); }}><Text style={darkMode && { color: '#fff' }}>S</Text></TouchableOpacity>
+            <TouchableOpacity style={[styles.dayButton, { backgroundColor: 6 === bttId ? colors.light_gray : (darkMode ? '#333' : colors.white) }]} onPress={() => { setSelectedDay(6); setDishes(diet.getDishesForDay(6)); setBttId(6); }}><Text style={darkMode && { color: '#fff' }}>D</Text></TouchableOpacity>
           </View>
 
           {renderAddDishButton(creatingRecipe)}
@@ -585,7 +598,7 @@ export default function AddDietMenu({ route }) {
           {/*renderizar todos los dishes que haya en el día seleccionado*/}
           {renderDishList()}
 
-          <Text style={styles.grupoTitulo}>Totales</Text>
+          <Text style={[styles.grupoTitulo, darkMode && { color: '#fff' }]}>Totales</Text>
 
           {/*DIARIO*/}
           <Text style={styles.title_2}>Diario</Text>
@@ -642,7 +655,7 @@ export default function AddDietMenu({ route }) {
             <Text style={styles.text}>{calculateWeeklyTotals().totalProtein} g</Text>
           </View>
 
-          <Text style={styles.grupoTitulo}>Elegir imagen</Text>
+          <Text style={[styles.grupoTitulo, darkMode && { color: '#fff' }]}>Elegir imagen</Text>
 
           <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 10 }}>
             <TouchableOpacity onPress={() => imgMenuRef.current?.abrirMenu()} style={{ width: '100%', alignItems: 'center', marginBottom: 20 }}>

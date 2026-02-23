@@ -565,9 +565,9 @@ export default function ProfileScreen() {
 
       <Text style={[styles.sectionTitle, darkMode && styles.darkTextSecondary]}>Rutinas recientes</Text>
       {recentRoutines.length === 0 ? (
-        <TouchableOpacity onPress={() => navigation.navigate('Rutinas')} style={styles.emptyRoutinesBox}>
+        <TouchableOpacity onPress={() => navigation.navigate('Rutinas')} style={[styles.emptyRoutinesBox, darkMode && { borderColor: '#333', backgroundColor: '#1a1a1a' }]}>
           <Ionicons name="barbell-outline" size={28} color="#ef2b2d" />
-          <Text style={styles.emptyRoutinesText}>No has abierto ninguna rutina todavía.</Text>
+          <Text style={[styles.emptyRoutinesText, darkMode && { color: '#aaa' }]}>No has abierto ninguna rutina todavía.</Text>
           <Text style={styles.emptyRoutinesLink}>Ir a Rutinas →</Text>
         </TouchableOpacity>
       ) : (
@@ -578,15 +578,15 @@ export default function ProfileScreen() {
           return (
             <TouchableOpacity
               key={r.id + i}
-              style={[styles.recentRutinaBox, { borderLeftColor: r.color || '#ef2b2d' }]}
+              style={[styles.recentRutinaBox, { borderLeftColor: r.color || '#ef2b2d' }, darkMode && styles.darkRecentRutinaBox]}
               onPress={() => navigation.navigate('Rutinas')}
               activeOpacity={0.75}
             >
               <View style={styles.recentRutinaRow}>
                 <Ionicons name="barbell" size={20} color={r.color || '#ef2b2d'} />
                 <View style={{ flex: 1, marginLeft: 10 }}>
-                  <Text style={styles.recentRutinaNombre}>{r.nombre}</Text>
-                  <Text style={styles.recentRutinaDetalle}>{r.dificultad}</Text>
+                  <Text style={[styles.recentRutinaNombre, darkMode && styles.darkText]}>{r.nombre}</Text>
+                  <Text style={[styles.recentRutinaDetalle, darkMode && { color: '#aaa' }]}>{r.dificultad}</Text>
                 </View>
                 <Text style={styles.recentRutinaFecha}>{fechaStr} {horaStr}</Text>
               </View>
@@ -824,6 +824,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 4,
     elevation: 2,
+  },
+  darkRecentRutinaBox: {
+    backgroundColor: '#1e1e1e',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   recentRutinaRow: {
     flexDirection: 'row',

@@ -1,13 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput,
-  SafeAreaView,
-  ImageBackground,
-  Platform,
+  View, Text, TouchableOpacity, ScrollView,
+  SafeAreaView, ImageBackground,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import styles from './stylesheet.js';
@@ -15,37 +12,87 @@ import Dish from '../src/objects/Dish.js';
 import Diet from '../src/objects/Diet.js';
 import DietGroup from '../src/objects/DietGroup.js';
 import { getAllMeals } from '../src/services/MealsService';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import Ingredient from '../src/objects/Ingredient.js';
 import Header from '../src/components/Header';
+import { BACKEND_URL } from '../src/config';
 
 export default function Alimentacion() {
 
   const navigation = useNavigation();
 
-  {/*platos desde Firestore*/ }
+  /* ---------- dark mode ---------- */
+  const [darkMode, setDarkMode] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      const loadTheme = async () => {
+        const savedTheme = await AsyncStorage.getItem('darkMode');
+        setDarkMode(savedTheme === 'true');
+      };
+      loadTheme();
+    }, [])
+  );
+
+  /* ---------- platos desde Firestore ---------- */
   const [allDishes, setAllDishes] = useState([]);
 
-  {/*dietas personalizadas del usuario*/ }
+  useEffect(() => {
+    const loadMeals = async () => {
+      try {
+        const meals = await getAllMeals();
+        if (meals && meals.length > 0) {
+          const dishesFromDB = meals.map((meal, index) => {
+            // Dish(id, name, imgUrl, ingredientsWithGrams, vegetarian, vegan, gluten_free)
+            // ingredients from Firestore are plain strings — wrap in {ingredient, grams} shape
+            const rawIngredients = meal.ingredients || [];
+            const ingredientsWithGrams = Array.isArray(rawIngredients)
+              ? rawIngredients.map(i =>
+                typeof i === 'object' && i.ingredient
+                  ? i                                   // already correct shape
+                  : { ingredient: { name: i, calories: 0, fiber: 0, carbohydrates: 0, fat: 0, protein: 0 }, grams: 0 }
+              )
+              : [];
+
+            return new Dish(
+              meal.id || index,
+              meal.name,
+              meal.imgUrl || require('../assets/images/images_dish/dish_01.jpg'),
+              ingredientsWithGrams,
+              meal.vegetarian || false,
+              meal.vegan || false,
+              meal.gluten_free || false,
+              meal.calories || 0
+            );
+          });
+          setAllDishes(dishesFromDB);
+          console.log('✅ Platos cargados en Alimentacion:', dishesFromDB.length);
+        } else {
+          console.warn('⚠️  No se obtuvieron platos, usando fallback');
+          setAllDishes([]);
+        }
+      } catch (error) {
+        console.error('❌ Error cargando platos:', error);
+        setAllDishes([]);
+      }
+    };
+    loadMeals();
+  }, []);
+
+  /* ---------- dietas personalizadas del usuario ---------- */
   const [userPersonalizedDiets, setUserPersonalizedDiets] = useState([]);
 
-  {/*cargar dietas personalizadas del usuario cuando se enfoca la pantalla*/ }
   useFocusEffect(
     React.useCallback(() => {
       let isMounted = true;
 
       const loadUserPersonalizedDiets = async () => {
         try {
-          const userDocId = await AsyncStorage.getItem("userDocId");
+          const userDocId = await AsyncStorage.getItem('userDocId');
           if (!userDocId) {
             console.warn('⚠️ No se encontró userDocId');
             return;
           }
 
-          // Usar 10.0.2.2 para emulador Android, localhost para otros
-          const host = '10.0.2.2'; // Android emulator
-          const port = '8082';
-          const url = `http://${host}:${port}/api/infopersonalizeddiet/user/${userDocId}`;
+          const url = `${BACKEND_URL}/api/infopersonalizeddiet/user/${userDocId}`;
 
           console.log('📥 Cargando dietas de:', url);
           const response = await fetch(url);
@@ -68,7 +115,6 @@ export default function Alimentacion() {
         }
       };
 
-      // Cargar inmediatamente
       loadUserPersonalizedDiets();
 
       return () => {
@@ -77,87 +123,49 @@ export default function Alimentacion() {
     }, [])
   );
 
-  {/*cargar platos desde Firestore al montar el componente*/ }
-  useEffect(() => {
-    const loadMeals = async () => {
-      try {
-        const meals = await getAllMeals();
-        if (meals && meals.length > 0) {
-          const dishesFromDB = meals.map((meal, index) =>
-            new Dish(
-              meal.id || index,
-              meal.name,
-              meal.imgUrl || require('../assets/images/images_dish/dish_01.jpg'),
-              meal.macronutrients || 0,
-              meal.ingredients || [],
-              meal.calories || 0,
-              meal.vegetarian || false,
-              meal.vegan || false,
-              meal.gluten_free || false
-            )
-          );
-          setAllDishes(dishesFromDB);
-          console.log('✅ Platos cargados en Alimentacion:', dishesFromDB.length);
-        } else {
-          // Si no hay platos, usar fallback
-          console.warn('⚠️  No se obtuvieron platos, usando fallback');
-          setAllDishes([]);
-        }
-      } catch (error) {
-        console.error('❌ Error cargando platos:', error);
-        setAllDishes([]);
-      }
-    };
-
-    loadMeals();
-  }, []);
-
-  {/* diets de prueba - usar platos dinámicos */}
+  /* ---------- dietas por defecto (fallback) ---------- */
   const createDefaultDiets = () => {
-    // Si no hay platos, crear fallback
     let dishes = allDishes;
     if (dishes.length === 0) {
       dishes = [
-        new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, true, true, false),
-        new Dish(2, "Carne", require('../assets/images/images_dish/dish_02.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, false, false, false),
-        new Dish(3, "Postre", require('../assets/images/images_dish/dish_03.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, false, false, false),
-        new Dish(4, "Pescado", require('../assets/images/images_dish/dish_04.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, false, false, false),
-        new Dish(5, "Sopa", require('../assets/images/images_dish/dish_05.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, true, true, false),
-        new Dish(6, "Pasta", require('../assets/images/images_dish/dish_06.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, false, false, false),
+        new Dish(1, 'Ensalada', require('../assets/images/images_dish/dish_01.jpg'), 400, ['ingrediente1', 'ingrediente2'], 500, true, true, false),
+        new Dish(2, 'Carne', require('../assets/images/images_dish/dish_02.jpg'), 400, ['ingrediente1', 'ingrediente2'], 500, false, false, false),
+        new Dish(3, 'Postre', require('../assets/images/images_dish/dish_03.jpg'), 400, ['ingrediente1', 'ingrediente2'], 500, false, false, false),
+        new Dish(4, 'Pescado', require('../assets/images/images_dish/dish_04.jpg'), 400, ['ingrediente1', 'ingrediente2'], 500, false, false, false),
+        new Dish(5, 'Sopa', require('../assets/images/images_dish/dish_05.jpg'), 400, ['ingrediente1', 'ingrediente2'], 500, true, true, false),
+        new Dish(6, 'Pasta', require('../assets/images/images_dish/dish_06.jpg'), 400, ['ingrediente1', 'ingrediente2'], 500, false, false, false),
       ];
     }
 
-    const p1 = dishes[0] || new Dish(1, "Plato 1", require('../assets/images/images_dish/dish_01.jpg'), 400, [], 500, false, false, false);
-    const p2 = dishes[1] || new Dish(2, "Plato 2", require('../assets/images/images_dish/dish_02.jpg'), 400, [], 500, false, false, false);
-    const p3 = dishes[2] || new Dish(3, "Plato 3", require('../assets/images/images_dish/dish_03.jpg'), 400, [], 500, false, false, false);
-    const p4 = dishes[3] || new Dish(4, "Plato 4", require('../assets/images/images_dish/dish_04.jpg'), 400, [], 500, false, false, false);
-    const p5 = dishes[4] || new Dish(5, "Plato 5", require('../assets/images/images_dish/dish_05.jpg'), 400, [], 500, false, false, false);
-    const p6 = dishes[5] || new Dish(6, "Plato 6", require('../assets/images/images_dish/dish_06.jpg'), 400, [], 500, false, false, false);
+    const p1 = dishes[0] || new Dish(1, 'Plato 1', require('../assets/images/images_dish/dish_01.jpg'), 400, [], 500, false, false, false);
+    const p2 = dishes[1] || new Dish(2, 'Plato 2', require('../assets/images/images_dish/dish_02.jpg'), 400, [], 500, false, false, false);
+    const p3 = dishes[2] || new Dish(3, 'Plato 3', require('../assets/images/images_dish/dish_03.jpg'), 400, [], 500, false, false, false);
+    const p4 = dishes[3] || new Dish(4, 'Plato 4', require('../assets/images/images_dish/dish_04.jpg'), 400, [], 500, false, false, false);
+    const p5 = dishes[4] || new Dish(5, 'Plato 5', require('../assets/images/images_dish/dish_05.jpg'), 400, [], 500, false, false, false);
+    const p6 = dishes[5] || new Dish(6, 'Plato 6', require('../assets/images/images_dish/dish_06.jpg'), 400, [], 500, false, false, false);
 
-    let r1 = new Diet(1, "Dieta Balanceada", "descripcion", require('../assets/images/images_diet/diet_02.jpg'), [[p2, p3, p6], [p6, p4, p5], [p5, p4, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
-    let r2 = new Diet(2, "Dieta Vegana", "descripcion", require('../assets/images/images_diet/diet_02.jpg'), [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
-    let r3 = new Diet(3, "Dieta Cetogénica", "descripcion", require('../assets/images/images_diet/diet_01.jpg'), [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
-    let r4 = new Diet(4, "Dieta Mediterránea", "descripcion", require('../assets/images/images_diet/diet_01.jpg'), [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
-    let r5 = new Diet(5, "Dieta Alta en Proteínas", "descripcion", require('../assets/images/images_diet/diet_01.jpg'), [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
-    let r6 = new Diet(6, "Dieta Baja en Carbohidratos", "descripcion", require('../assets/images/images_diet/diet_01.jpg'), [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
+    const r1 = new Diet(1, 'Dieta Balanceada', 'descripcion', require('../assets/images/images_diet/diet_02.jpg'), [[p2, p3, p6], [p6, p4, p5], [p5, p4, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
+    const r2 = new Diet(2, 'Dieta Vegana', 'descripcion', require('../assets/images/images_diet/diet_02.jpg'), [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
+    const r3 = new Diet(3, 'Dieta Cetogénica', 'descripcion', require('../assets/images/images_diet/diet_01.jpg'), [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
+    const r4 = new Diet(4, 'Dieta Mediterránea', 'descripcion', require('../assets/images/images_diet/diet_01.jpg'), [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
+    const r5 = new Diet(5, 'Dieta Alta en Proteínas', 'descripcion', require('../assets/images/images_diet/diet_01.jpg'), [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
+    const r6 = new Diet(6, 'Dieta Baja en Carbohidratos', 'descripcion', require('../assets/images/images_diet/diet_01.jpg'), [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
 
     return [r1, r2, r3, r4, r5, r6];
   };
 
-
-  // Inicializar con solo dietas por defecto
+  // Inicializar grupos con dietas por defecto
   const defaultDiets = createDefaultDiets();
   const [recipesGroups, setRecipesGroups] = useState({
-    g1: new DietGroup(1, "Trending", defaultDiets),
-    g2: new DietGroup(2, "Mis dietas", defaultDiets.slice(2, 5), true),
-    g3: new DietGroup(3, "Para ganar músculo", defaultDiets.slice(0, 5))
+    g1: new DietGroup(1, 'Trending', defaultDiets),
+    g2: new DietGroup(2, 'Mis dietas', defaultDiets.slice(2, 5), true),
+    g3: new DietGroup(3, 'Para ganar músculo', defaultDiets.slice(0, 5)),
   });
 
   // Actualizar recipesGroups cuando userPersonalizedDiets cambia
   useEffect(() => {
-    const defaultDiets = createDefaultDiets();
+    const defaults = createDefaultDiets();
 
-    // Convertir dietas de Firestore a objetos Diet DENTRO del useEffect
     let personalizedDiets = [];
     if (userPersonalizedDiets && userPersonalizedDiets.length > 0) {
       const dietImages = [
@@ -181,7 +189,6 @@ export default function Alimentacion() {
           }
         }
 
-        // Usar una imagen de las disponibles (rotando entre diet_01 y diet_02)
         const imageIndex = index % dietImages.length;
 
         return new Diet(
@@ -194,77 +201,41 @@ export default function Alimentacion() {
       });
     }
 
-    const g1 = new DietGroup(1, "Trending", [...defaultDiets]);
-    const g2 = new DietGroup(2, "Mis dietas", personalizedDiets.length > 0 ? [...personalizedDiets] : [...defaultDiets.slice(2, 5)], true);
-    const g3 = new DietGroup(3, "Para ganar músculo", [...defaultDiets.slice(0, 5)]);
+    const g1 = new DietGroup(1, 'Trending', [...defaults]);
+    const g2 = new DietGroup(2, 'Mis dietas', personalizedDiets.length > 0 ? [...personalizedDiets] : [...defaults.slice(2, 5)], true);
+    const g3 = new DietGroup(3, 'Para ganar músculo', [...defaults.slice(0, 5)]);
 
-    setRecipesGroups({
-      g1, g2, g3
-    });
+    setRecipesGroups({ g1, g2, g3 });
   }, [userPersonalizedDiets]);
 
-  const [diets, setDiet] = useState([]);
-  const [darkMode, setDarkMode] = useState(false);
+  /* ---------- navegación ---------- */
+  const handleEnterDiet = (diet) => {
+    if (!diet) {
+      console.warn('handleEnterDiet: diet is undefined');
+      return;
+    }
+    navigation.navigate('AddDietMenu', { diet });
+  };
 
-  // Cargar preferencia cada vez que entramos
-  useFocusEffect(
-    useCallback(() => {
-      const loadTheme = async () => {
-        const savedTheme = await AsyncStorage.getItem("darkMode");
-        setDarkMode(savedTheme === "true");
-      };
-      loadTheme();
-    }, [])
-  );
+  const handleEnterGrupoCompleto = (group) => {
+    navigation.navigate('ListaGrupoRecetas', {
+      name: group.name,
+      recipes: group.recipes,
+    });
+  };
 
-  const renderGrupo = (group) => (
+  const handleCreateNewDiet = (group) => {
+    navigation.navigate('AddDietMenu', { recipes: group.recipes ?? group });
+  };
 
-
-    <View style={styles.grupoContainer}>
-      {/* group title */}
-      <Text style={[styles.grupoTitulo, darkMode && { color: '#fff' }]}>{group.name}</Text>
-      {/* recipes row */}
-      <View style={styles.recetasRow}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {/* map displays a list of the items that are inside the function */}
-          {group.recipes.slice(0, 3).map((diet) => (
-            renderRecetaCard(diet)
-          ))}
-
-          {showAddCard(group.canEdit, group)}
-
-          <TouchableOpacity
-            style={[styles.seeMoreCard, darkMode && { backgroundColor: '#000', borderColor: '#fff' }]}
-            onPress={() => handleEnterGrupoCompleto(group)}>
-            <Ionicons name="arrow-forward" size={24} color={darkMode ? "#fff" : "#111114"} />
-            <Text style={{ color: darkMode ? "#fff" : '#111114', fontWeight: '600' }}>Ver más</Text>
-          </TouchableOpacity>
-
-        </ScrollView>
-
-      </View>
-    </View>
-    );
-
-  {/* render a card*/ }
+  /* ---------- render helpers ---------- */
   const renderRecetaCard = (diet) => {
-    // Convertir diet a objeto plano si es una instancia de Diet
-    const dietObj = {
-      id: diet.id,
-      name: diet.name,
-      description: diet.description,
-      imgUrl: diet.imgUrl,
-      weeklyDishes: diet.weeklyDishes
-    };
-
-    // Determinar la imagen: si es un número (require), usarlo directamente; si es string, tratarlo como URI
     let imageSource;
-    if (typeof dietObj.imgUrl === 'number') {
-      imageSource = dietObj.imgUrl;
-    } else if (typeof dietObj.imgUrl === 'string') {
-      imageSource = { uri: dietObj.imgUrl };
+    if (typeof diet.imgUrl === 'number') {
+      imageSource = diet.imgUrl;
+    } else if (typeof diet.imgUrl === 'string' && diet.imgUrl) {
+      imageSource = { uri: diet.imgUrl };
     } else {
-      // Si no es válido, usar imagen por defecto
       imageSource = require('../assets/images/images_diet/diet_02.jpg');
     }
 
@@ -272,11 +243,11 @@ export default function Alimentacion() {
       <TouchableOpacity
         key={diet.id}
         style={[styles.recipeCards, styles.recetaCard, darkMode && { backgroundColor: '#000', borderColor: '#000' }]}
-        onPress={() => {
-          handleEnterDiet(diet);
-        }}>
-
-        <ImageBackground source={typeof diet.imgUrl === 'number' ? diet.imgUrl : { uri: diet.imgUrl }} resizeMode="cover" style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', zIndex: -1, borderRadius: 14, overflow: 'hidden' }}>
+        onPress={() => handleEnterDiet(diet)}>
+        <ImageBackground
+          source={imageSource}
+          resizeMode="cover"
+          style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', borderRadius: 14, overflow: 'hidden' }}>
           <Text style={styles.recetaTextoTitulo}>{diet.name}</Text>
           <Text style={styles.recetaTexto}>Subtítulo</Text>
         </ImageBackground>
@@ -284,69 +255,57 @@ export default function Alimentacion() {
     );
   };
 
-  {/* ahow add more card if true */ }
   const showAddCard = (show, group) => {
-    console.log("showAddCard: ", group)
-    if (show) {
-      return (
-        <TouchableOpacity style={[styles.addCard, darkMode && { backgroundColor: '#000' }]} onPress={() => handleCreateNewDiet(group)}>
-          <Ionicons name="add" size={32} color="#ef2b2d" />
-        </TouchableOpacity>
-      );
-    }
-    return null;
-  }
-
-  {/*Enter a recipe card handler*/ }
-  const handleEnterDiet = (diet) => {
-    if (!diet) {
-      console.warn('handleEntrarDiet: diet is undefined');
-      return;
-    }
-    // Pass diet inside the params object so AddDietMenu receives it as route.params.diet
-    navigation.navigate('AddDietMenu', { diet });
+    if (!show) return null;
+    return (
+      <TouchableOpacity
+        style={[styles.addCard, darkMode && { backgroundColor: '#000' }]}
+        onPress={() => handleCreateNewDiet(group)}>
+        <Ionicons name="add" size={32} color="#ef2b2d" />
+      </TouchableOpacity>
+    );
   };
 
-  {/*See More button handler*/ }
-  const handleEnterGrupoCompleto = (group) => {
-    navigation.navigate('ListaGrupoRecetas', {
-      name: group.name,
-      recipes: group.recipes
-    });
-  };
+  const renderGrupo = (group) => (
+    <View style={styles.grupoContainer}>
+      <Text style={[styles.grupoTitulo, darkMode && { color: '#fff' }]}>{group.name}</Text>
+      <View style={styles.recetasRow}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {group.recipes.slice(0, 3).map((diet) => renderRecetaCard(diet))}
 
-  {/*enter the create a new diet menu*/ }
-  const handleCreateNewDiet = (group) => {
-    // Send group recipes in params so AddDietMenu can read route.params.recipes
-    navigation.navigate('AddDietMenu', { recipes: group.recipes ?? group });
-  }
+          {showAddCard(group.canEdit, group)}
 
+          <TouchableOpacity
+            style={[styles.seeMoreCard, darkMode && { backgroundColor: '#000', borderColor: '#fff' }]}
+            onPress={() => handleEnterGrupoCompleto(group)}>
+            <Ionicons name="arrow-forward" size={24} color={darkMode ? '#fff' : '#111114'} />
+            <Text style={{ color: darkMode ? '#fff' : '#111114', fontWeight: '600' }}>Ver más</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+    </View>
+  );
+
+  /* ---------- render principal ---------- */
   return (
-
-    <View style={styles.container}>
-      <StatusBar style="auto" />
-
-      <Header title="Alimentación" showBackButton={false} />
-    <View style={[
-      styles.container,
-      darkMode && { backgroundColor: '#000' },
-      { justifyContent: 'flex-start', paddingBottom: 0, marginTop: 0, paddingTop: Platform.OS === "android" ? 30 : 0 }
-    ]}>
-      <StatusBar style={darkMode ? "light" : "auto"} backgroundColor={darkMode ? "#000" : "transparent"} translucent={true} />
+    <View style={[styles.container, darkMode && { backgroundColor: '#000' }]}>
+      <StatusBar
+        style={darkMode ? 'light' : 'auto'}
+        backgroundColor={darkMode ? '#000' : 'transparent'}
+        translucent={true}
+      />
 
       <Header title="Alimentación" showBackButton={false} darkMode={darkMode} />
 
-      {/* render groups */}
-      <ScrollView contentContainerStyle={[styles.scrollContent, darkMode && { backgroundColor: '#000' }]} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[styles.scrollContent, darkMode && { backgroundColor: '#000' }]}
+        showsVerticalScrollIndicator={false}>
         <SafeAreaView>
           {renderGrupo(recipesGroups.g1)}
           {renderGrupo(recipesGroups.g2)}
           {renderGrupo(recipesGroups.g3)}
-          {renderGrupo(recipesGroups.g1)}
         </SafeAreaView>
       </ScrollView>
     </View>
-
   );
 }
-

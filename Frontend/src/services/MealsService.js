@@ -22,25 +22,34 @@ export const getAllMeals = async () => {
     console.log('📥 Intentando obtener platos de Firestore...');
     const mealsCollection = collection(db, 'infomeals');
     const querySnapshot = await getDocs(mealsCollection);
-    
+
     const meals = [];
     querySnapshot.forEach((doc) => {
       const data = doc.data();
       meals.push({
         id: doc.id,
         name: data.name || data.nombre || '',
+        // Firestore usa "image", no "imgUrl"
         imgUrl: data.imgUrl || data.image || data.imagen || '',
-        calories: data.kcal || data.calories || 0,
+        // Firestore usa "kcal", no "calories"
+        calories: data.calories || data.kcal || 0,
         macronutrients: data.protein || data.proteins || data.proteina || 0,
-        ingredients: Array.isArray(data.ingredients) ? data.ingredients : 
-                    typeof data.ingredients === 'string' ? [data.ingredients] : [],
+        // ingredients es Array de strings en Firestore
+        ingredients: Array.isArray(data.ingredients)
+          ? data.ingredients
+          : typeof data.ingredients === 'string'
+            ? [data.ingredients]
+            : [],
         vegetarian: data.vegetarian || false,
         vegan: data.vegan || false,
-        gluten_free: data.gluten_free || data.gluten === false || false,
-        ...data
+        // Firestore usa "gluten" (true = tiene gluten), gluten_free es lo contrario
+        gluten_free: data.gluten_free !== undefined
+          ? data.gluten_free
+          : data.gluten === false,   // gluten:false → sin gluten → gluten_free:true
+        description: data.description || '',
       });
     });
-    
+
     console.log('✅ Platos obtenidos de Firestore:', meals.length);
     return meals;
   } catch (error) {
@@ -78,7 +87,7 @@ export const getMealById = async (mealId) => {
   try {
     const mealsCollection = collection(db, 'infomeals');
     const querySnapshot = await getDocs(mealsCollection);
-    
+
     let meal = null;
     querySnapshot.forEach((doc) => {
       if (doc.id === mealId) {
@@ -89,8 +98,8 @@ export const getMealById = async (mealId) => {
           imgUrl: data.imgUrl || data.image || data.imagen || '',
           calories: data.kcal || data.calories || 0,
           macronutrients: data.protein || data.proteins || data.proteina || 0,
-          ingredients: Array.isArray(data.ingredients) ? data.ingredients : 
-                      typeof data.ingredients === 'string' ? [data.ingredients] : [],
+          ingredients: Array.isArray(data.ingredients) ? data.ingredients :
+            typeof data.ingredients === 'string' ? [data.ingredients] : [],
           vegetarian: data.vegetarian || false,
           vegan: data.vegan || false,
           gluten_free: data.gluten_free || data.gluten === false || false,
@@ -98,7 +107,7 @@ export const getMealById = async (mealId) => {
         };
       }
     });
-    
+
     return meal;
   } catch (error) {
     console.error('❌ Error obteniendo plato de Firestore:', error);

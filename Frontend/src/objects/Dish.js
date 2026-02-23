@@ -2,14 +2,15 @@ import Ingredient from './Ingredient';
 
 export default class Dish {
 
-  constructor(id, name, imgUrl, ingredientsWithGrams, vegetarian, vegan, gluten_free) {
+  constructor(id, name, imgUrl, ingredientsWithGrams, vegetarian, vegan, gluten_free, calories = 0) {
     this.id = id;
     this.name = name;
     this.imgUrl = imgUrl;
-    this.ingredients = ingredientsWithGrams; // ← SIEMPRE este formato
+    this.ingredients = Array.isArray(ingredientsWithGrams) ? ingredientsWithGrams : [];
     this.vegetarian = vegetarian;
     this.vegan = vegan;
     this.gluten_free = gluten_free;
+    this.calories = calories; // calorías directas (fallback cuando no hay datos de ingredientes)
   }
 
   getIngredientsWithGrams() {
@@ -25,17 +26,17 @@ export default class Dish {
   }
 
   // Reconstruye una instancia de Dish desde un objeto plano (p.ej. desde JSON / route params)
-static from(obj) {
-  if (!obj) return null;
-  
-  const IngredientClass = require('./Ingredient').default;
+  static from(obj) {
+    if (!obj) return null;
 
-  const ingredientsWithGrams = (obj.ingredients || []).map(item => {
-    // Caso 1: Formato correcto { ingredient: {...}, grams: X }
-    if (item.ingredient) {
-      const ing = item.ingredient instanceof IngredientClass
-        ? item.ingredient
-        : new Ingredient(
+    const IngredientClass = require('./Ingredient').default;
+
+    const ingredientsWithGrams = (obj.ingredients || []).map(item => {
+      // Caso 1: Formato correcto { ingredient: {...}, grams: X }
+      if (item.ingredient) {
+        const ing = item.ingredient instanceof IngredientClass
+          ? item.ingredient
+          : new Ingredient(
             item.ingredient.id,
             item.ingredient.name,
             item.ingredient.calories,
@@ -46,13 +47,13 @@ static from(obj) {
             item.ingredient.imgUrl
           );
 
-      return { ingredient: ing, grams: item.grams };
-    }
+        return { ingredient: ing, grams: item.grams };
+      }
 
-    // Caso 2: Formato incorrecto → item ES el ingrediente
-    const ing = item instanceof IngredientClass
-      ? item
-      : new IngredientClass(
+      // Caso 2: Formato incorrecto → item ES el ingrediente
+      const ing = item instanceof IngredientClass
+        ? item
+        : new IngredientClass(
           item.id,
           item.name,
           item.calories,
@@ -63,19 +64,19 @@ static from(obj) {
           item.imgUrl
         );
 
-    return { ingredient: ing, grams: item.grams ?? 0 };
-  });
+      return { ingredient: ing, grams: item.grams ?? 0 };
+    });
 
-  return new Dish(
-    obj.id,
-    obj.name,
-    obj.imgUrl,
-    ingredientsWithGrams,
-    obj.vegetarian,
-    obj.vegan,
-    obj.gluten_free
-  );
-}
+    return new Dish(
+      obj.id,
+      obj.name,
+      obj.imgUrl,
+      ingredientsWithGrams,
+      obj.vegetarian,
+      obj.vegan,
+      obj.gluten_free
+    );
+  }
 
   getUrl() {
     return this.imgUrl;
@@ -90,10 +91,17 @@ static from(obj) {
   }
 
   getTotalCalories() {
-    return this.ingredients.reduce((total, item) => {
-      const caloriesPerGram = item.ingredient.calories / item.ingredient.grams;
-      return total + caloriesPerGram * item.grams;
+    if (!Array.isArray(this.ingredients) || this.ingredients.length === 0) {
+      return this.calories || 0;
+    }
+    const fromIngredients = this.ingredients.reduce((total, item) => {
+      if (!item || !item.ingredient) return total;
+      const cal = item.ingredient.calories || 0;
+      const g = item.grams || 0;
+      return total + (cal * g) / 100;
     }, 0);
+    // Si los ingredientes no aportan datos (grams todos 0), usar calorías directas
+    return fromIngredients > 0 ? fromIngredients : (this.calories || 0);
   }
 }
 

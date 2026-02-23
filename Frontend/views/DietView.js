@@ -13,7 +13,7 @@ import Diet from '../src/objects/Diet';
 import Dish from '../src/objects/Dish';
 import Alimentacion from './Alimentacion';
 import { SearchMenu } from '../src/components/SearchMenu';
-import { WeeklyItemsMenu } from '../src/components/WeeklyItemsMenu';
+
 import { getAllMeals } from '../src/services/MealsService';
 
 const { height } = Dimensions.get('window');
@@ -52,19 +52,26 @@ export default function DietView({ route }) {
       try {
         const meals = await getAllMeals();
         if (meals && meals.length > 0) {
-          const dishesFromDB = meals.map((meal, index) =>
-            new Dish(
+          const dishesFromDB = meals.map((meal, index) => {
+            const rawIng = meal.ingredients || [];
+            const ingredientsWithGrams = Array.isArray(rawIng)
+              ? rawIng.map(i =>
+                typeof i === 'object' && i.ingredient
+                  ? i
+                  : { ingredient: { name: String(i), calories: 0, fiber: 0, carbohydrates: 0, fat: 0, protein: 0 }, grams: 0 }
+              )
+              : [];
+            return new Dish(
               meal.id || index,
               meal.name,
               meal.imgUrl || require('../assets/images/images_dish/dish_01.jpg'),
-              meal.macronutrients || 0,
-              meal.ingredients || [],
-              meal.calories || 0,
+              ingredientsWithGrams,
               meal.vegetarian || false,
               meal.vegan || false,
-              meal.gluten_free || false
-            )
-          );
+              meal.gluten_free || false,
+              meal.calories || 0
+            );
+          });
           setAllAvailableDishes(dishesFromDB);
 
           // Obtener platos de la dieta
@@ -81,12 +88,11 @@ export default function DietView({ route }) {
                   dishFromDiet.id,
                   dishFromDiet.name,
                   completeDish.imgUrl,
-                  dishFromDiet.macronutrients || completeDish.macronutrients,
                   dishFromDiet.ingredients || completeDish.ingredients || [],
-                  dishFromDiet.calories || completeDish.calories,
                   dishFromDiet.vegetarian !== undefined ? dishFromDiet.vegetarian : completeDish.vegetarian,
                   dishFromDiet.vegan !== undefined ? dishFromDiet.vegan : completeDish.vegan,
-                  dishFromDiet.gluten_free !== undefined ? dishFromDiet.gluten_free : completeDish.gluten_free
+                  dishFromDiet.gluten_free !== undefined ? dishFromDiet.gluten_free : completeDish.gluten_free,
+                  dishFromDiet.calories || completeDish.calories || 0
                 );
               }
               return dishFromDiet;
