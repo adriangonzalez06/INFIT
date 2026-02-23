@@ -420,7 +420,7 @@ export default function Rutinas() {
       <StatusBar style={darkMode ? "light" : "auto"} />
       <Header title="Rutinas" showBackButton={false} />
 
-      <View style={styles.greetingContainer}>
+      <View style={[styles.greetingContainer, darkMode && { backgroundColor: '#121212' }]}>
         <Text style={[styles.greetingText, darkMode && styles.darkText]}>Hola {userName || 'usuario'},</Text>
         <Text style={[styles.subGreetingText, darkMode && styles.darkTextSecondary]}>¿listo para entrenar?</Text>
       </View>

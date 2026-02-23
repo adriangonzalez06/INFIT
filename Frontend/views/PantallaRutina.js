@@ -198,10 +198,10 @@ export default function PantallaRutina({ route, navigation }) {
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <TouchableOpacity
-            onLongPress={() => {
+            onLongPress={grupoKey !== 'predefinidas' ? () => {
               setEjercicioSeleccionado(item);
               setOpcionesVisible(true);
-            }}
+            } : undefined}
           >
             <View style={[styles.ejercicioItem, darkMode && styles.darkItemBorder]}>
               {item.animacion ? (
@@ -237,7 +237,7 @@ export default function PantallaRutina({ route, navigation }) {
           </TouchableOpacity>
         )}
         ListEmptyComponent={
-          <Text style={styles.emptyText}>No hay ejercicios añadidos aún.</Text>
+          <Text style={[styles.emptyText, darkMode && styles.darkTextSecondary]}>No hay ejercicios añadidos aún.</Text>
         }
       />
 
@@ -269,11 +269,11 @@ export default function PantallaRutina({ route, navigation }) {
 
                 return (
                   <View>
-                    <Text style={styles.grupoTitulo}>{grupo.toUpperCase()}</Text>
+                    <Text style={[styles.grupoTitulo, darkMode && { color: '#ef5656' }]}>{grupo.toUpperCase()}</Text>
                     {filteredList.map((ejercicio) => (
                       <TouchableOpacity
                         key={ejercicio.id || ejercicio.name}
-                        style={styles.ejercicioItemModal}
+                        style={[styles.ejercicioItemModal, darkMode && { borderBottomColor: '#333' }]}
                         onPress={() => {
                           setModoEdicion(false);
                           setEjercicioEnEdicion(ejercicio);
@@ -311,7 +311,7 @@ export default function PantallaRutina({ route, navigation }) {
                 );
               }}
               ListEmptyComponent={
-                <Text style={{ textAlign: 'center', padding: 20 }}>
+                <Text style={[{ textAlign: 'center', padding: 20 }, darkMode && styles.darkTextSecondary]}>
                   {Object.keys(backendExercises).length === 0 ? 'Cargando ejercicios...' : 'No se encontraron ejercicios.'}
                 </Text>
               }
@@ -355,13 +355,13 @@ export default function PantallaRutina({ route, navigation }) {
 
             {/* DUPLICAR */}
             <TouchableOpacity
-              style={styles.optionButton2}
+              style={[styles.optionButton2, darkMode && styles.darkOptionButton]}
               onPress={() => {
                 handleDuplicateEjercicio();
               }}
             >
               <Ionicons name="copy-outline" size={22} color="#ef2b2d" />
-              <Text style={styles.optionText}>Duplicar ejercicio</Text>
+              <Text style={[styles.optionText, darkMode && styles.darkText]}>Duplicar ejercicio</Text>
             </TouchableOpacity>
 
             {/* ELIMINAR */}
@@ -378,7 +378,7 @@ export default function PantallaRutina({ route, navigation }) {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.cancelButton}
+              style={[styles.cancelButton, darkMode && { backgroundColor: '#2a2a2a' }]}
               onPress={() => setOpcionesVisible(false)}
             >
               <Text style={styles.cancelText}>Cancelar</Text>
@@ -390,8 +390,8 @@ export default function PantallaRutina({ route, navigation }) {
       {/* MODAL DETALLES */}
       <Modal visible={detallesVisible} transparent animationType="slide">
         <View style={styles.optionsOverlay}>
-          <View style={styles.optionsCard}>
-            <Text style={styles.optionsTitle}>{ejercicioEnEdicion?.nombre || ejercicioEnEdicion?.name}</Text>
+          <View style={[styles.optionsCard, darkMode && styles.darkModalContent]}>
+            <Text style={[styles.optionsTitle, darkMode && styles.darkText]}>{ejercicioEnEdicion?.nombre || ejercicioEnEdicion?.name}</Text>
 
             {ejercicioEnEdicion?.animacion ? (
               <LottieView
@@ -409,23 +409,25 @@ export default function PantallaRutina({ route, navigation }) {
             ) : null}
 
             <TextInput
-              style={styles.inputDescripcion}
+              style={[styles.inputDescripcion, darkMode && { backgroundColor: '#2a2a2a', color: '#aaa' }]}
               value={descripcionEjercicio}
               editable={false}
               multiline
             />
 
             <TextInput
-              style={styles.input}
+              style={[styles.input, darkMode && styles.darkInput]}
               placeholder="Repeticiones"
+              placeholderTextColor={darkMode ? "#888" : "#999"}
               keyboardType="numeric"
               value={repeticionesEjercicio}
               onChangeText={setRepeticionesEjercicio}
             />
 
             <TextInput
-              style={styles.input}
+              style={[styles.input, darkMode && styles.darkInput]}
               placeholder="Peso (kg)"
+              placeholderTextColor={darkMode ? "#888" : "#999"}
               keyboardType="numeric"
               value={pesoEjercicio}
               onChangeText={setPesoEjercicio}
@@ -494,7 +496,7 @@ export default function PantallaRutina({ route, navigation }) {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.cancelButton}
+              style={[styles.cancelButton, darkMode && { backgroundColor: '#2a2a2a' }]}
               onPress={() => {
                 setModoEdicion(false);
                 setDetallesVisible(false);
