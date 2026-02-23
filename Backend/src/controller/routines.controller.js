@@ -125,4 +125,34 @@ routinesCtl.deleteRoutine = async (req, res) => {
     }
 };
 
+/**
+ * Obtener rutinas predefinidas (colección global, no por usuario)
+ * Ruta: GET /api/routines/predefined
+ */
+routinesCtl.getPredefinedRoutines = async (req, res) => {
+    try {
+        const db = firestoreService.getDb();
+        const snapshot = await db.collection('predefinedRoutines').get();
+
+        const ORDER = ['piernas', 'espalda', 'pecho'];
+        const routines = [];
+        snapshot.forEach(doc => {
+            routines.push({ id: doc.id, ...doc.data() });
+        });
+
+        // Ordenar por orden establecido; los que no estén van al final
+        routines.sort((a, b) => {
+            const ia = ORDER.indexOf(a.id);
+            const ib = ORDER.indexOf(b.id);
+            return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+        });
+
+        res.json(routines);
+    } catch (error) {
+        console.error('[getPredefinedRoutines] Error:', error);
+        res.status(500).json({ message: 'Error al obtener rutinas predefinidas', error: error.message });
+    }
+};
+
 module.exports = routinesCtl;
+

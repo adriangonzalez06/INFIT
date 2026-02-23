@@ -11,8 +11,9 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 export const Header = forwardRef(({
     title = "",
     showBackButton = false,
+    darkMode = false,
 }, ref) => {
-    
+
     const navigation = useNavigation();
 
     const renderBackButton = (showBackButton) => {
@@ -30,7 +31,7 @@ export const Header = forwardRef(({
         <View style={styles.header}>
             {renderBackButton(showBackButton)}
             {/* title */}
-            <Text style={styles.title}>{title}</Text>
+            <Text style={[styles.title, darkMode && { color: '#ef2b2d' }]}>{title}</Text>
         </View>
     );
 });

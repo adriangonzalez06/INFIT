@@ -1,5 +1,4 @@
-
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,27 +10,125 @@ import {
   Modal,
   StyleSheet,
   Platform,
+  Animated,
+  Easing,
+  Alert,
+  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import axios from 'axios';
+import * as ImagePicker from 'expo-image-picker';
+import { BACKEND_URL } from '../src/config';
 
-import colors from './colors';
+
+
+async function ensureCameraPermission() {
+  const { status } = await ImagePicker.requestCameraPermissionsAsync();
+  return status === 'granted';
+}
+
+
+
+export async function openCameraForAvatar() {
+  const ok = await ensureCameraPermission();
+  if (!ok) {
+    Alert.alert(
+      'Permiso requerido',
+      'Activa el permiso de cámara en Ajustes para continuar.',
+      [{ text: 'Cancelar', style: 'cancel' }, { text: 'Abrir ajustes', onPress: () => Linking.openSettings() }]
+    );
+    return null;
+  }
+
+  const result = await ImagePicker.launchCameraAsync({
+    allowsEditing: true,
+    aspect: [1, 1],
+    quality: 0.85,
+  });
+
+  if (result.canceled || !result.assets?.length) return null;
+  return result.assets[0];
+}
+
+// 3) Abrir galería usando el Photo Picker del sistema (no pide storage)
+export async function openGalleryForAvatar() {
+  const result = await ImagePicker.launchImageLibraryAsync({
+    allowsEditing: true,
+    aspect: [1, 1],
+    quality: 0.85,
+  });
+
+  if (result.canceled || !result.assets?.length) return null;
+  return result.assets[0];
+}
+
+
+// 4) Pequeño Action Sheet
+export async function chooseAvatarSource() {
+  return new Promise(resolve => {
+    Alert.alert(
+      'Foto de perfil',
+      'Elige un origen',
+      [
+        { text: 'Cámara', onPress: () => resolve('camera') },
+        { text: 'Galería', onPress: () => resolve('gallery') },
+        { text: 'Cancelar', style: 'cancel', onPress: () => resolve('cancel') },
+      ],
+      { cancelable: true }
+    );
+  });
+}
+
+
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
+
+
+  const [avatarScale] = useState(new Animated.Value(0));     // zoom
+  const [avatarOpacity] = useState(new Animated.Value(0));   // fade imagen
+  const [bgOpacity] = useState(new Animated.Value(0));       // fade fondo
+
+
 
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+  const [recentRoutines, setRecentRoutines] = useState([]); // ←← rutinas recientes
+
+  // Cargar preferencia de modo oscuro cada vez que la pantalla gana foco
+  useFocusEffect(
+    useCallback(() => {
+      const loadTheme = async () => {
+        const savedTheme = await ReactNativeAsyncStorage.getItem("darkMode");
+        setDarkMode(savedTheme === "true");
+      };
+      loadTheme();
+    }, [])
+  );
+
+  // Cargar rutinas recientes cada vez que se muestra la pantalla
+  useFocusEffect(
+    useCallback(() => {
+      ReactNativeAsyncStorage.getItem('recentRoutines').then(raw => {
+        if (raw) setRecentRoutines(JSON.parse(raw));
+        else setRecentRoutines([]);
+      }).catch(() => { });
+    }, [])
+  );
 
   // Estados para modal y campos de edición
   const [modalVisible, setModalVisible] = useState(false);
   const [pesoInput, setPesoInput] = useState('');
   const [alturaInput, setAlturaInput] = useState('');
+
+  //Estado para el modal y foto de perfil ampliable
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
 
   useEffect(() => {
     const auth = getAuth();
@@ -46,9 +143,8 @@ export default function ProfileScreen() {
 
           // Obtener datos del backend buscando por email (como WelcomeScreen)
           try {
-            const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
             const resp = await axios.get(
-              `http://${host}:8082/api/usuarios/buscar/email/${encodeURIComponent(firebaseUser.email)}`,
+              `${BACKEND_URL}/api/usuarios/buscar/email/${encodeURIComponent(firebaseUser.email)}`,
               { timeout: 5000 }
             );
 
@@ -65,29 +161,37 @@ export default function ProfileScreen() {
               await ReactNativeAsyncStorage.setItem('userWeight', String(pesoGuardado));
               await ReactNativeAsyncStorage.setItem('userHeight', String(alturaGuardada));
               await ReactNativeAsyncStorage.setItem('userDocId', documentId);  // Guardar el ID real
+
+              if (resp.data.photoURL) {
+                await ReactNativeAsyncStorage.setItem('userAvatar', resp.data.photoURL);
+              }
+
+              // Actualizar el estado con el avatar del backend si existe
+              const backendAvatar = resp.data.photo ? { uri: resp.data.photo } : require('../assets/avatar.png');
+
+              setUser({
+                nombre: nombreUser,
+                email: emailUser,
+                avatar: backendAvatar,
+                peso: pesoGuardado ? parseFloat(String(pesoGuardado)) : 80,
+                altura: alturaGuardada ? parseFloat(String(alturaGuardada)) : 1.9,
+              });
             }
           } catch (e) {
             console.warn('No se pudo obtener datos del backend:', e?.message);
             documentId = firebaseUser.uid;
+            // Si falla el backend, inicializamos con datos mínimos
+            setUser({
+              nombre: firebaseUser.displayName || 'Usuario',
+              email: firebaseUser.email,
+              avatar: require('../assets/avatar.png'),
+              peso: 80,
+              altura: 1.9,
+              registros: [],
+            });
           }
 
-          // Usar el ID real del documento
           setUserId(documentId || firebaseUser.uid);
-
-          const userData = {
-            nombre: nombreUser,
-            email: emailUser,
-            avatar: require('../assets/avatar.png'),
-            peso: pesoGuardado ? parseFloat(String(pesoGuardado)) : 80,
-            altura: alturaGuardada ? parseFloat(String(alturaGuardada)) : 1.9,
-            registros: [
-              { tipo: 'Ejercicio', detalle: '30 min de cardio', fecha: '22/10/2025' },
-              { tipo: 'Alimentación', detalle: 'Desayuno saludable', fecha: '22/10/2025' },
-              { tipo: 'Sueño', detalle: 'Dormido 7h 45min', fecha: '21/10/2025' },
-            ],
-          };
-
-          setUser(userData);
         } catch (error) {
           console.error('Error cargando perfil:', error);
           setUser({
@@ -96,11 +200,6 @@ export default function ProfileScreen() {
             avatar: require('../assets/avatar.png'),
             peso: 80,
             altura: 1.9,
-            registros: [
-              { tipo: 'Ejercicio', detalle: '30 min de cardio', fecha: '22/10/2025' },
-              { tipo: 'Alimentación', detalle: 'Desayuno saludable', fecha: '22/10/2025' },
-              { tipo: 'Sueño', detalle: 'Dormido 7h 45min', fecha: '21/10/2025' },
-            ],
           });
         } finally {
           setLoading(false);
@@ -121,6 +220,59 @@ export default function ProfileScreen() {
     setModalVisible(true);
   };
 
+  const openAvatarModal = () => {
+    setShowAvatarModal(true);
+
+    // estados iniciales
+    avatarScale.setValue(0.85);     // empieza un poco pequeño
+    avatarOpacity.setValue(0);      // fade in imagen
+    bgOpacity.setValue(0);          // fade in fondo
+
+    Animated.parallel([
+      Animated.timing(bgOpacity, {
+        toValue: 1,
+        duration: 300,              // un pelín más largo para fondo
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(avatarOpacity, {
+        toValue: 1,
+        duration: 240,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(avatarScale, {
+        toValue: 1,
+        duration: 300,
+        easing: Easing.out(Easing.cubic), // sin rebote, suave
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const closeAvatarModal = () => {
+    Animated.parallel([
+      Animated.timing(bgOpacity, {
+        toValue: 0,
+        duration: 180,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(avatarOpacity, {
+        toValue: 0,
+        duration: 150,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(avatarScale, {
+        toValue: 0.85,               // vuelve a pequeño
+        duration: 160,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start(() => setShowAvatarModal(false));
+  };
+
   const saveEdits = async () => {
     const newPeso = parseFloat(pesoInput.replace(',', '.'));
     const newAltura = parseFloat(alturaInput.replace(',', '.'));
@@ -139,8 +291,7 @@ export default function ProfileScreen() {
     setIsSaving(true);
     try {
       // Actualizar en el backend
-      const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
-      const url = `http://${host}:8082/api/usuarios/${userId}`;
+      const url = `${BACKEND_URL}/api/usuarios/${userId}`;
 
       console.log('Enviando petición a:', url);
       console.log('Datos:', { weight: newPeso, height: newAltura });
@@ -200,27 +351,32 @@ export default function ProfileScreen() {
     );
   }
 
-  const imc = (user.peso / (user.altura * user.altura)).toFixed(1);
+  const imc = (user.altura > 0) ? (user.peso / (user.altura * user.altura)).toFixed(1) : '0';
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={[styles.container, darkMode && styles.darkContainer]}>
       {/* Cabecera normal (no sticky) */}
-      <View style={styles.headerContent}>
+      <View style={[styles.headerContent, darkMode && styles.darkHeaderContent]}>
         <View style={{ flex: 1 }} />
         <TouchableOpacity onPress={() => navigation.navigate('Ajustes')}>
-          <Ionicons name="settings-outline" size={28} color="#333" />
+          <Ionicons name="settings-outline" size={28} color={darkMode ? "#fff" : "#333"} />
         </TouchableOpacity>
       </View>
 
       <View style={styles.profileSection}>
-        <Image source={user.avatar} style={styles.avatarPerfil} />
-        <Text style={styles.nombre}>{user.nombre}</Text>
+        <TouchableOpacity activeOpacity={0.9} onLongPress={openAvatarModal}>
+          <Image
+            source={user.avatar}
+            style={styles.avatarPerfil}
+          />
+        </TouchableOpacity>
+        <Text style={[styles.nombre, darkMode && styles.darkText]}>{user.nombre}</Text>
       </View>
 
       <View style={styles.statsContainer}>
-        <Stat label="Peso" value={`${user.peso} kg`} />
-        <Stat label="Altura" value={`${user.altura} m`} />
-        <Stat label="IMC" value={imc} />
+        <Stat label="Peso" value={`${user.peso} kg`} darkMode={darkMode} />
+        <Stat label="Altura" value={`${user.altura} m`} darkMode={darkMode} />
+        <Stat label="IMC" value={imc} darkMode={darkMode} />
       </View>
 
       {/* Botón para abrir modal */}
@@ -275,18 +431,173 @@ export default function ProfileScreen() {
         </View>
       </Modal>
 
-      <Text style={styles.sectionTitle}>Últimos registros</Text>
-      {user.registros.map((registro, index) => (
-        <View key={index} style={styles.registroBox}>
-          <Text style={styles.registroTipo}>{registro.tipo}</Text>
-          <Text style={styles.registroDetalle}>{registro.detalle}</Text>
-          <Text style={styles.registroFecha}>{registro.fecha}</Text>
+      <Modal
+        visible={showAvatarModal}
+        transparent
+        animationType="none"
+        onRequestClose={closeAvatarModal}
+      >
+        {/* Capa de fondo animada */}
+        <Animated.View
+          style={[
+            styles.blurBackground,
+            { opacity: bgOpacity },
+          ]}
+        />
+
+        {/* Capa invisible para cerrar al tocar fuera */}
+        <TouchableOpacity
+          activeOpacity={1}
+          style={StyleSheet.absoluteFillObject}
+          onPress={closeAvatarModal}
+        />
+
+        <View style={styles.modalFullCenter} pointerEvents="box-none">
+          {/* Imagen ampliada */}
+          <Animated.Image
+            source={user.avatar}
+            style={[
+              styles.avatarZoom,
+              {
+                opacity: avatarOpacity,
+                transform: [{ scale: avatarScale }],
+              },
+            ]}
+          />
+
+          {/* Botón "Modificar foto" */}
+          <Animated.View
+            style={{
+              opacity: avatarOpacity,
+              transform: [{ scale: avatarScale }],
+              marginTop: 24,
+            }}
+          >
+            <TouchableOpacity
+              style={styles.modifyButton}
+              onPress={async () => {
+                closeAvatarModal();
+
+                // Guardia: asegurarse de que tenemos userId antes de empezar
+                if (!userId) {
+                  Alert.alert('Error', 'No se encontró tu ID de usuario. Vuelve a iniciar sesión.');
+                  return;
+                }
+
+                const choice = await chooseAvatarSource();
+                if (choice === 'cancel') return;
+
+                const asset = choice === 'camera'
+                  ? await openCameraForAvatar()
+                  : await openGalleryForAvatar();
+
+                if (!asset) return;
+
+                setIsSaving(true);
+                try {
+                  // 1) Pedir firma segura al backend
+                  let sig;
+                  try {
+                    const sigResp = await axios.post(
+                      `${BACKEND_URL}/cloudinary/signature`,
+                      {},
+                      { timeout: 8000 }
+                    );
+                    sig = sigResp.data;
+                  } catch (sigErr) {
+                    console.error('[Avatar] Error obteniendo firma Cloudinary:', sigErr?.message || sigErr);
+                    Alert.alert('Error', 'No se pudo conectar con el servidor. ¿Está el backend arrancado?');
+                    return;
+                  }
+
+                  // 2) Subir imagen a Cloudinary
+                  const form = new FormData();
+                  form.append('file', {
+                    uri: asset.uri,
+                    type: asset.mimeType || asset.type || 'image/jpeg',
+                    name: asset.fileName || 'avatar.jpg',
+                  });
+                  form.append('api_key', sig.apiKey);
+                  form.append('timestamp', String(sig.timestamp));
+                  form.append('signature', sig.signature);
+                  form.append('folder', sig.folder);
+
+                  let cloudinaryUrl;
+                  try {
+                    const upResp = await axios.post(
+                      `https://api.cloudinary.com/v1_1/${sig.cloudName}/image/upload`,
+                      form,
+                      { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 30000 }
+                    );
+                    cloudinaryUrl = upResp.data?.secure_url;
+                    if (!cloudinaryUrl) throw new Error('Cloudinary no devolvió URL');
+                  } catch (upErr) {
+                    console.error('[Avatar] Error subiendo a Cloudinary:', upErr?.response?.data || upErr?.message || upErr);
+                    Alert.alert('Error', 'No se pudo subir la imagen a Cloudinary. Revisa tus credenciales en el .env del backend.');
+                    return;
+                  }
+
+                  // 3) Actualizar visualmente en la app
+                  setUser(prev => prev ? { ...prev, avatar: { uri: cloudinaryUrl } } : prev);
+
+                  // 4) Guardar URL en Firestore via backend
+                  try {
+                    await axios.put(
+                      `${BACKEND_URL}/api/usuarios/${userId}`,
+                      { photoURL: cloudinaryUrl },
+                      { timeout: 8000 }
+                    );
+                  } catch (saveErr) {
+                    console.error('[Avatar] Error guardando URL en backend:', saveErr?.response?.data || saveErr?.message || saveErr);
+                    Alert.alert('Advertencia', 'La foto se subió pero no se pudo guardar en la base de datos. Inténtalo de nuevo.');
+                  }
+
+                } finally {
+                  setIsSaving(false);
+                }
+              }}
+            >
+              <Text style={styles.modifyButtonText}>Modificar foto</Text>
+            </TouchableOpacity>
+          </Animated.View>
         </View>
-      ))}
+      </Modal>
+
+      <Text style={[styles.sectionTitle, darkMode && styles.darkTextSecondary]}>Rutinas recientes</Text>
+      {recentRoutines.length === 0 ? (
+        <TouchableOpacity onPress={() => navigation.navigate('Rutinas')} style={styles.emptyRoutinesBox}>
+          <Ionicons name="barbell-outline" size={28} color="#ef2b2d" />
+          <Text style={styles.emptyRoutinesText}>No has abierto ninguna rutina todavía.</Text>
+          <Text style={styles.emptyRoutinesLink}>Ir a Rutinas →</Text>
+        </TouchableOpacity>
+      ) : (
+        recentRoutines.map((r, i) => {
+          const when = new Date(r.openedAt);
+          const fechaStr = when.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+          const horaStr = when.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+          return (
+            <TouchableOpacity
+              key={r.id + i}
+              style={[styles.recentRutinaBox, { borderLeftColor: r.color || '#ef2b2d' }]}
+              onPress={() => navigation.navigate('Rutinas')}
+              activeOpacity={0.75}
+            >
+              <View style={styles.recentRutinaRow}>
+                <Ionicons name="barbell" size={20} color={r.color || '#ef2b2d'} />
+                <View style={{ flex: 1, marginLeft: 10 }}>
+                  <Text style={styles.recentRutinaNombre}>{r.nombre}</Text>
+                  <Text style={styles.recentRutinaDetalle}>{r.dificultad}</Text>
+                </View>
+                <Text style={styles.recentRutinaFecha}>{fechaStr} {horaStr}</Text>
+              </View>
+            </TouchableOpacity>
+          );
+        })
+      )}
 
       <TouchableOpacity
         style={styles.boton}
-        onPress={() => navigation.navigate('RegistroNuevo')}
+        onPress={() => navigation.navigate('AddDietMenu')}
       >
         <Text style={styles.botonTexto}>Añadir nuevo registro</Text>
       </TouchableOpacity>
@@ -294,32 +605,73 @@ export default function ProfileScreen() {
   );
 }
 
-function Stat({ label, value }) {
+function Stat({ label, value, darkMode }) {
   return (
     <View style={styles.statBox}>
-      <Text style={styles.statLabel}>{label}</Text>
-      <Text style={styles.statValue}>{value}</Text>
+      <Text style={[styles.statLabel, darkMode && styles.darkTextSecondary]}>{label}</Text>
+      <Text style={[styles.statValue, darkMode && styles.darkText]}>{value}</Text>
     </View>
   );
 }
 
 
 const styles = StyleSheet.create({
+
+  modalFullCenter: {
+    position: 'absolute',
+    top: 0, bottom: 0, left: 0, right: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  blurBackground: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.85)',
+  },
+
+  avatarZoom: {
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    borderWidth: 3,
+    borderColor: '#fff',
+  },
+
+  modifyButton: {
+    backgroundColor: '#ef2b2d',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+  },
+
+  modifyButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+
   container: {
     paddingBottom: 60,
     backgroundColor: '#f9f9f9',
+  },
+  darkContainer: {
+    backgroundColor: '#121212',
   },
   headerContent: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
     alignItems: 'center',
-    paddingTop: 40,
+    paddingTop: 60,
     paddingHorizontal: 20,
     paddingBottom: 10,
     backgroundColor: '#f9f9f9',
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
     marginBottom: 30,
+  },
+  darkHeaderContent: {
+    backgroundColor: '#121212',
+    borderBottomColor: '#222',
   },
   profileSection: {
     alignItems: 'center',
@@ -338,6 +690,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333',
     textAlign: 'center',
+  },
+  darkText: {
+    color: '#fff',
+  },
+  darkTextSecondary: {
+    color: '#aaa',
   },
   statsContainer: {
     flexDirection: 'row',
@@ -432,6 +790,11 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderLeftColor: '#ef2b2d',
   },
+  darkRegistroBox: {
+    backgroundColor: '#1e1e1e',
+    shadowColor: '#000',
+    elevation: 0,
+  },
   registroTipo: {
     fontWeight: 'bold',
     fontSize: 16,
@@ -447,6 +810,63 @@ const styles = StyleSheet.create({
     color: '#999',
     marginTop: 2,
   },
+
+  // ── Rutinas recientes ──────────────────────────────────────────────────────
+  recentRutinaBox: {
+    backgroundColor: '#fff',
+    marginHorizontal: 20,
+    marginBottom: 10,
+    borderRadius: 10,
+    borderLeftWidth: 4,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  recentRutinaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  recentRutinaNombre: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#222',
+  },
+  recentRutinaDetalle: {
+    fontSize: 13,
+    color: '#777',
+    marginTop: 2,
+  },
+  recentRutinaFecha: {
+    fontSize: 11,
+    color: '#bbb',
+    marginLeft: 8,
+    textAlign: 'right',
+    flexShrink: 0,
+  },
+  emptyRoutinesBox: {
+    marginHorizontal: 20,
+    marginBottom: 10,
+    padding: 20,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
+    alignItems: 'center',
+    gap: 6,
+  },
+  emptyRoutinesText: {
+    fontSize: 14,
+    color: '#888',
+    textAlign: 'center',
+  },
+  emptyRoutinesLink: {
+    fontSize: 14,
+    color: '#ef2b2d',
+    fontWeight: '600',
+  },
+
   boton: {
     backgroundColor: '#ef2b2d',
     padding: 15,
@@ -460,4 +880,5 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
+
 });

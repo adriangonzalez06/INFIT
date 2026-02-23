@@ -1,13 +1,12 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput,
   SafeAreaView, Image, ImageBackground, Animated, Dimensions, FlatList, Alert
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import styles from './stylesheet';
-import { useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import Diet from '../src/objects/Diet';
@@ -136,6 +135,18 @@ export default function CreateDishMenu({ route }) {
   const [dishName, setDishName] = useState('');
   const [dishDescription, setDishDescription] = useState('');
   const [allDishes, setAllDishes] = useState([]);
+  const [darkMode, setDarkMode] = useState(false);
+
+  // Cargar preferencia cada vez que entramos
+  useFocusEffect(
+    useCallback(() => {
+      const loadTheme = async () => {
+        const savedTheme = await AsyncStorage.getItem("darkMode");
+        setDarkMode(savedTheme === "true");
+      };
+      loadTheme();
+    }, [])
+  );
 
   const renderImageItemMenu = ({ item }) => (
     <TouchableOpacity onPress={() => { handleSetImage(item.url); imgMenuRef.current?.cerrarMenu?.(); }} style={styles.chooseImage}>
@@ -200,7 +211,7 @@ export default function CreateDishMenu({ route }) {
 
       <View style={[styles.dishContainer]}>
 
-        <View style={{flex: 1 }}>
+        <View style={{ flex: 1 }}>
 
           <Text style={[styles.modalTitle, { fontSize: 14 }]}>{item.name}</Text>
 
@@ -210,23 +221,23 @@ export default function CreateDishMenu({ route }) {
           </View>
 
           <View style={styles.totalsContainer}>
-            <Text style={styles.title_3}>Fibra</Text>
-            <Text style={styles.text}>{item.fiber} g</Text>
+            <Text style={[styles.title_3, darkMode && { color: '#aaa' }]}>Fibra</Text>
+            <Text style={[styles.text, darkMode && { color: '#fff' }]}>{item.fiber} g</Text>
           </View>
 
           <View style={styles.totalsContainer}>
-            <Text style={styles.title_3}>Carbohidratos</Text>
-            <Text style={styles.text}>{item.carbohydrates} g</Text>
+            <Text style={[styles.title_3, darkMode && { color: '#aaa' }]}>Carbohidratos</Text>
+            <Text style={[styles.text, darkMode && { color: '#fff' }]}>{item.carbohydrates} g</Text>
           </View>
 
           <View style={styles.totalsContainer}>
-            <Text style={styles.title_3}>Grasas</Text>
-            <Text style={styles.text}>{item.fat} g</Text>
+            <Text style={[styles.title_3, darkMode && { color: '#aaa' }]}>Grasas</Text>
+            <Text style={[styles.text, darkMode && { color: '#fff' }]}>{item.fat} g</Text>
           </View>
 
           <View style={styles.totalsContainer}>
-            <Text style={styles.title_3}>Proteinas</Text>
-            <Text style={styles.text}>{item.protein} g</Text>
+            <Text style={[styles.title_3, darkMode && { color: '#aaa' }]}>Proteinas</Text>
+            <Text style={[styles.text, darkMode && { color: '#fff' }]}>{item.protein} g</Text>
           </View>
 
           <View style={{ flexDirection: 'row', gap: 5, marginTop: 3 }}>
@@ -248,35 +259,35 @@ export default function CreateDishMenu({ route }) {
 
     return (
       <TouchableOpacity key={ingredient.id} onPress={() => { showModal(index, grams) }} onLongPress={() => handleDeleteIngredient(index)}>
-        <View style={[styles.dishContainer]}>
+        <View style={[styles.dishContainer, darkMode && { backgroundColor: '#2a2a2a', borderColor: '#444' }]}>
 
           <View style={{ flex: 1 }}>
             <View key={ingredient.id} >
-              <Text style={styles.title_2}>{grams}g de {ingredient.name}</Text>
+              <Text style={[styles.title_2, darkMode && { color: '#fff' }]}>{grams}g de {ingredient.name}</Text>
 
               <View style={styles.totalsContainer}>
-                <Text style={styles.title_3}>Calorías</Text>
-                <Text style={styles.text}>{(ingredient.calories * grams) / 100} kcal</Text>
+                <Text style={[styles.title_3, darkMode && { color: '#aaa' }]}>Calorías</Text>
+                <Text style={[styles.text, darkMode && { color: '#fff' }]}>{(ingredient.calories * grams) / 100} kcal</Text>
               </View>
 
               <View style={styles.totalsContainer}>
-                <Text style={styles.title_3}>Fibra</Text>
-                <Text style={styles.text}>{(ingredient.fiber * grams) / 100} g</Text>
+                <Text style={[styles.title_3, darkMode && { color: '#aaa' }]}>Fibra</Text>
+                <Text style={[styles.text, darkMode && { color: '#fff' }]}>{(ingredient.fiber * grams) / 100} g</Text>
               </View>
 
               <View style={styles.totalsContainer}>
-                <Text style={styles.title_3}>Carbohidratos</Text>
-                <Text style={styles.text}>{(ingredient.carbohydrates * grams) / 100} g</Text>
+                <Text style={[styles.title_3, darkMode && { color: '#aaa' }]}>Carbohidratos</Text>
+                <Text style={[styles.text, darkMode && { color: '#fff' }]}>{(ingredient.carbohydrates * grams) / 100} g</Text>
               </View>
 
               <View style={styles.totalsContainer}>
-                <Text style={styles.title_3}>Grasas</Text>
-                <Text style={styles.text}>{(ingredient.fat * grams) / 100} g</Text>
+                <Text style={[styles.title_3, darkMode && { color: '#aaa' }]}>Grasas</Text>
+                <Text style={[styles.text, darkMode && { color: '#fff' }]}>{(ingredient.fat * grams) / 100} g</Text>
               </View>
 
               <View style={styles.totalsContainer}>
-                <Text style={styles.title_3}>Proteína</Text>
-                <Text style={styles.text}>{(ingredient.protein * grams) / 100} g</Text>
+                <Text style={[styles.title_3, darkMode && { color: '#aaa' }]}>Proteína</Text>
+                <Text style={[styles.text, darkMode && { color: '#fff' }]}>{(ingredient.protein * grams) / 100} g</Text>
               </View>
 
             </View>
@@ -324,15 +335,17 @@ export default function CreateDishMenu({ route }) {
     return (
       <Modal visible={visible} transparent animationType="fade" onRequestClose={hideModal}>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Cambiar gramos de {currentIngredient?.name}</Text>
+          <View style={[styles.modalContent, darkMode && { backgroundColor: '#1e1e1e' }]}>
+            <Text style={[styles.modalTitle, darkMode && { color: '#fff' }]}>Cambiar gramos de {currentIngredient?.name}</Text>
             <LabelTextInput
               label="Introduzca la cantidad de gramos deseada"
               placeholder="Gramos..."
+              placeholderTextColor={darkMode ? "#666" : "#999"}
               onChangeText={setGrams}
               value={grams?.toString()}
               keyboardType="numeric"
               maxLength={6}
+              style={[darkMode && { backgroundColor: '#2a2a2a', borderColor: '#444', color: '#fff' }]}
             />
             <View style={styles.modalButtons}>
               <View style={{ flex: 1, justifyContent: 'flex-end', flexDirection: 'row', gap: 10, marginTop: 10 }}>
@@ -440,60 +453,62 @@ export default function CreateDishMenu({ route }) {
 
   return (
 
-    <View style={styles.container}>
-      <StatusBar style="auto" />
+    <View style={[styles.container, darkMode && { backgroundColor: '#121212' }]}>
+      <StatusBar style={darkMode ? "light" : "auto"} />
 
       <Header title="Nuevo plato" showBackButton={true} />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.scrollContent, darkMode && { backgroundColor: '#121212' }]} showsVerticalScrollIndicator={false}>
         <View style={styles.grupoContainer}>
 
           <LabelTextInput
             label="Nombre del plato"
             placeholder="Nombre..."
-            onChangeTExt={setName}
+            placeholderTextColor={darkMode ? "#666" : "#999"}
+            onChangeText={setName}
             value={name}
+            style={[darkMode && { backgroundColor: '#2a2a2a', borderColor: '#444', color: '#fff' }]}
           />
 
-          <Text style={[styles.grupoTitulo, { marginTop: 15 }]}>Ingredientes</Text>
+          <Text style={[styles.grupoTitulo, { marginTop: 15 }, darkMode && { color: '#ef2b2d' }]}>Ingredientes</Text>
 
           <TouchableOpacity
-            style={styles.addDishButton}
+            style={[styles.addDishButton, darkMode && { borderColor: '#444' }]}
             onPress={() => searchMenuRef.current?.abrirMenu()}
           >
-            <Text style={styles.addDishButtonText}>+ Añadir ingrediente</Text>
+            <Text style={[styles.addDishButtonText, darkMode && { color: '#fff' }]}>+ Añadir ingrediente</Text>
           </TouchableOpacity>
 
           {renderIngredientList()}
 
-          <Text style={styles.grupoTitulo}>Totales</Text>
+          <Text style={[styles.grupoTitulo, darkMode && { color: '#ef2b2d' }]}>Totales</Text>
 
           <View style={styles.totalsContainer}>
-            <Text style={styles.title_3}>Calorías</Text>
-            <Text style={styles.text}>{calculateTotals(dish).totalCalories} kcal</Text>
+            <Text style={[styles.title_3, darkMode && { color: '#aaa' }]}>Calorías</Text>
+            <Text style={[styles.text, darkMode && { color: '#fff' }]}>{calculateTotals(dish).totalCalories} kcal</Text>
           </View>
 
           <View style={styles.totalsContainer}>
-            <Text style={styles.title_3}>Fibra</Text>
-            <Text style={styles.text}>{calculateTotals(dish).totalFiber} g</Text>
+            <Text style={[styles.title_3, darkMode && { color: '#aaa' }]}>Fibra</Text>
+            <Text style={[styles.text, darkMode && { color: '#fff' }]}>{calculateTotals(dish).totalFiber} g</Text>
           </View>
 
           <View style={styles.totalsContainer}>
-            <Text style={styles.title_3}>Carbohidratos</Text>
-            <Text style={styles.text}>{calculateTotals(dish).totalCarbs} g</Text>
+            <Text style={[styles.title_3, darkMode && { color: '#aaa' }]}>Carbohidratos</Text>
+            <Text style={[styles.text, darkMode && { color: '#fff' }]}>{calculateTotals(dish).totalCarbs} g</Text>
           </View>
 
           <View style={styles.totalsContainer}>
-            <Text style={styles.title_3}>Grasas</Text>
-            <Text style={styles.text}>{calculateTotals(dish).totalFat} g</Text>
+            <Text style={[styles.title_3, darkMode && { color: '#aaa' }]}>Grasas</Text>
+            <Text style={[styles.text, darkMode && { color: '#fff' }]}>{calculateTotals(dish).totalFat} g</Text>
           </View>
 
           <View style={styles.totalsContainer}>
-            <Text style={styles.title_3}>Proteína</Text>
-            <Text style={styles.text}>{calculateTotals(dish).totalProtein} g</Text>
+            <Text style={[styles.title_3, darkMode && { color: '#aaa' }]}>Proteína</Text>
+            <Text style={[styles.text, darkMode && { color: '#fff' }]}>{calculateTotals(dish).totalProtein} g</Text>
           </View>
 
-          <Text style={[styles.grupoTitulo, { marginTop: 10 }]}>Elegir imagen</Text>
+          <Text style={[styles.grupoTitulo, { marginTop: 10 }, darkMode && { color: '#ef2b2d' }]}>Elegir imagen</Text>
 
           <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 10 }}>
             <TouchableOpacity onPress={() => imgMenuRef.current?.abrirMenu()} style={{ width: '100%', alignItems: 'center', marginBottom: 20 }}>

@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput, Platform,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Header from '../src/components/Header';
 import { StatusBar } from 'expo-status-bar';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import axios from 'axios';
+import { BACKEND_URL } from '../src/config';
 
 
 const SUGERENCIAS = {
@@ -23,21 +24,39 @@ const rutinasPredefinidas = [
   {
     id: 'piernas',
     nombre: 'Piernas explosivas',
-    ejercicios: ['Sentadillas', 'Zancadas', 'Peso muerto rumano'],
+    ejercicios: [
+      { id: 'p1', nombre: 'Sentadillas', series: '4', repeticiones: '12', peso: '60', animacion: require('../assets/ejercicios/sentadilla.json') },
+      { id: 'p2', nombre: 'Zancadas', series: '3', repeticiones: '10', peso: '20', image: 'https://media.istockphoto.com/id/1310156903/photo/young-woman-doing-lunges-exercise-at-home.jpg?s=612x612&w=0&k=20&c=JCcun30_jK-9_I0E6-I6tUaM0V7QO8_l7v5Z1S_V8_M=' },
+      { id: 'p3', nombre: 'Peso muerto rumano', series: '4', repeticiones: '10', peso: '50', image: 'https://images.squarespace-cdn.com/content/v1/594c3dcd37c58189856cc33b/1589139825444-2L3LXZO3M5ZG1Z3Z3V3Z/Romanian+Deadlift' },
+      { id: 'p4', nombre: 'Prensa de piernas', series: '3', repeticiones: '15', peso: '100', image: 'https://www.verywellfit.com/thmb/Jz_vHwKk_lG5n2u0Y2G9X_4V-I8=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/81-3120071-Leg-Press-GIF-669357e6005740348705009a259c7d81.gif' },
+      { id: 'p5', nombre: 'Extensión de cuádriceps', series: '3', repeticiones: '12', peso: '40', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/LEG-EXTENSION.gif' },
+    ],
     dificultad: 'Intermedio',
     color: '#ef2b2d',
   },
   {
     id: 'espalda',
     nombre: 'Espalda fuerte',
-    ejercicios: ['Dominadas', 'Remo con barra', 'Peso muerto'],
+    ejercicios: [
+      { id: 'e1', nombre: 'Dominadas', series: '4', repeticiones: '8', peso: '0', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/PULL-UP.gif' },
+      { id: 'e2', nombre: 'Remo con barra', series: '4', repeticiones: '10', peso: '40', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/BARBELL-BENT-OVER-ROW.gif' },
+      { id: 'e3', nombre: 'Peso muerto', series: '3', repeticiones: '8', peso: '80', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/BARBELL-DEADLIFT.gif' },
+      { id: 'e4', nombre: 'Jalón al pecho', series: '4', repeticiones: '12', peso: '50', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/LAT-PULLDOWN.gif' },
+      { id: 'e5', nombre: 'Remo en polea baja', series: '3', repeticiones: '12', peso: '45', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/04/Seated-Cable-Row.gif' },
+    ],
     dificultad: 'Avanzado',
     color: '#2a9d8f',
   },
   {
     id: 'pecho',
     nombre: 'Pecho definido',
-    ejercicios: ['Press banca', 'Flexiones', 'Press inclinado'],
+    ejercicios: [
+      { id: 'c1', nombre: 'Press banca', series: '4', repeticiones: '10', peso: '60', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/BARBELL-BENCH-PRESS.gif' },
+      { id: 'c2', nombre: 'Flexiones', series: '3', repeticiones: '20', peso: '0', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/PUSH-UP.gif' },
+      { id: 'c3', nombre: 'Press inclinado', series: '4', repeticiones: '10', peso: '50', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/INCLINE-BARBELL-BENCH-PRESS.gif' },
+      { id: 'c4', nombre: 'Aperturas con mancuernas', series: '3', repeticiones: '12', peso: '15', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/DUMBBELL-FLY.gif' },
+      { id: 'c5', nombre: 'Fondos en paralelas', series: '3', repeticiones: '10', peso: '0', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/06/Triceps-Dips.gif' },
+    ],
     dificultad: 'Principiante',
     color: '#f4a261',
   },
@@ -46,28 +65,90 @@ const rutinasPredefinidas = [
 export default function Rutinas() {
   const navigation = useNavigation();
   const [rutinas, setRutinas] = useState({ grupo1: [] });
+  const [predefinidas, setPredefinidas] = useState([]); // ← separadas del estado de rutinas de usuario
   const [modalVisible, setModalVisible] = useState(false);
   const [grupoActivo, setGrupoActivo] = useState(null);
   const [nombreRutina, setNombreRutina] = useState('');
   const [sugerencias, setSugerencias] = useState([]);
   const [dificultad, setDificultad] = useState(null);
   const [userName, setUserName] = useState('');
+  const [userId, setUserId] = useState(null); // ← ID del usuario en Firestore
   const [opcionesVisible, setOpcionesVisible] = useState(false);
   const [rutinaSeleccionada, setRutinaSeleccionada] = useState(null);
+  const [darkMode, setDarkMode] = useState(false);
+
+  // Cargar preferencia de modo oscuro cada vez que la pantalla gana foco
+  useFocusEffect(
+    useCallback(() => {
+      const loadTheme = async () => {
+        const savedTheme = await AsyncStorage.getItem("darkMode");
+        setDarkMode(savedTheme === "true");
+      };
+      loadTheme();
+    }, [])
+  );
 
   useEffect(() => {
-    // 1. Cargar rutinas de AsyncStorage
+    // 1a. Cargar rutinas del usuario — primero caché local, luego Firestore
     const cargarRutinas = async () => {
       try {
-        const data = await AsyncStorage.getItem('rutinas');
-        if (data) {
-          setRutinas(JSON.parse(data));
+        // Caché instantánea para que la UI no parpadee
+        const cached = await AsyncStorage.getItem('rutinas');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          setRutinas({ grupo1: parsed.grupo1 || [] });
+        }
+
+        // Intentar obtener del backend para tener la versión más reciente
+        const uid = await AsyncStorage.getItem('userId');
+        if (uid) {
+          setUserId(uid);
+          try {
+            const resp = await axios.get(`${BACKEND_URL}/api/routines/${uid}`, { timeout: 8000 });
+            const fromServer = resp.data || [];
+            // El backend devuelve { id, name, exercises, ... } — adaptamos al formato frontend
+            const grupo1 = fromServer.map(r => ({
+              id: r.id,
+              nombre: r.name || r.nombre || 'Sin nombre',
+              ejercicios: r.exercises || r.ejercicios || [],
+              dificultad: r.dificultad || 'Sin definir',
+              color: r.color || '#264653',
+            }));
+            const nuevas = { grupo1 };
+            setRutinas(nuevas);
+            await AsyncStorage.setItem('rutinas', JSON.stringify(nuevas));
+          } catch (netErr) {
+            console.warn('[Rutinas] Error cargando rutinas del backend (usando caché):', netErr.message);
+          }
         }
       } catch (e) {
         console.error('Error cargando rutinas:', e);
       }
     };
     cargarRutinas();
+
+    // 1b. Cargar rutinas predefinidas — caché AsyncStorage primero, luego backend
+    const cargarPredefinidas = async () => {
+      try {
+        const cached = await AsyncStorage.getItem('predefinedRoutines');
+        if (cached) {
+          // Usar caché: mezclar animaciones/imágenes locales sobre datos de Firestore
+          const fromCache = JSON.parse(cached);
+          setPredefinidas(mergeWithLocalAssets(fromCache));
+          return; // no hacemos petición de red
+        }
+        // Sin caché → pedir al backend
+        const resp = await axios.get(`${BACKEND_URL}/api/routines/predefined`, { timeout: 8000 });
+        const fromServer = resp.data || [];
+        await AsyncStorage.setItem('predefinedRoutines', JSON.stringify(fromServer));
+        setPredefinidas(mergeWithLocalAssets(fromServer));
+      } catch (e) {
+        console.warn('[Rutinas] No se pudieron cargar las predefinidas del backend, usando locales:', e.message);
+        // Fallback a las constantes locales si el backend no responde
+        setPredefinidas(rutinasPredefinidas);
+      }
+    };
+    cargarPredefinidas();
 
     // 2. Cargar nombre de usuario (Quick cache + Firebase listener)
     const setupIdentidad = async () => {
@@ -78,9 +159,8 @@ export default function Rutinas() {
       const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
         if (firebaseUser) {
           try {
-            const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
             const resp = await axios.get(
-              `http://${host}:8082/api/usuarios/buscar/email/${encodeURIComponent(firebaseUser.email)}`,
+              `${BACKEND_URL}/api/usuarios/buscar/email/${encodeURIComponent(firebaseUser.email)}`,
               { timeout: 5000 }
             );
             if (resp.data && resp.data.nombre) {
@@ -127,20 +207,41 @@ export default function Rutinas() {
     if (!nombreRutina.trim()) return;
 
     const nuevaRutina = {
-      id: Date.now().toString(),
+      id: Date.now().toString(), // ID temporal local
       nombre: nombreRutina.trim(),
       ejercicios: sugerencias,
       dificultad: dificultad || 'Sin definir',
       color: '#264653',
     };
 
+    // Guardar en el estado y en el caché local inmediatamente
     const nuevasRutinas = {
       ...rutinas,
       [grupoActivo]: [...(rutinas[grupoActivo] || []), nuevaRutina],
     };
-
     setRutinas(nuevasRutinas);
     await guardarEnStorage(nuevasRutinas);
+
+    // Persistir en Firestore en background
+    if (userId) {
+      try {
+        await axios.post(
+          `${BACKEND_URL}/api/routines/${userId}`,
+          {
+            name: nuevaRutina.nombre,
+            exercises: nuevaRutina.ejercicios,
+            dificultad: nuevaRutina.dificultad,
+            color: nuevaRutina.color,
+          },
+          { timeout: 8000 }
+        );
+        console.log('[Rutinas] Rutina guardada en Firestore ✅');
+      } catch (e) {
+        console.warn('[Rutinas] Error guardando rutina en Firestore (guardada solo local):', e.message);
+      }
+    } else {
+      console.warn('[Rutinas] Sin userId — rutina guardada solo en local');
+    }
 
     setNombreRutina('');
     setSugerencias([]);
@@ -149,21 +250,44 @@ export default function Rutinas() {
   };
 
   const handleEntrarRutina = (rutina, grupoKey) => {
+    // ── Registrar rutina reciente en AsyncStorage ──────────────────────────
+    (async () => {
+      try {
+        const raw = await AsyncStorage.getItem('recentRoutines');
+        const prev = raw ? JSON.parse(raw) : [];
+        const entry = {
+          id: rutina.id,
+          nombre: rutina.nombre,
+          dificultad: rutina.dificultad || 'Sin definir',
+          color: rutina.color || '#264653',
+          openedAt: Date.now(),
+        };
+        // Eliminar si ya estaba y poner al principio (más reciente primero)
+        const updated = [entry, ...prev.filter(r => r.id !== rutina.id)].slice(0, 5);
+        await AsyncStorage.setItem('recentRoutines', JSON.stringify(updated));
+      } catch (e) {
+        console.warn('[Rutinas] No se pudo guardar rutina reciente:', e.message);
+      }
+    })();
+
     navigation.navigate('PantallaRutina', {
       rutina,
       grupoKey,
       actualizarRutina: async (rutinaActualizada) => {
-        const nuevasRutinas = {
-          ...rutinas,
-          [grupoKey]: (rutinas[grupoKey] || []).map((r) =>
-            r.id === rutinaActualizada.id ? rutinaActualizada : r
-          ),
-        };
-        setRutinas(nuevasRutinas);
-        await guardarEnStorage(nuevasRutinas);
+        setRutinas(prev => {
+          const nuevasRutinas = {
+            ...prev,
+            [grupoKey]: (prev[grupoKey] || []).map((r) =>
+              r.id === rutinaActualizada.id ? rutinaActualizada : r
+            ),
+          };
+          guardarEnStorage(nuevasRutinas);
+          return nuevasRutinas;
+        });
       },
     });
   };
+
 
   const handleLongPress = (rutina) => {
     setRutinaSeleccionada(rutina);
@@ -177,6 +301,20 @@ export default function Rutinas() {
     };
     setRutinas(nuevasRutinas);
     await guardarEnStorage(nuevasRutinas);
+
+    // Eliminar del backend
+    if (userId && rutinaSeleccionada.id) {
+      try {
+        await axios.delete(
+          `${BACKEND_URL}/api/routines/${userId}/${rutinaSeleccionada.id}`,
+          { timeout: 8000 }
+        );
+        console.log('[Rutinas] Rutina eliminada de Firestore ✅');
+      } catch (e) {
+        console.warn('[Rutinas] Error eliminando rutina del backend:', e.message);
+      }
+    }
+
     setOpcionesVisible(false);
   };
 
@@ -188,13 +326,47 @@ export default function Rutinas() {
     };
     setRutinas(nuevasRutinas);
     await guardarEnStorage(nuevasRutinas);
+
+    // Guardar copia en el backend
+    if (userId) {
+      try {
+        await axios.post(
+          `${BACKEND_URL}/api/routines/${userId}`,
+          {
+            name: copia.nombre,
+            exercises: copia.ejercicios,
+            dificultad: copia.dificultad,
+            color: copia.color,
+          },
+          { timeout: 8000 }
+        );
+        console.log('[Rutinas] Rutina duplicada en Firestore ✅');
+      } catch (e) {
+        console.warn('[Rutinas] Error duplicando rutina en Firestore:', e.message);
+      }
+    }
+
     setOpcionesVisible(false);
+  };
+
+  // Mezcla datos de Firestore con animaciones/imágenes definidas localmente
+  const mergeWithLocalAssets = (serverRoutines) => {
+    return serverRoutines.map(sr => {
+      const local = rutinasPredefinidas.find(r => r.id === sr.id);
+      if (!local) return sr;
+      const mergedEjercicios = (sr.ejercicios || []).map(se => {
+        const le = local.ejercicios.find(e => e.id === se.id || e.nombre === se.nombre);
+        if (!le) return se;
+        return { ...se, image: le.image, animacion: le.animacion };
+      });
+      return { ...local, ...sr, ejercicios: mergedEjercicios };
+    });
   };
 
   const renderGrupo = (titulo, rutinasGrupo, grupoKey) => {
     return (
       <View style={styles.grupoContainer}>
-        <Text style={styles.grupoTitulo}>{titulo}</Text>
+        <Text style={[styles.grupoTitulo, darkMode && styles.darkText]}>{titulo}</Text>
         <View style={styles.rutinasRow}>
           {(rutinasGrupo || []).map((rutina) => (
             <TouchableOpacity
@@ -211,7 +383,7 @@ export default function Rutinas() {
             </TouchableOpacity>
           ))}
           <TouchableOpacity
-            style={styles.addCard}
+            style={[styles.addCard, darkMode && styles.darkAddCard]}
             onPress={() => handleAddRutina(grupoKey)}
           >
             <Ionicons name="add" size={32} color="#ef2b2d" />
@@ -223,13 +395,14 @@ export default function Rutinas() {
 
   const renderPredefinidas = () => (
     <View style={styles.grupoContainer}>
-      <Text style={styles.grupoTitulo}>Rutinas recomendadas</Text>
+      <Text style={[styles.grupoTitulo, darkMode && styles.darkText]}>Rutinas recomendadas</Text>
       <View style={styles.rutinasRow}>
-        {rutinasPredefinidas.map((rutina) => (
+        {(predefinidas.length > 0 ? predefinidas : rutinasPredefinidas).map((rutina) => (
           <TouchableOpacity
             key={rutina.id}
             style={[styles.rutinaCard, { backgroundColor: rutina.color }]}
             onPress={() => handleEntrarRutina(rutina, 'predefinidas')}
+          // onLongPress desactivado en rutinas predefinidas
           >
             <Ionicons name="barbell" size={24} color="#fff" />
             <Text style={styles.rutinaTexto}>{rutina.nombre}</Text>
@@ -243,13 +416,13 @@ export default function Rutinas() {
   );
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="auto" />
+    <View style={[styles.container, darkMode && styles.darkContainer]}>
+      <StatusBar style={darkMode ? "light" : "auto"} />
       <Header title="Rutinas" showBackButton={false} />
 
       <View style={styles.greetingContainer}>
-        <Text style={styles.greetingText}>Hola {userName || 'usuario'},</Text>
-        <Text style={styles.subGreetingText}>¿listo para entrenar?</Text>
+        <Text style={[styles.greetingText, darkMode && styles.darkText]}>Hola {userName || 'usuario'},</Text>
+        <Text style={[styles.subGreetingText, darkMode && styles.darkTextSecondary]}>¿listo para entrenar?</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -347,6 +520,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     backgroundColor: '#fff',
   },
+  darkContainer: {
+    backgroundColor: '#121212',
+  },
   greetingContainer: {
     paddingVertical: 15,
     marginBottom: 10,
@@ -357,6 +533,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
     textAlign: 'center',
+  },
+  darkText: {
+    color: '#fff',
+  },
+  darkTextSecondary: {
+    color: '#aaa',
   },
   subGreetingText: {
     fontSize: 18,
@@ -376,11 +558,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 10,
     color: '#333',
+    textAlign: 'center',
   },
   rutinasRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
+    justifyContent: 'center',
   },
   rutinaCard: {
     width: 140,
@@ -411,6 +595,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#fff',
+  },
+  darkAddCard: {
+    backgroundColor: '#1e1e1e',
   },
   modalOverlay: {
     flex: 1,

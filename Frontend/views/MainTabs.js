@@ -1,8 +1,8 @@
-// views/MainTabs.js
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { useFocusEffect } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import WelcomeScreen from './WelcomeScreen';
 import ChatBot from './ChatBot';
@@ -14,17 +14,32 @@ import Alimentacion from './Alimentacion';
 const Tab = createBottomTabNavigator();
 
 export default function MainTabs() {
+  const [isDark, setIsDark] = useState(false);
+
+  // Cargar preferencia cada vez que el Tab Navigator está en foco o volvemos a él
+  useFocusEffect(
+    useCallback(() => {
+      const loadTheme = async () => {
+        const savedTheme = await AsyncStorage.getItem("darkMode");
+        setIsDark(savedTheme === "true");
+      };
+      loadTheme();
+    }, [])
+  );
+
   return (
     <Tab.Navigator
       initialRouteName="Rutinas"
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarActiveTintColor: '#ef2b2d',
-        tabBarInactiveTintColor: '#999',
+        tabBarInactiveTintColor: isDark ? '#666' : '#999',
         tabBarStyle: {
-          backgroundColor: '#fff',
+          backgroundColor: isDark ? '#1e1e1e' : '#fff',
           borderTopWidth: 0,
           elevation: 5,
+          height: 60,
+          paddingBottom: 8,
         },
         tabBarIcon: ({ color, size }) => {
           let iconName;
@@ -55,8 +70,8 @@ export default function MainTabs() {
     >
       <Tab.Screen name="Rutinas" component={Rutinas} />
       <Tab.Screen name="Alimentacion" component={Alimentacion} />
-      <Tab.Screen name="ChatBot" component={ChatBot}/>
-      <Tab.Screen name="Descubre" component={Buscar}/>
+      <Tab.Screen name="ChatBot" component={ChatBot} />
+      <Tab.Screen name="Descubre" component={Buscar} />
       <Tab.Screen name="Perfil" component={ProfileScreen} />
     </Tab.Navigator>
   );

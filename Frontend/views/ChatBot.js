@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,8 @@ import {
   SafeAreaView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import colors from './colors';
 
 const Chatbot = () => {
@@ -18,7 +20,19 @@ const Chatbot = () => {
     { id: '1', text: '¡Hola! Soy tu asistente de INFIT 😊 ¿En qué puedo ayudarte hoy?', from: 'bot' }
   ]);
   const [input, setInput] = useState('');
+  const [darkMode, setDarkMode] = useState(false);
   const flatListRef = useRef();
+
+  // Cargar preferencia cada vez que entramos
+  useFocusEffect(
+    useCallback(() => {
+      const loadTheme = async () => {
+        const savedTheme = await AsyncStorage.getItem("darkMode");
+        setDarkMode(savedTheme === "true");
+      };
+      loadTheme();
+    }, [])
+  );
 
   const sendMessage = () => {
     if (!input.trim()) return;
@@ -46,13 +60,13 @@ const Chatbot = () => {
     <View
       style={[
         styles.messageBubble,
-        item.from === 'user' ? styles.userBubble : styles.botBubble
+        item.from === 'user' ? styles.userBubble : [styles.botBubble, darkMode && styles.darkBotBubble]
       ]}
     >
       <Text
         style={[
           styles.messageText,
-          item.from === 'user' ? styles.userText : styles.botText
+          item.from === 'user' ? styles.userText : [styles.botText, darkMode && styles.darkText]
         ]}
       >
         {item.text}
@@ -61,14 +75,14 @@ const Chatbot = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, darkMode && styles.darkContainer]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.inner}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Asistente INFIT</Text>
+        <View style={[styles.header, darkMode && styles.darkHeader]}>
+          <Text style={[styles.headerTitle, darkMode && styles.darkText]}>Asistente INFIT</Text>
         </View>
 
         <FlatList
@@ -80,13 +94,13 @@ const Chatbot = () => {
           style={styles.chatList}
         />
 
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, darkMode && styles.darkHeader]}>
           <TextInput
             value={input}
             onChangeText={setInput}
             placeholder="Escribe un mensaje..."
-            placeholderTextColor="#999"
-            style={styles.input}
+            placeholderTextColor={darkMode ? "#666" : "#999"}
+            style={[styles.input, darkMode && styles.darkInput]}
             multiline
           />
           <TouchableOpacity
@@ -107,6 +121,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.bg_gray || '#F5F5F7',
   },
+  darkContainer: {
+    backgroundColor: '#121212',
+  },
   inner: {
     flex: 1,
   },
@@ -119,10 +136,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  darkHeader: {
+    backgroundColor: '#1e1e1e',
+    borderBottomColor: '#333',
+    borderTopColor: '#333',
+  },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: colors.dark_gray || '#333',
+  },
+  darkText: {
+    color: '#fff',
   },
   chatList: {
     flex: 1,
@@ -154,6 +179,9 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     borderBottomLeftRadius: 4,
   },
+  darkBotBubble: {
+    backgroundColor: '#2a2a2a',
+  },
   messageText: {
     fontSize: 16,
     lineHeight: 22,
@@ -183,6 +211,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     maxHeight: 100,
     color: '#333',
+  },
+  darkInput: {
+    backgroundColor: '#2a2a2a',
+    color: '#fff',
   },
   sendButton: {
     width: 44,

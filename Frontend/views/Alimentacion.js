@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput,
   SafeAreaView,
   ImageBackground,
+  Platform,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import styles from './stylesheet.js';
-import colors from './colors.js';
 import Dish from '../src/objects/Dish.js';
 import Diet from '../src/objects/Diet.js';
 import DietGroup from '../src/objects/DietGroup.js';
@@ -51,7 +53,7 @@ export default function Alimentacion() {
           if (!response.ok) {
             throw new Error('Error al cargar dietas personalizadas');
           }
- 
+
           const diets = await response.json();
           console.log('✅ Dietas personalizadas cargadas:', diets.length);
 
@@ -138,7 +140,7 @@ export default function Alimentacion() {
     let r4 = new Diet(4, "Dieta Mediterránea", "descripcion", require('../assets/images/images_diet/diet_01.jpg'), [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
     let r5 = new Diet(5, "Dieta Alta en Proteínas", "descripcion", require('../assets/images/images_diet/diet_01.jpg'), [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
     let r6 = new Diet(6, "Dieta Baja en Carbohidratos", "descripcion", require('../assets/images/images_diet/diet_01.jpg'), [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
-  
+
     return [r1, r2, r3, r4, r5, r6];
   };
 
@@ -202,13 +204,25 @@ export default function Alimentacion() {
   }, [userPersonalizedDiets]);
 
   const [diets, setDiet] = useState([]);
+  const [darkMode, setDarkMode] = useState(false);
+
+  // Cargar preferencia cada vez que entramos
+  useFocusEffect(
+    useCallback(() => {
+      const loadTheme = async () => {
+        const savedTheme = await AsyncStorage.getItem("darkMode");
+        setDarkMode(savedTheme === "true");
+      };
+      loadTheme();
+    }, [])
+  );
 
   const renderGrupo = (group) => (
 
 
     <View style={styles.grupoContainer}>
       {/* group title */}
-      <Text style={styles.grupoTitulo}>{group.name}</Text>
+      <Text style={[styles.grupoTitulo, darkMode && { color: '#fff' }]}>{group.name}</Text>
       {/* recipes row */}
       <View style={styles.recetasRow}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -220,10 +234,10 @@ export default function Alimentacion() {
           {showAddCard(group.canEdit, group)}
 
           <TouchableOpacity
-            style={styles.seeMoreCard}
+            style={[styles.seeMoreCard, darkMode && { backgroundColor: '#000', borderColor: '#fff' }]}
             onPress={() => handleEnterGrupoCompleto(group)}>
-            <Ionicons name="arrow-forward" size={24} color="#111114" />
-            <Text style={{ color: '##111114', fontWeight: '600' }}>Ver más</Text>
+            <Ionicons name="arrow-forward" size={24} color={darkMode ? "#fff" : "#111114"} />
+            <Text style={{ color: darkMode ? "#fff" : '#111114', fontWeight: '600' }}>Ver más</Text>
           </TouchableOpacity>
 
         </ScrollView>
@@ -257,7 +271,7 @@ export default function Alimentacion() {
     return (
       <TouchableOpacity
         key={diet.id}
-        style={[styles.recipeCards, styles.recetaCard]}
+        style={[styles.recipeCards, styles.recetaCard, darkMode && { backgroundColor: '#000', borderColor: '#000' }]}
         onPress={() => {
           handleEnterDiet(diet);
         }}>
@@ -275,7 +289,7 @@ export default function Alimentacion() {
     console.log("showAddCard: ", group)
     if (show) {
       return (
-        <TouchableOpacity style={[styles.addCard]} onPress={() => handleCreateNewDiet(group)}>
+        <TouchableOpacity style={[styles.addCard, darkMode && { backgroundColor: '#000' }]} onPress={() => handleCreateNewDiet(group)}>
           <Ionicons name="add" size={32} color="#ef2b2d" />
         </TouchableOpacity>
       );
@@ -313,9 +327,17 @@ export default function Alimentacion() {
       <StatusBar style="auto" />
 
       <Header title="Alimentación" showBackButton={false} />
+    <View style={[
+      styles.container,
+      darkMode && { backgroundColor: '#000' },
+      { justifyContent: 'flex-start', paddingBottom: 0, marginTop: 0, paddingTop: Platform.OS === "android" ? 30 : 0 }
+    ]}>
+      <StatusBar style={darkMode ? "light" : "auto"} backgroundColor={darkMode ? "#000" : "transparent"} translucent={true} />
+
+      <Header title="Alimentación" showBackButton={false} darkMode={darkMode} />
 
       {/* render groups */}
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.scrollContent, darkMode && { backgroundColor: '#000' }]} showsVerticalScrollIndicator={false}>
         <SafeAreaView>
           {renderGrupo(recipesGroups.g1)}
           {renderGrupo(recipesGroups.g2)}

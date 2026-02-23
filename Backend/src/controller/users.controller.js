@@ -168,6 +168,7 @@ usuarioCtl.updateUsu = async (req, res) => {
             email,
             password,       // (3) si viene, hashear
             photo,
+            photoURL,       // soporte para actualización de avatar desde el frontend
             birthdate,
             height,
             weight,
@@ -194,6 +195,7 @@ usuarioCtl.updateUsu = async (req, res) => {
         }
 
         if (photo !== undefined) updateData.photo = String(photo).trim();
+        if (photoURL !== undefined) updateData.photo = String(photoURL).trim(); // soporte para campo que envía el frontend
 
         // (8) Tipos consistentes
         if (birthdate !== undefined) updateData.birthdate = toISODate(birthdate);
