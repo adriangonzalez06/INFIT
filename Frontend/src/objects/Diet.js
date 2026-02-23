@@ -68,7 +68,12 @@ static from(obj) {
               ingredients,
               dishObj.vegetarian,
               dishObj.vegan,
-              dishObj.gluten_free
+              dishObj.gluten_free,
+              dishObj.calories || dishObj.kcal || 0,
+              dishObj.fiber || 0,
+              dishObj.carbs || 0,
+              dishObj.fat || 0,
+              dishObj.protein || 0
             );
           })
         )

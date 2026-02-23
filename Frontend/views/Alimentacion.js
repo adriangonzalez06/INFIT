@@ -86,12 +86,15 @@ export default function Alimentacion() {
               meal.id || index,
               meal.name,
               meal.imgUrl || require('../assets/images/images_dish/dish_01.jpg'),
-              meal.macronutrients || 0,
-              meal.ingredients || [],
-              meal.calories || 0,
+              [],  // Don't pass Firestore string ingredients - use dish macros instead
               meal.vegetarian || false,
               meal.vegan || false,
-              meal.gluten_free || false
+              meal.gluten_free || false,
+              meal.calories || meal.kcal || 0,
+              meal.fiber || 0,
+              meal.carbs || 0,
+              meal.fat || 0,
+              meal.protein || 0
             )
           );
           setAllDishes(dishesFromDB);
@@ -116,21 +119,21 @@ export default function Alimentacion() {
     let dishes = allDishes;
     if (dishes.length === 0) {
       dishes = [
-        new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, true, true, false),
-        new Dish(2, "Carne", require('../assets/images/images_dish/dish_02.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, false, false, false),
-        new Dish(3, "Postre", require('../assets/images/images_dish/dish_03.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, false, false, false),
-        new Dish(4, "Pescado", require('../assets/images/images_dish/dish_04.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, false, false, false),
-        new Dish(5, "Sopa", require('../assets/images/images_dish/dish_05.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, true, true, false),
-        new Dish(6, "Pasta", require('../assets/images/images_dish/dish_06.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, false, false, false),
+        new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), [], true, true, false),
+        new Dish(2, "Carne", require('../assets/images/images_dish/dish_02.jpg'), [], false, false, false),
+        new Dish(3, "Postre", require('../assets/images/images_dish/dish_03.jpg'), [], false, false, false),
+        new Dish(4, "Pescado", require('../assets/images/images_dish/dish_04.jpg'), [], false, false, false),
+        new Dish(5, "Sopa", require('../assets/images/images_dish/dish_05.jpg'), [], true, true, false),
+        new Dish(6, "Pasta", require('../assets/images/images_dish/dish_06.jpg'), [], false, false, false),
       ];
     }
 
-    const p1 = dishes[0] || new Dish(1, "Plato 1", require('../assets/images/images_dish/dish_01.jpg'), 400, [], 500, false, false, false);
-    const p2 = dishes[1] || new Dish(2, "Plato 2", require('../assets/images/images_dish/dish_02.jpg'), 400, [], 500, false, false, false);
-    const p3 = dishes[2] || new Dish(3, "Plato 3", require('../assets/images/images_dish/dish_03.jpg'), 400, [], 500, false, false, false);
-    const p4 = dishes[3] || new Dish(4, "Plato 4", require('../assets/images/images_dish/dish_04.jpg'), 400, [], 500, false, false, false);
-    const p5 = dishes[4] || new Dish(5, "Plato 5", require('../assets/images/images_dish/dish_05.jpg'), 400, [], 500, false, false, false);
-    const p6 = dishes[5] || new Dish(6, "Plato 6", require('../assets/images/images_dish/dish_06.jpg'), 400, [], 500, false, false, false);
+    const p1 = dishes[0] || new Dish(1, "Plato 1", require('../assets/images/images_dish/dish_01.jpg'), [], false, false, false);
+    const p2 = dishes[1] || new Dish(2, "Plato 2", require('../assets/images/images_dish/dish_02.jpg'), [], false, false, false);
+    const p3 = dishes[2] || new Dish(3, "Plato 3", require('../assets/images/images_dish/dish_03.jpg'), [], false, false, false);
+    const p4 = dishes[3] || new Dish(4, "Plato 4", require('../assets/images/images_dish/dish_04.jpg'), [], false, false, false);
+    const p5 = dishes[4] || new Dish(5, "Plato 5", require('../assets/images/images_dish/dish_05.jpg'), [], false, false, false);
+    const p6 = dishes[5] || new Dish(6, "Plato 6", require('../assets/images/images_dish/dish_06.jpg'), [], false, false, false);
 
     let r1 = new Diet(1, "Dieta Balanceada", "descripcion", require('../assets/images/images_diet/diet_02.jpg'), [[p2, p3, p6], [p6, p4, p5], [p5, p4, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
     let r2 = new Diet(2, "Dieta Vegana", "descripcion", require('../assets/images/images_diet/diet_02.jpg'), [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
@@ -138,30 +141,6 @@ export default function Alimentacion() {
     let r4 = new Diet(4, "Dieta Mediterránea", "descripcion", require('../assets/images/images_diet/diet_01.jpg'), [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
     let r5 = new Diet(5, "Dieta Alta en Proteínas", "descripcion", require('../assets/images/images_diet/diet_01.jpg'), [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
     let r6 = new Diet(6, "Dieta Baja en Carbohidratos", "descripcion", require('../assets/images/images_diet/diet_01.jpg'), [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
-  //id, name, imgUrl, calories, fiber, carbohydrates, fat, protein)
-  let in1 = new Ingredient(1, "Manzana", 30, 2, 12, 2, 3);
-  let in2 = new Ingredient(2, "Carne", 40, 4, 14, 3, 1);
-
-  let ingredients = [
-    { ingredient: in1, grams: 100 },
-    { ingredient: in2, grams: 100 }
-  ];
-
-  {/*platos placeholder, leer los datos de la base de datos*/ }
-  let plato1 = new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), ingredients, true, true, false);
-  let plato2 = new Dish(2, "Carne", require('../assets/images/images_dish/dish_02.jpg'), ingredients, false, false, true);
-  let plato3 = new Dish(3, "Postre", require('../assets/images/images_dish/dish_03.jpg'), ingredients, true, false, false);
-  let plato4 = new Dish(4, "Pescado", require('../assets/images/images_dish/dish_04.jpg'), ingredients, false, false, true);
-  let plato5 = new Dish(5, "Sopa", require('../assets/images/images_dish/dish_05.jpg'), ingredients, true, true, false);
-  let plato6 = new Dish(6, "Pasta", require('../assets/images/images_dish/dish_06.jpg'), ingredients, false, true, false);
-
-  {/* diets de prueba*/ }
-  let r1 = new Diet(1, "Dieta Balanceada", "descripcion", require('../assets/images/images_diet/diet_02.jpg'), [[plato2, plato3, plato6], [plato6, plato4, plato5], [plato5, plato4, plato6], [plato2, plato3], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato3]]);
-  let r2 = new Diet(2, "Dieta Vegana", "descripcion", require('../assets/images/images_diet/diet_02.jpg'), [[plato2, plato3, plato6], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato2, plato3], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato3]]);
-  let r3 = new Diet(3, "Dieta Cetogénica", "descripcion", require('../assets/images/images_diet/diet_01.jpg'), [[plato2, plato3, plato6], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato2, plato3], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato3]]);
-  let r4 = new Diet(4, "Dieta Mediterránea", "descripcion", require('../assets/images/images_diet/diet_01.jpg'), [[plato2, plato3, plato6], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato2, plato3], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato3]]);
-  let r5 = new Diet(5, "Dieta Alta en Proteínas", "descripcion", require('../assets/images/images_diet/diet_01.jpg'), [[plato2, plato3, plato6], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato2, plato3], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato3]]);
-  let r6 = new Diet(6, "Dieta Baja en Carbohidratos", "descripcion", require('../assets/images/images_diet/diet_01.jpg'), [[plato2, plato3, plato6], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato2, plato3], [plato1, plato2, plato3], [plato5, plato1, plato6], [plato3]]);
     return [r1, r2, r3, r4, r5, r6];
   };
 

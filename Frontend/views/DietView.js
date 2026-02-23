@@ -45,12 +45,15 @@ export default function DietView({ route }) {
               meal.id || index,
               meal.name,
               meal.imgUrl || require('../assets/images/images_dish/dish_01.jpg'),
-              meal.macronutrients || 0,
-              meal.ingredients || [],
-              meal.calories || 0,
+              [],  // Don't pass Firestore string ingredients - use dish macros instead
               meal.vegetarian || false,
               meal.vegan || false,
-              meal.gluten_free || false
+              meal.gluten_free || false,
+              meal.calories || meal.kcal || 0,
+              meal.fiber || 0,
+              meal.carbs || 0,
+              meal.fat || 0,
+              meal.protein || 0
             )
           );
           setAllAvailableDishes(dishesFromDB);
@@ -69,12 +72,15 @@ export default function DietView({ route }) {
                   dishFromDiet.id,
                   dishFromDiet.name,
                   completeDish.imgUrl,
-                  dishFromDiet.macronutrients || completeDish.macronutrients,
                   dishFromDiet.ingredients || completeDish.ingredients || [],
-                  dishFromDiet.calories || completeDish.calories,
                   dishFromDiet.vegetarian !== undefined ? dishFromDiet.vegetarian : completeDish.vegetarian,
                   dishFromDiet.vegan !== undefined ? dishFromDiet.vegan : completeDish.vegan,
-                  dishFromDiet.gluten_free !== undefined ? dishFromDiet.gluten_free : completeDish.gluten_free
+                  dishFromDiet.gluten_free !== undefined ? dishFromDiet.gluten_free : completeDish.gluten_free,
+                  dishFromDiet.calories !== undefined ? dishFromDiet.calories : completeDish.calories || dishFromDiet.kcal || completeDish.kcal || 0,
+                  dishFromDiet.fiber !== undefined ? dishFromDiet.fiber : completeDish.fiber || 0,
+                  dishFromDiet.carbs !== undefined ? dishFromDiet.carbs : completeDish.carbs || 0,
+                  dishFromDiet.fat !== undefined ? dishFromDiet.fat : completeDish.fat || 0,
+                  dishFromDiet.protein !== undefined ? dishFromDiet.protein : completeDish.protein || 0
                 );
               }
               return dishFromDiet;
@@ -86,9 +92,9 @@ export default function DietView({ route }) {
         } else {
           // Fallback con platos de ejemplo
           const fallbackDishes = [
-            new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, true, true, false),
-            new Dish(2, "Carne", require('../assets/images/images_dish/dish_02.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, false, false, false),
-            new Dish(3, "Postre", require('../assets/images/images_dish/dish_03.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, false, false, false),
+            new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), [], true, true, false),
+            new Dish(2, "Carne", require('../assets/images/images_dish/dish_02.jpg'), [], false, false, false),
+            new Dish(3, "Postre", require('../assets/images/images_dish/dish_03.jpg'), [], false, false, false),
           ];
           setAllAvailableDishes(fallbackDishes);
           setDishes(fallbackDishes);

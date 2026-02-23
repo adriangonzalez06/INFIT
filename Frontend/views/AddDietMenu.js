@@ -120,30 +120,69 @@ export default function AddDietMenu({ route }) {
       try {
         const meals = await getAllMeals();
         if (meals && meals.length > 0) {
+          console.log('📊 Primera comida de Firestore:', JSON.stringify(meals[0], null, 2));
           const dishesFromDB = meals.map((meal, index) =>
             new Dish(
               meal.id || index,
               meal.name,
               meal.imgUrl || require('../assets/images/images_dish/dish_01.jpg'),
-              meal.macronutrients || 0,
-              meal.ingredients || [],
-              meal.calories || 0,
+              [],  // Don't pass Firestore string ingredients - use dish macros instead
               meal.vegetarian || false,
               meal.vegan || false,
-              meal.gluten_free || false
+              meal.gluten_free || false,
+              meal.calories || meal.kcal || 0,
+              meal.fiber || 0,
+              meal.carbs || 0,
+              meal.fat || 0,
+              meal.protein || 0
             )
           );
-          setAllAvailableDishes(dishesFromDB);
           console.log('✅ Platos cargados en AddDietMenu:', dishesFromDB.length);
+          console.log('📋 Primer plato objeto:', dishesFromDB[0]);
+          setAllAvailableDishes(dishesFromDB);
+
+          // Enriquecer dieta existente con macros de Firestore
+          if (!creatingRecipe && diet && diet.weeklyDishes) {
+            const enrichedWeeklyDishes = diet.weeklyDishes.map(dayDishes =>
+              (dayDishes || []).map(dishFromDiet => {
+                // Buscar este dish en los meals de Firestore
+                const firebaseDish = dishesFromDB.find(d => d.id === dishFromDiet.id || d.name === dishFromDiet.name);
+                if (firebaseDish && (!dishFromDiet.fiber && !dishFromDiet.carbs && !dishFromDiet.fat && !dishFromDiet.protein)) {
+                  // Si el dish no tiene macros pero lo encontramos en Firestore, copiarlos
+                  console.log(`🔄 Enriqueciendo ${dishFromDiet.name} con macros de Firestore`);
+                  return new Dish(
+                    dishFromDiet.id,
+                    dishFromDiet.name,
+                    dishFromDiet.imgUrl || firebaseDish.imgUrl,
+                    [],
+                    dishFromDiet.vegetarian,
+                    dishFromDiet.vegan,
+                    dishFromDiet.gluten_free,
+                    firebaseDish.calories,
+                    firebaseDish.fiber,
+                    firebaseDish.carbs,
+                    firebaseDish.fat,
+                    firebaseDish.protein
+                  );
+                }
+                return dishFromDiet;
+              })
+            );
+            diet.weeklyDishes = enrichedWeeklyDishes;
+            // Actualizar estado de dishes con los datos enriquecidos
+            setDishes(diet.getDishesForDay(0));
+            setAllDishes(diet.getAllDishes());
+          }
+
         } else {
           // Si no hay platos de Firestore, usar fallback
           const fallbackDishes = [
-            new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, true, true, false),
-            new Dish(2, "Carne", require('../assets/images/images_dish/dish_02.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, false, false, false),
-            new Dish(3, "Postre", require('../assets/images/images_dish/dish_03.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, false, false, false),
-            new Dish(4, "Pescado", require('../assets/images/images_dish/dish_04.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, false, false, false),
-            new Dish(5, "Sopa", require('../assets/images/images_dish/dish_05.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, true, true, false),
-            new Dish(6, "Pasta", require('../assets/images/images_dish/dish_06.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, false, false, false),
+            new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), [], true, true, false),
+            new Dish(2, "Carne", require('../assets/images/images_dish/dish_02.jpg'), [], false, false, false),
+            new Dish(3, "Postre", require('../assets/images/images_dish/dish_03.jpg'), [], false, false, false),
+            new Dish(4, "Pescado", require('../assets/images/images_dish/dish_04.jpg'), [], false, false, false),
+            new Dish(5, "Sopa", require('../assets/images/images_dish/dish_05.jpg'), [], true, true, false),
+            new Dish(6, "Pasta", require('../assets/images/images_dish/dish_06.jpg'), [], false, false, false),
           ];
           setAllAvailableDishes(fallbackDishes);
           console.log('⚠️  Usando platos de fallback');
@@ -152,9 +191,9 @@ export default function AddDietMenu({ route }) {
         console.error('❌ Error cargando platos:', error);
         // Fallback en caso de error
         const fallbackDishes = [
-          new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, true, true, false),
-          new Dish(2, "Carne", require('../assets/images/images_dish/dish_02.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, false, false, false),
-          new Dish(3, "Postre", require('../assets/images/images_dish/dish_03.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, false, false, false),
+          new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), [], true, true, false),
+          new Dish(2, "Carne", require('../assets/images/images_dish/dish_02.jpg'), [], false, false, false),
+          new Dish(3, "Postre", require('../assets/images/images_dish/dish_03.jpg'), [], false, false, false),
         ];
         setAllAvailableDishes(fallbackDishes);
       }
@@ -162,8 +201,7 @@ export default function AddDietMenu({ route }) {
 
     loadMeals();
   }, []);
-  {/*array de todos los platos*/ }
-  const allAvailableDishes = [dish1, dish2, dish3, dish4, dish5, dish6];
+  {/*array de mis platos favoritos*/ }
   const myDishes = [dish1, dish3];
 
   {/*datos de la dieta*/ }
@@ -180,7 +218,7 @@ export default function AddDietMenu({ route }) {
   {/*Totales de la diet*/ }
   const totalCalories = (dishes.reduce((sum, p) => sum + (p?.calories || 0), 0));
   const totalFiber = (dishes.reduce((sum, p) => sum + (p?.fiber || 0), 0));
-  const totalCarbs = (dishes.reduce((sum, p) => sum + (p?.carbohydrates || 0), 0));
+  const totalCarbs = (dishes.reduce((sum, p) => sum + (p?.carbs || 0), 0));
   const totalFat = (dishes.reduce((sum, p) => sum + (p?.fat || 0), 0));
   const totalProtein = (dishes.reduce((sum, p) => sum + (p?.protein || 0), 0));
 
@@ -244,7 +282,7 @@ export default function AddDietMenu({ route }) {
   const handleSetImage = (url) => {
     setSelectedUri(url);
     diet.setUrl(url);
-  }
+  };
 
   {/*-------FUNCIONES DE LOS PLATOS--------*/ }
   {/*funcion para agregar un plato a la dieta*/ }
@@ -393,17 +431,36 @@ export default function AddDietMenu({ route }) {
     let totalFat = 0;
     let totalProtein = 0;
 
-    dish.getIngredientsWithGrams().forEach(({ ingredient, grams }) => {
-      if (!ingredient) return;
-      totalCalories += ((ingredient.calories || 0) * (grams || 0)) / 100;
-      totalFiber += ((ingredient.fiber || 0) * (grams || 0)) / 100;
-      totalCarbs += ((ingredient.carbohydrates || 0) * (grams || 0)) / 100;
-      totalFat += ((ingredient.fat || 0) * (grams || 0)) / 100;
-      totalProtein += ((ingredient.protein || 0) * (grams || 0)) / 100;
-    });
+    const ingredientsWithGrams = dish?.getIngredientsWithGrams?.() || [];
+    console.log('💣 calculateDishTotals:', { dishName: dish?.name, ingredientsCount: ingredientsWithGrams.length, dishCalories: dish?.calories, dishFiber: dish?.fiber, dishCarbs: dish?.carbs });
+    
+    if (Array.isArray(ingredientsWithGrams) && ingredientsWithGrams.length > 0) {
+      console.log('🥗 Usando ingredientes...');
+      // Si hay ingredientes, calcular desde ellos
+      ingredientsWithGrams.forEach((item) => {
+        if (!item) return;
+        const { ingredient, grams } = item;
+        if (!ingredient) return;
+        totalCalories += ((ingredient.calories || 0) * (grams || 0)) / 100;
+        totalFiber += ((ingredient.fiber || 0) * (grams || 0)) / 100;
+        totalCarbs += ((ingredient.carbohydrates || 0) * (grams || 0)) / 100;
+        totalFat += ((ingredient.fat || 0) * (grams || 0)) / 100;
+        totalProtein += ((ingredient.protein || 0) * (grams || 0)) / 100;
+      });
+    } else if (dish && (dish.calories !== undefined || dish.fiber !== undefined || dish.carbs !== undefined || dish.fat !== undefined || dish.protein !== undefined)) {
+      console.log('♻️ Usando macros del dish:', { cal: dish.calories, fiber: dish.fiber, carbs: dish.carbs, fat: dish.fat, protein: dish.protein });
+      // Si no hay ingredientes pero hay macros en el plato, usarlos
+      totalCalories = dish.calories || 0;
+      totalFiber = dish.fiber || 0;
+      totalCarbs = dish.carbs || 0;
+      totalFat = dish.fat || 0;
+      totalProtein = dish.protein || 0;
+    } else {
+      console.log('⚠️ No hay ingredientes ni macros en el dish');
+    }
 
+    console.log('📊 Totales calculados:', { totalCalories, totalFiber, totalCarbs, totalFat, totalProtein });
     return { totalCalories, totalFiber, totalCarbs, totalFat, totalProtein, }
-
   };
 
   {/*-------FUNCIONES DE LOS TOTALES--------*/ }
@@ -416,16 +473,31 @@ export default function AddDietMenu({ route }) {
     let totalFat = 0;
     let totalProtein = 0;
 
-    diet.getDishesForDay(selectedDay).forEach((dish) => {
-      dish.getIngredientsWithGrams().forEach(({ ingredient, grams }) => {
-        if (!ingredient) return;
+    const dayDishes = diet.getDishesForDay(selectedDay) || [];
+    dayDishes.forEach((dish) => {
+      const ingredientsWithGrams = dish?.getIngredientsWithGrams?.() || [];
+      
+      if (Array.isArray(ingredientsWithGrams) && ingredientsWithGrams.length > 0) {
+        // Si hay ingredientes, calcular desde ellos
+        ingredientsWithGrams.forEach((item) => {
+          if (!item) return;
+          const { ingredient, grams } = item;
+          if (!ingredient) return;
 
-        totalCalories += (ingredient.calories * grams) / 100;
-        totalFiber += (ingredient.fiber * grams) / 100;
-        totalCarbs += (ingredient.carbohydrates * grams) / 100;
-        totalFat += (ingredient.fat * grams) / 100;
-        totalProtein += (ingredient.protein * grams) / 100;
-      });
+          totalCalories += ((ingredient.calories || 0) * (grams || 0)) / 100;
+          totalFiber += ((ingredient.fiber || 0) * (grams || 0)) / 100;
+          totalCarbs += ((ingredient.carbohydrates || 0) * (grams || 0)) / 100;
+          totalFat += ((ingredient.fat || 0) * (grams || 0)) / 100;
+          totalProtein += ((ingredient.protein || 0) * (grams || 0)) / 100;
+        });
+      } else if (dish && (dish.calories !== undefined || dish.fiber !== undefined || dish.carbs !== undefined || dish.fat !== undefined || dish.protein !== undefined)) {
+        // Si no hay ingredientes pero hay macros en el plato, usarlos
+        totalCalories += (dish.calories || 0);
+        totalFiber += (dish.fiber || 0);
+        totalCarbs += (dish.carbs || 0);
+        totalFat += (dish.fat || 0);
+        totalProtein += (dish.protein || 0);
+      }
     });
 
     totalCalories = roundNums(totalCalories);
@@ -446,17 +518,32 @@ export default function AddDietMenu({ route }) {
     let totalFat = 0;
     let totalProtein = 0;
 
-    diet.getAllDishes().forEach((dayDishes) => {
+    const allWeeklyDishes = diet.getAllDishes() || [];
+    allWeeklyDishes.forEach((dayDishes) => {
       (dayDishes || []).forEach((dish) => {
-        dish.getIngredientsWithGrams().forEach(({ ingredient, grams }) => {
-          if (!ingredient) return;
+        const ingredientsWithGrams = dish?.getIngredientsWithGrams?.() || [];
+        
+        if (Array.isArray(ingredientsWithGrams) && ingredientsWithGrams.length > 0) {
+          // Si hay ingredientes, calcular desde ellos
+          ingredientsWithGrams.forEach((item) => {
+            if (!item) return;
+            const { ingredient, grams } = item;
+            if (!ingredient) return;
 
-          totalCalories += (ingredient.calories * grams) / 100;
-          totalFiber += (ingredient.fiber * grams) / 100;
-          totalCarbs += (ingredient.carbohydrates * grams) / 100;
-          totalFat += (ingredient.fat * grams) / 100;
-          totalProtein += (ingredient.protein * grams) / 100;
-        });
+            totalCalories += ((ingredient.calories || 0) * (grams || 0)) / 100;
+            totalFiber += ((ingredient.fiber || 0) * (grams || 0)) / 100;
+            totalCarbs += ((ingredient.carbohydrates || 0) * (grams || 0)) / 100;
+            totalFat += ((ingredient.fat || 0) * (grams || 0)) / 100;
+            totalProtein += ((ingredient.protein || 0) * (grams || 0)) / 100;
+          });
+        } else if (dish && (dish.calories !== undefined || dish.fiber !== undefined || dish.carbs !== undefined || dish.fat !== undefined || dish.protein !== undefined)) {
+          // Si no hay ingredientes pero hay macros en el plato, usarlos
+          totalCalories += (dish.calories || 0);
+          totalFiber += (dish.fiber || 0);
+          totalCarbs += (dish.carbs || 0);
+          totalFat += (dish.fat || 0);
+          totalProtein += (dish.protein || 0);
+        }
       });
     });
 
@@ -473,7 +560,7 @@ export default function AddDietMenu({ route }) {
   const roundNums = (num) => {
     let roundedNum = Math.round(num * 100) / 100
     return roundedNum.toFixed(2);
-  }
+  };
 
   const saveDiet = async () => {
     try {
@@ -517,13 +604,10 @@ export default function AddDietMenu({ route }) {
       });
 
       // Preparar datos para enviar a la API
-      const dietData = {
       const dietToSave = {
         id: diet.id,
         name: diet.name,
         description: diet.description,
-        imgUrl: diet.imgUrl,
-        weeklyDishes: diet.weeklyDishes
         userID: userDocId,
         weeklyDishes: serializedWeeklyDishes,
         imgUrl: 'https://via.placeholder.com/300x300?text=Dieta+Personalizada',
@@ -537,7 +621,7 @@ export default function AddDietMenu({ route }) {
       const url = `http://${host}:${port}/api/infopersonalizeddiet`;
 
       console.log('📤 Enviando dieta a:', url);
-      console.log('📦 Datos:', JSON.stringify(dietData));
+      console.log('📦 Datos:', JSON.stringify(dietToSave));
 
       // Enviar POST a la API
       const response = await fetch(url, {
@@ -545,7 +629,7 @@ export default function AddDietMenu({ route }) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(dietData),
+        body: JSON.stringify(dietToSave),
       });
 
       if (!response.ok) {
@@ -568,7 +652,7 @@ export default function AddDietMenu({ route }) {
       // Actualizar el array local también
       addingGroup.push({
         id: result.id,
-        ...dietData
+        ...dietToSave
       });
 
       setDietName('');
@@ -625,7 +709,8 @@ export default function AddDietMenu({ route }) {
 
       )
     }
-  }
+    return null;
+  };
 
 
   return (

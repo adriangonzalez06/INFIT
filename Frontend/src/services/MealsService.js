@@ -30,8 +30,12 @@ export const getAllMeals = async () => {
         id: doc.id,
         name: data.name || data.nombre || '',
         imgUrl: data.imgUrl || data.image || data.imagen || '',
+        kcal: data.kcal || data.calories || 0,
         calories: data.kcal || data.calories || 0,
-        macronutrients: data.protein || data.proteins || data.proteina || 0,
+        fiber: data.fiber || data.fibra || 0,
+        carbs: data.carbs || data.carbohydrates || data.carbohidratos || 0,
+        fat: data.fat || data.grasas || 0,
+        protein: data.protein || data.proteins || data.proteina || 0,
         ingredients: Array.isArray(data.ingredients) ? data.ingredients : 
                     typeof data.ingredients === 'string' ? [data.ingredients] : [],
         vegetarian: data.vegetarian || false,
