@@ -16,6 +16,7 @@ import { getAuth, signOut } from "firebase/auth";
 import { initializeApp, getApps } from "firebase/app";
 import { firebaseConfig } from "../firebaseConfig";
 import ReactNativeAsyncStorage from "@react-native-async-storage/async-storage";
+import AppModal from './AppModal';
 
 const app =
   getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
@@ -25,6 +26,11 @@ export default function SettingsScreen({ navigation }) {
   const [darkMode, setDarkMode] = useState(false);
   const [units, setUnits] = useState("kg/cm");
   const [language, setLanguage] = useState("es");
+  const [modal, setModal] = useState({ visible: false, type: 'info', title: '', message: '', onConfirm: null });
+
+  const showModal = (type, title, message, onConfirm = null) =>
+    setModal({ visible: true, type, title, message, onConfirm });
+  const hideModal = () => setModal(m => ({ ...m, visible: false }));
 
   // Cargar preferencia al montar el componente
   React.useEffect(() => {
@@ -43,11 +49,8 @@ export default function SettingsScreen({ navigation }) {
     await ReactNativeAsyncStorage.setItem("darkMode", String(value));
   };
 
-  const confirmAction = (message, action) => {
-    Alert.alert("Confirmación", message, [
-      { text: "Cancelar", style: "cancel" },
-      { text: "Aceptar", onPress: action },
-    ]);
+  const confirmAction = (message, action, title = 'Confirmación') => {
+    showModal('confirm', title, message, action);
   };
 
   const handleLogout = async () => {
@@ -60,7 +63,7 @@ export default function SettingsScreen({ navigation }) {
       navigation.navigate("Login");
     } catch (error) {
       console.error("Error al cerrar sesión:", error);
-      Alert.alert("Error", "Error al cerrar sesión: " + error.message);
+      showModal('error', 'Error al cerrar sesión', error.message || 'No se pudo cerrar la sesión. Inténtalo de nuevo.');
     }
   };
 
@@ -71,137 +74,150 @@ export default function SettingsScreen({ navigation }) {
 
 
   return (
-    <View style={[styles.container, darkMode && styles.darkContainer]}>
-      <ScrollView>
-        {/* Encabezado */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
-          </TouchableOpacity>
-          <Text style={[styles.title, darkMode && styles.darkText]}>Ajustes</Text>
-        </View>
-
-        {/* Sección Cuenta */}
-        <Text style={[styles.section, { color: sectionHeaderColor }]}>Cuenta</Text>
-
-        <Pressable
-          style={[styles.option, darkMode && styles.darkOption]}
-          onPress={() => navigation.navigate("ChangePassword")}
-        >
-          <View style={styles.optionLeft}>
-            <Ionicons name="key-outline" size={20} color={iconColor} />
-            <Text style={[styles.optionText, darkMode && styles.darkText]}>Cambiar contraseña</Text>
+    <>
+      <View style={[styles.container, darkMode && styles.darkContainer]}>
+        <ScrollView>
+          {/* Encabezado */}
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
+            </TouchableOpacity>
+            <Text style={[styles.title, darkMode && styles.darkText]}>Ajustes</Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color={darkMode ? "#444" : "#ccc"} />
-        </Pressable>
 
-        <Pressable
-          style={[styles.option, darkMode && styles.darkOption]}
-          onPress={() => navigation.navigate("EditProfile")}
-        >
-          <View style={styles.optionLeft}>
-            <Ionicons name="person-circle-outline" size={20} color={iconColor} />
-            <Text style={[styles.optionText, darkMode && styles.darkText]}>Editar perfil</Text>
+          {/* Sección Cuenta */}
+          <Text style={[styles.section, { color: sectionHeaderColor }]}>Cuenta</Text>
+
+          <Pressable
+            style={[styles.option, darkMode && styles.darkOption]}
+            onPress={() => navigation.navigate("ChangePassword")}
+          >
+            <View style={styles.optionLeft}>
+              <Ionicons name="key-outline" size={20} color={iconColor} />
+              <Text style={[styles.optionText, darkMode && styles.darkText]}>Cambiar contraseña</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={darkMode ? "#444" : "#ccc"} />
+          </Pressable>
+
+          <Pressable
+            style={[styles.option, darkMode && styles.darkOption]}
+            onPress={() => navigation.navigate("EditProfile")}
+          >
+            <View style={styles.optionLeft}>
+              <Ionicons name="person-circle-outline" size={20} color={iconColor} />
+              <Text style={[styles.optionText, darkMode && styles.darkText]}>Editar perfil</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={darkMode ? "#444" : "#ccc"} />
+          </Pressable>
+
+          <Pressable
+            style={[styles.option, darkMode && styles.darkOption]}
+            onPress={() => navigation.navigate("ChangeEmail")}
+          >
+            <View style={styles.optionLeft}>
+              <Ionicons name="mail-outline" size={20} color={iconColor} />
+              <Text style={[styles.optionText, darkMode && styles.darkText]}>Cambiar correo electrónico</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={darkMode ? "#444" : "#ccc"} />
+          </Pressable>
+
+          <Pressable
+            style={[styles.option, darkMode && styles.darkOption]}
+            onPress={() => confirmAction("¿Deseas cerrar sesión?", handleLogout)}
+          >
+            <View style={styles.optionLeft}>
+              <Ionicons name="log-out-outline" size={20} color={iconColor} />
+              <Text style={[styles.optionText, darkMode && styles.darkText]}>Cerrar sesión</Text>
+            </View>
+          </Pressable>
+
+          {/* Sección Preferencias */}
+          <Text style={[styles.section, { color: sectionHeaderColor }]}>Preferencias</Text>
+
+          <View style={[styles.option, darkMode && styles.darkOption]}>
+            <View style={styles.optionLeft}>
+              <Ionicons name="moon-outline" size={20} color={iconColor} />
+              <Text style={[styles.optionText, darkMode && styles.darkText]}>Modo oscuro</Text>
+            </View>
+            <Switch
+              value={darkMode}
+              onValueChange={toggleDarkMode}
+              trackColor={{ false: "#ddd", true: "#ef2b2d" }}
+              thumbColor={Platform.OS === "ios" ? undefined : (darkMode ? "#fff" : "#f4f3f4")}
+            />
           </View>
-          <Ionicons name="chevron-forward" size={18} color={darkMode ? "#444" : "#ccc"} />
-        </Pressable>
 
-        <Pressable
-          style={[styles.option, darkMode && styles.darkOption]}
-          onPress={() => navigation.navigate("ChangeEmail")}
-        >
-          <View style={styles.optionLeft}>
-            <Ionicons name="mail-outline" size={20} color={iconColor} />
-            <Text style={[styles.optionText, darkMode && styles.darkText]}>Cambiar correo electrónico</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={darkMode ? "#444" : "#ccc"} />
-        </Pressable>
+          <Pressable
+            style={[styles.option, darkMode && styles.darkOption]}
+            onPress={() => setUnits(units === "kg/cm" ? "lb/in" : "kg/cm")}
+          >
+            <View style={styles.optionLeft}>
+              <Ionicons name="scale-outline" size={20} color={iconColor} />
+              <Text style={[styles.optionText, darkMode && styles.darkText]}>Unidades: {units}</Text>
+            </View>
+          </Pressable>
 
-        <Pressable
-          style={[styles.option, darkMode && styles.darkOption]}
-          onPress={() => confirmAction("¿Deseas cerrar sesión?", handleLogout)}
-        >
-          <View style={styles.optionLeft}>
-            <Ionicons name="log-out-outline" size={20} color={iconColor} />
-            <Text style={[styles.optionText, darkMode && styles.darkText]}>Cerrar sesión</Text>
-          </View>
-        </Pressable>
+          <Pressable
+            style={[styles.option, darkMode && styles.darkOption]}
+            onPress={() => setLanguage(language === "es" ? "en" : "es")}
+          >
+            <View style={styles.optionLeft}>
+              <Ionicons name="language-outline" size={20} color={iconColor} />
+              <Text style={[styles.optionText, darkMode && styles.darkText]}>Idioma: {language}</Text>
+            </View>
+          </Pressable>
 
-        {/* Sección Preferencias */}
-        <Text style={[styles.section, { color: sectionHeaderColor }]}>Preferencias</Text>
+          {/* Sección Sistema */}
+          <Text style={[styles.section, { color: sectionHeaderColor }]}>Sistema</Text>
 
-        <View style={[styles.option, darkMode && styles.darkOption]}>
-          <View style={styles.optionLeft}>
-            <Ionicons name="moon-outline" size={20} color={iconColor} />
-            <Text style={[styles.optionText, darkMode && styles.darkText]}>Modo oscuro</Text>
-          </View>
-          <Switch
-            value={darkMode}
-            onValueChange={toggleDarkMode}
-            trackColor={{ false: "#ddd", true: "#ef2b2d" }}
-            thumbColor={Platform.OS === "ios" ? undefined : (darkMode ? "#fff" : "#f4f3f4")}
-          />
-        </View>
+          <Pressable
+            style={[styles.option, darkMode && styles.darkOption]}
+            onPress={() => confirmAction("¿Deseas borrar la caché?", () => { })}
+          >
+            <View style={styles.optionLeft}>
+              <Ionicons name="trash-outline" size={20} color={iconColor} />
+              <Text style={[styles.optionText, darkMode && styles.darkText]}>Borrar caché</Text>
+            </View>
+          </Pressable>
 
-        <Pressable
-          style={[styles.option, darkMode && styles.darkOption]}
-          onPress={() => setUnits(units === "kg/cm" ? "lb/in" : "kg/cm")}
-        >
-          <View style={styles.optionLeft}>
-            <Ionicons name="scale-outline" size={20} color={iconColor} />
-            <Text style={[styles.optionText, darkMode && styles.darkText]}>Unidades: {units}</Text>
-          </View>
-        </Pressable>
+          <Pressable
+            style={[styles.option, darkMode && styles.darkOption]}
+            onPress={() => confirmAction("¿Deseas borrar todos los datos?", () => { })}
+          >
+            <View style={styles.optionLeft}>
+              <Ionicons name="warning-outline" size={20} color="#ef2b2d" />
+              <Text style={[styles.optionText, { color: "#ef2b2d" }]}>Borrar todos los datos</Text>
+            </View>
+          </Pressable>
 
-        <Pressable
-          style={[styles.option, darkMode && styles.darkOption]}
-          onPress={() => setLanguage(language === "es" ? "en" : "es")}
-        >
-          <View style={styles.optionLeft}>
-            <Ionicons name="language-outline" size={20} color={iconColor} />
-            <Text style={[styles.optionText, darkMode && styles.darkText]}>Idioma: {language}</Text>
-          </View>
-        </Pressable>
+          {/* Sección Legal */}
+          <Text style={[styles.section, { color: sectionHeaderColor }]}>Legal</Text>
+          <Pressable
+            style={[styles.option, darkMode && styles.darkOption]}
+            onPress={() => navigation.navigate("PrivacyPolicy")}
+          >
+            <View style={styles.optionLeft}>
+              <Ionicons name="document-text-outline" size={20} color={iconColor} />
+              <Text style={[styles.optionText, darkMode && styles.darkText]}>Política de privacidad</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={darkMode ? "#444" : "#ccc"} />
+          </Pressable>
 
-        {/* Sección Sistema */}
-        <Text style={[styles.section, { color: sectionHeaderColor }]}>Sistema</Text>
-
-        <Pressable
-          style={[styles.option, darkMode && styles.darkOption]}
-          onPress={() => confirmAction("¿Deseas borrar la caché?", () => { })}
-        >
-          <View style={styles.optionLeft}>
-            <Ionicons name="trash-outline" size={20} color={iconColor} />
-            <Text style={[styles.optionText, darkMode && styles.darkText]}>Borrar caché</Text>
-          </View>
-        </Pressable>
-
-        <Pressable
-          style={[styles.option, darkMode && styles.darkOption]}
-          onPress={() => confirmAction("¿Deseas borrar todos los datos?", () => { })}
-        >
-          <View style={styles.optionLeft}>
-            <Ionicons name="warning-outline" size={20} color="#ef2b2d" />
-            <Text style={[styles.optionText, { color: "#ef2b2d" }]}>Borrar todos los datos</Text>
-          </View>
-        </Pressable>
-
-        {/* Sección Legal */}
-        <Text style={[styles.section, { color: sectionHeaderColor }]}>Legal</Text>
-        <Pressable
-          style={[styles.option, darkMode && styles.darkOption]}
-          onPress={() => navigation.navigate("PrivacyPolicy")}
-        >
-          <View style={styles.optionLeft}>
-            <Ionicons name="document-text-outline" size={20} color={iconColor} />
-            <Text style={[styles.optionText, darkMode && styles.darkText]}>Política de privacidad</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={darkMode ? "#444" : "#ccc"} />
-        </Pressable>
-
-        <Text style={styles.version}>Versión 1.0.0</Text>
-      </ScrollView>
-    </View>
+          <Text style={styles.version}>Versión 1.0.0</Text>
+        </ScrollView>
+      </View>
+      <AppModal
+        visible={modal.visible}
+        type={modal.type}
+        title={modal.title}
+        message={modal.message}
+        confirmText={modal.type === 'confirm' ? 'Aceptar' : 'Entendido'}
+        cancelText="Cancelar"
+        onConfirm={() => { hideModal(); modal.onConfirm && modal.onConfirm(); }}
+        onCancel={hideModal}
+        darkMode={darkMode}
+      />
+    </>
   );
 }
 

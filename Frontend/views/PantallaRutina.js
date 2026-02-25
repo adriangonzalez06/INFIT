@@ -10,8 +10,8 @@ import {
   StyleSheet,
   Image,
   Platform,
-  Alert
 } from 'react-native';
+import AppModal from './AppModal';
 import { StatusBar } from 'expo-status-bar';
 import { useFocusEffect } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -47,6 +47,9 @@ export default function PantallaRutina({ route, navigation }) {
   // NUEVO: modo edición
   const [modoEdicion, setModoEdicion] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [appModal, setAppModal] = useState({ visible: false, type: 'error', title: '', message: '' });
+  const showAppModal = (type, title, message) => setAppModal({ visible: true, type, title, message });
+  const hideAppModal = () => setAppModal(m => ({ ...m, visible: false }));
 
   // Cargar preferencia cada vez que entramos
   useFocusEffect(
@@ -121,7 +124,7 @@ export default function PantallaRutina({ route, navigation }) {
       await axios.put(url, payload);
     } catch (error) {
       console.error('Error autosaving routine:', error);
-      Alert.alert('Error', 'No se pudieron guardar los cambios en la nube');
+      showAppModal('error', 'Error de sincronización', 'No se pudieron guardar los cambios en la nube.');
     }
   };
 
@@ -178,336 +181,347 @@ export default function PantallaRutina({ route, navigation }) {
   };
 
   return (
-    <View style={[styles.rutinaContainer, darkMode && styles.darkContainer]}>
-      <StatusBar style={darkMode ? "light" : "auto"} backgroundColor={darkMode ? "#121212" : "transparent"} translucent={true} />
-      {/* HEADER */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
-        </TouchableOpacity>
-        <Text style={styles.title}>{rutina.nombre}</Text>
-        <TouchableOpacity onPress={() => setBuscadorVisible(true)}>
-          <Ionicons name="search" size={24} color="#ef2b2d" />
-        </TouchableOpacity>
-      </View>
-
-      {/* LISTA DE EJERCICIOS */}
-      <FlatList
-        contentContainerStyle={{ paddingTop: 0 }}
-        data={ejercicios}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            onLongPress={grupoKey !== 'predefinidas' ? () => {
-              setEjercicioSeleccionado(item);
-              setOpcionesVisible(true);
-            } : undefined}
-          >
-            <View style={[styles.ejercicioItem, darkMode && styles.darkItemBorder]}>
-              {item.animacion ? (
-                <LottieView
-                  source={item.animacion}
-                  autoPlay
-                  loop
-                  style={styles.iconoGif}
-                />
-              )
-                : item.image ? (
-                  <Image
-                    source={{ uri: item.image }}
-                    style={styles.iconoGif}
-                    resizeMode="cover"
-                    resizeMethod="resize"
-                    onError={(e) => console.log(`Error loading image for ${item.nombre}:`, e.nativeEvent.error)}
-                  />
-                ) : (
-                  <Ionicons name="barbell-outline" size={40} color={darkMode ? "#aaa" : "#555"} />
-                )}
-
-              <View style={styles.rowBetween}>
-                <Text style={[styles.ejercicioTexto, darkMode && styles.darkText]}>{item.nombre}</Text>
-
-                {item.series && item.repeticiones && item.peso && (
-                  <Text style={[styles.datosEjercicio, darkMode && styles.darkTextSecondary]}>
-                    {item.series}x{item.repeticiones}x{item.peso}
-                  </Text>
-                )}
-              </View>
-            </View>
+    <>
+      <View style={[styles.rutinaContainer, darkMode && styles.darkContainer]}>
+        <StatusBar style={darkMode ? "light" : "auto"} backgroundColor={darkMode ? "#121212" : "transparent"} translucent={true} />
+        {/* HEADER */}
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
           </TouchableOpacity>
-        )}
-        ListEmptyComponent={
-          <Text style={[styles.emptyText, darkMode && styles.darkTextSecondary]}>No hay ejercicios añadidos aún.</Text>
-        }
-      />
-
-      {/* MODAL BUSCADOR */}
-      <Modal visible={buscadorVisible} transparent animationType="fade">
-        <View style={styles.overlay}>
-          <View style={[styles.buscadorContainer, darkMode && styles.darkModalContent]}>
-            <TextInput
-              style={[styles.input, darkMode && styles.darkInput]}
-              placeholder="Buscar ejercicio..."
-              placeholderTextColor={darkMode ? "#888" : "#999"}
-              value={filtro}
-              onChangeText={setFiltro}
-            />
-
-            <FlatList
-              data={Object.entries(backendExercises)}
-              keyExtractor={([grupo]) => grupo}
-              initialNumToRender={5}
-              maxToRenderPerBatch={10}
-              windowSize={5}
-              removeClippedSubviews={Platform.OS === 'android'}
-              renderItem={({ item: [grupo, lista] }) => {
-                const filteredList = lista.filter((ej) =>
-                  (ej.name || '').toLowerCase().includes(filtro.toLowerCase())
-                );
-
-                if (filteredList.length === 0) return null;
-
-                return (
-                  <View>
-                    <Text style={[styles.grupoTitulo, darkMode && { color: '#ef5656' }]}>{grupo.toUpperCase()}</Text>
-                    {filteredList.map((ejercicio) => (
-                      <TouchableOpacity
-                        key={ejercicio.id || ejercicio.name}
-                        style={[styles.ejercicioItemModal, darkMode && { borderBottomColor: '#333' }]}
-                        onPress={() => {
-                          setModoEdicion(false);
-                          setEjercicioEnEdicion(ejercicio);
-                          setDescripcionEjercicio(ejercicio.descripcion);
-                          setPesoEjercicio('');
-                          setRepeticionesEjercicio('');
-                          setSeries('');
-                          setDetallesVisible(true);
-                        }}
-                      >
-                        <View style={styles.row}>
-                          {ejercicio.animacion ? (
-                            <LottieView
-                              source={ejercicio.animacion}
-                              autoPlay
-                              loop
-                              style={styles.iconoGif}
-                            />
-                          ) : ejercicio.image ? (
-                            <Image
-                              source={{ uri: ejercicio.image }}
-                              style={styles.iconoGif}
-                              resizeMode="cover"
-                              resizeMethod="resize" // Optimizes memory on Android
-                              onError={(e) => console.log(`Error loading modal image for ${ejercicio.name}:`, e.nativeEvent.error)}
-                            />
-                          ) : (
-                            <Ionicons name="fitness" size={40} color="#ef2b2d" />
-                          )}
-                          <Text style={[{ flex: 1, flexWrap: 'wrap' }, darkMode && styles.darkText]}>{ejercicio.name || ejercicio.nombre}</Text>
-                        </View>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                );
-              }}
-              ListEmptyComponent={
-                <Text style={[{ textAlign: 'center', padding: 20 }, darkMode && styles.darkTextSecondary]}>
-                  {Object.keys(backendExercises).length === 0 ? 'Cargando ejercicios...' : 'No se encontraron ejercicios.'}
-                </Text>
-              }
-            />
-
-            <TouchableOpacity
-              onPress={() => setBuscadorVisible(false)}
-              style={styles.cerrar}
-            >
-              <Text style={styles.cerrarTexto}>Cerrar</Text>
-            </TouchableOpacity>
-          </View>
+          <Text style={styles.title}>{rutina.nombre}</Text>
+          <TouchableOpacity onPress={() => setBuscadorVisible(true)}>
+            <Ionicons name="search" size={24} color="#ef2b2d" />
+          </TouchableOpacity>
         </View>
-      </Modal>
 
-      {/* MODAL OPCIONES */}
-      <Modal visible={opcionesVisible} transparent animationType="fade">
-        <View style={styles.optionsOverlay}>
-          <View style={[styles.optionsCard, darkMode && styles.darkModalContent]}>
-            <Text style={[styles.optionsTitle, darkMode && styles.darkText]}>Opciones del ejercicio</Text>
-
-            {/* BOTÓN EDITAR */}
+        {/* LISTA DE EJERCICIOS */}
+        <FlatList
+          contentContainerStyle={{ paddingTop: 0 }}
+          data={ejercicios}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
             <TouchableOpacity
-              style={[styles.optionButton2, darkMode && styles.darkOptionButton]}
-              onPress={() => {
-                setOpcionesVisible(false);
-                setModoEdicion(true);
-
-                setEjercicioEnEdicion(ejercicioSeleccionado);
-                setDescripcionEjercicio(ejercicioSeleccionado.descripcion || '');
-                setPesoEjercicio(ejercicioSeleccionado.peso || '');
-                setRepeticionesEjercicio(ejercicioSeleccionado.repeticiones || '');
-                setSeries(ejercicioSeleccionado.series || '');
-
-                setDetallesVisible(true);
-              }}
+              onLongPress={grupoKey !== 'predefinidas' ? () => {
+                setEjercicioSeleccionado(item);
+                setOpcionesVisible(true);
+              } : undefined}
             >
-              <Ionicons name="create-outline" size={22} color="#ef2b2d" />
-              <Text style={[styles.optionText, darkMode && styles.darkText]}>Editar ejercicio</Text>
+              <View style={[styles.ejercicioItem, darkMode && styles.darkItemBorder]}>
+                {item.animacion ? (
+                  <LottieView
+                    source={item.animacion}
+                    autoPlay
+                    loop
+                    style={styles.iconoGif}
+                  />
+                )
+                  : item.image ? (
+                    <Image
+                      source={{ uri: item.image }}
+                      style={styles.iconoGif}
+                      resizeMode="cover"
+                      resizeMethod="resize"
+                      onError={(e) => console.log(`Error loading image for ${item.nombre}:`, e.nativeEvent.error)}
+                    />
+                  ) : (
+                    <Ionicons name="barbell-outline" size={40} color={darkMode ? "#aaa" : "#555"} />
+                  )}
+
+                <View style={styles.rowBetween}>
+                  <Text style={[styles.ejercicioTexto, darkMode && styles.darkText]}>{item.nombre}</Text>
+
+                  {item.series && item.repeticiones && item.peso && (
+                    <Text style={[styles.datosEjercicio, darkMode && styles.darkTextSecondary]}>
+                      {item.series}x{item.repeticiones}x{item.peso}
+                    </Text>
+                  )}
+                </View>
+              </View>
             </TouchableOpacity>
+          )}
+          ListEmptyComponent={
+            <Text style={[styles.emptyText, darkMode && styles.darkTextSecondary]}>No hay ejercicios añadidos aún.</Text>
+          }
+        />
 
-            {/* DUPLICAR */}
-            <TouchableOpacity
-              style={[styles.optionButton2, darkMode && styles.darkOptionButton]}
-              onPress={() => {
-                handleDuplicateEjercicio();
-              }}
-            >
-              <Ionicons name="copy-outline" size={22} color="#ef2b2d" />
-              <Text style={[styles.optionText, darkMode && styles.darkText]}>Duplicar ejercicio</Text>
-            </TouchableOpacity>
-
-            {/* ELIMINAR */}
-            <TouchableOpacity
-              style={[styles.optionButton2, styles.deleteButton]}
-              onPress={() => {
-                handleDeleteEjercicio();
-              }}
-            >
-              <Ionicons name="trash-outline" size={22} color="#fff" />
-              <Text style={[styles.optionText, { color: '#fff' }]}>
-                Eliminar ejercicio
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.cancelButton, darkMode && { backgroundColor: '#2a2a2a' }]}
-              onPress={() => setOpcionesVisible(false)}
-            >
-              <Text style={styles.cancelText}>Cancelar</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* MODAL DETALLES */}
-      <Modal visible={detallesVisible} transparent animationType="slide">
-        <View style={styles.optionsOverlay}>
-          <View style={[styles.optionsCard, darkMode && styles.darkModalContent]}>
-            <Text style={[styles.optionsTitle, darkMode && styles.darkText]}>{ejercicioEnEdicion?.nombre || ejercicioEnEdicion?.name}</Text>
-
-            {ejercicioEnEdicion?.animacion ? (
-              <LottieView
-                source={ejercicioEnEdicion.animacion}
-                autoPlay
-                loop
-                style={{ width: 150, height: 150, alignSelf: 'center' }}
+        {/* MODAL BUSCADOR */}
+        <Modal visible={buscadorVisible} transparent animationType="fade">
+          <View style={styles.overlay}>
+            <View style={[styles.buscadorContainer, darkMode && styles.darkModalContent]}>
+              <TextInput
+                style={[styles.input, darkMode && styles.darkInput]}
+                placeholder="Buscar ejercicio..."
+                placeholderTextColor={darkMode ? "#888" : "#999"}
+                value={filtro}
+                onChangeText={setFiltro}
               />
-            ) : ejercicioEnEdicion?.image ? (
-              <Image
-                source={{ uri: ejercicioEnEdicion.image }}
-                style={{ width: 150, height: 150, alignSelf: 'center', borderRadius: 10 }}
-                resizeMode="cover"
-              />
-            ) : null}
 
-            <TextInput
-              style={[styles.inputDescripcion, darkMode && { backgroundColor: '#2a2a2a', color: '#aaa' }]}
-              value={descripcionEjercicio}
-              editable={false}
-              multiline
-            />
-
-            <TextInput
-              style={[styles.input, darkMode && styles.darkInput]}
-              placeholder="Repeticiones"
-              placeholderTextColor={darkMode ? "#888" : "#999"}
-              keyboardType="numeric"
-              value={repeticionesEjercicio}
-              onChangeText={setRepeticionesEjercicio}
-            />
-
-            <TextInput
-              style={[styles.input, darkMode && styles.darkInput]}
-              placeholder="Peso (kg)"
-              placeholderTextColor={darkMode ? "#888" : "#999"}
-              keyboardType="numeric"
-              value={pesoEjercicio}
-              onChangeText={setPesoEjercicio}
-            />
-
-            <TextInput
-              style={[styles.input, darkMode && styles.darkInput]}
-              placeholder="Series"
-              placeholderTextColor={darkMode ? "#888" : "#999"}
-              keyboardType="numeric"
-              value={series}
-              onChangeText={setSeries}
-            />
-
-            {/* GUARDAR */}
-            <TouchableOpacity
-              style={[styles.optionButton, darkMode && { backgroundColor: '#27894940' }]}
-              onPress={() => {
-                if (modoEdicion) {
-                  // EDITAR
-                  const actualizado = {
-                    ...ejercicioEnEdicion,
-                    descripcion: descripcionEjercicio,
-                    series,
-                    repeticiones: repeticionesEjercicio,
-                    peso: pesoEjercicio,
-                  };
-
-                  const nuevaLista = ejercicios.map((e) =>
-                    e.id === ejercicioEnEdicion.id ? actualizado : e
+              <FlatList
+                data={Object.entries(backendExercises)}
+                keyExtractor={([grupo]) => grupo}
+                initialNumToRender={5}
+                maxToRenderPerBatch={10}
+                windowSize={5}
+                removeClippedSubviews={Platform.OS === 'android'}
+                renderItem={({ item: [grupo, lista] }) => {
+                  const filteredList = lista.filter((ej) =>
+                    (ej.name || '').toLowerCase().includes(filtro.toLowerCase())
                   );
 
-                  setEjercicios(nuevaLista);
-                  actualizarRutina({ ...rutina, ejercicios: nuevaLista });
-                  setModoEdicion(false);
+                  if (filteredList.length === 0) return null;
 
-                } else {
-                  // AÑADIR
-                  const nuevo = {
-                    id: Date.now().toString(),
-                    nombre: ejercicioEnEdicion.nombre || ejercicioEnEdicion.name,
-                    animacion: ejercicioEnEdicion.animacion,
-                    image: ejercicioEnEdicion.image,
-                    gif: ejercicioEnEdicion.gif,
-                    descripcion: descripcionEjercicio,
-                    series,
-                    repeticiones: repeticionesEjercicio,
-                    peso: pesoEjercicio,
-                  };
-
-                  const nuevaLista = [...ejercicios, nuevo];
-                  setEjercicios(nuevaLista);
-                  actualizarRutina({ ...rutina, ejercicios: nuevaLista });
+                  return (
+                    <View>
+                      <Text style={[styles.grupoTitulo, darkMode && { color: '#ef5656' }]}>{grupo.toUpperCase()}</Text>
+                      {filteredList.map((ejercicio) => (
+                        <TouchableOpacity
+                          key={ejercicio.id || ejercicio.name}
+                          style={[styles.ejercicioItemModal, darkMode && { borderBottomColor: '#333' }]}
+                          onPress={() => {
+                            setModoEdicion(false);
+                            setEjercicioEnEdicion(ejercicio);
+                            setDescripcionEjercicio(ejercicio.descripcion);
+                            setPesoEjercicio('');
+                            setRepeticionesEjercicio('');
+                            setSeries('');
+                            setDetallesVisible(true);
+                          }}
+                        >
+                          <View style={styles.row}>
+                            {ejercicio.animacion ? (
+                              <LottieView
+                                source={ejercicio.animacion}
+                                autoPlay
+                                loop
+                                style={styles.iconoGif}
+                              />
+                            ) : ejercicio.image ? (
+                              <Image
+                                source={{ uri: ejercicio.image }}
+                                style={styles.iconoGif}
+                                resizeMode="cover"
+                                resizeMethod="resize" // Optimizes memory on Android
+                                onError={(e) => console.log(`Error loading modal image for ${ejercicio.name}:`, e.nativeEvent.error)}
+                              />
+                            ) : (
+                              <Ionicons name="fitness" size={40} color="#ef2b2d" />
+                            )}
+                            <Text style={[{ flex: 1, flexWrap: 'wrap' }, darkMode && styles.darkText]}>{ejercicio.name || ejercicio.nombre}</Text>
+                          </View>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  );
+                }}
+                ListEmptyComponent={
+                  <Text style={[{ textAlign: 'center', padding: 20 }, darkMode && styles.darkTextSecondary]}>
+                    {Object.keys(backendExercises).length === 0 ? 'Cargando ejercicios...' : 'No se encontraron ejercicios.'}
+                  </Text>
                 }
-
-                setDetallesVisible(false);
-                setBuscadorVisible(false);
-              }}
-            >
-              <Ionicons
-                name="checkmark-circle-outline"
-                size={22}
-                color="#3a9238ff"
               />
-              <Text style={[styles.optionText, darkMode && styles.darkText]}>Guardar ejercicio</Text>
-            </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.cancelButton, darkMode && { backgroundColor: '#2a2a2a' }]}
-              onPress={() => {
-                setModoEdicion(false);
-                setDetallesVisible(false);
-              }}
-            >
-              <Text style={styles.cancelText}>Cancelar</Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setBuscadorVisible(false)}
+                style={styles.cerrar}
+              >
+                <Text style={styles.cerrarTexto}>Cerrar</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      </Modal>
-    </View>
+        </Modal>
+
+        {/* MODAL OPCIONES */}
+        <Modal visible={opcionesVisible} transparent animationType="fade">
+          <View style={styles.optionsOverlay}>
+            <View style={[styles.optionsCard, darkMode && styles.darkModalContent]}>
+              <Text style={[styles.optionsTitle, darkMode && styles.darkText]}>Opciones del ejercicio</Text>
+
+              {/* BOTÓN EDITAR */}
+              <TouchableOpacity
+                style={[styles.optionButton2, darkMode && styles.darkOptionButton]}
+                onPress={() => {
+                  setOpcionesVisible(false);
+                  setModoEdicion(true);
+
+                  setEjercicioEnEdicion(ejercicioSeleccionado);
+                  setDescripcionEjercicio(ejercicioSeleccionado.descripcion || '');
+                  setPesoEjercicio(ejercicioSeleccionado.peso || '');
+                  setRepeticionesEjercicio(ejercicioSeleccionado.repeticiones || '');
+                  setSeries(ejercicioSeleccionado.series || '');
+
+                  setDetallesVisible(true);
+                }}
+              >
+                <Ionicons name="create-outline" size={22} color="#ef2b2d" />
+                <Text style={[styles.optionText, darkMode && styles.darkText]}>Editar ejercicio</Text>
+              </TouchableOpacity>
+
+              {/* DUPLICAR */}
+              <TouchableOpacity
+                style={[styles.optionButton2, darkMode && styles.darkOptionButton]}
+                onPress={() => {
+                  handleDuplicateEjercicio();
+                }}
+              >
+                <Ionicons name="copy-outline" size={22} color="#ef2b2d" />
+                <Text style={[styles.optionText, darkMode && styles.darkText]}>Duplicar ejercicio</Text>
+              </TouchableOpacity>
+
+              {/* ELIMINAR */}
+              <TouchableOpacity
+                style={[styles.optionButton2, styles.deleteButton]}
+                onPress={() => {
+                  handleDeleteEjercicio();
+                }}
+              >
+                <Ionicons name="trash-outline" size={22} color="#fff" />
+                <Text style={[styles.optionText, { color: '#fff' }]}>
+                  Eliminar ejercicio
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.cancelButton, darkMode && { backgroundColor: '#2a2a2a' }]}
+                onPress={() => setOpcionesVisible(false)}
+              >
+                <Text style={styles.cancelText}>Cancelar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
+        {/* MODAL DETALLES */}
+        <Modal visible={detallesVisible} transparent animationType="slide">
+          <View style={styles.optionsOverlay}>
+            <View style={[styles.optionsCard, darkMode && styles.darkModalContent]}>
+              <Text style={[styles.optionsTitle, darkMode && styles.darkText]}>{ejercicioEnEdicion?.nombre || ejercicioEnEdicion?.name}</Text>
+
+              {ejercicioEnEdicion?.animacion ? (
+                <LottieView
+                  source={ejercicioEnEdicion.animacion}
+                  autoPlay
+                  loop
+                  style={{ width: 150, height: 150, alignSelf: 'center' }}
+                />
+              ) : ejercicioEnEdicion?.image ? (
+                <Image
+                  source={{ uri: ejercicioEnEdicion.image }}
+                  style={{ width: 150, height: 150, alignSelf: 'center', borderRadius: 10 }}
+                  resizeMode="cover"
+                />
+              ) : null}
+
+              <TextInput
+                style={[styles.inputDescripcion, darkMode && { backgroundColor: '#2a2a2a', color: '#aaa' }]}
+                value={descripcionEjercicio}
+                editable={false}
+                multiline
+              />
+
+              <TextInput
+                style={[styles.input, darkMode && styles.darkInput]}
+                placeholder="Repeticiones"
+                placeholderTextColor={darkMode ? "#888" : "#999"}
+                keyboardType="numeric"
+                value={repeticionesEjercicio}
+                onChangeText={setRepeticionesEjercicio}
+              />
+
+              <TextInput
+                style={[styles.input, darkMode && styles.darkInput]}
+                placeholder="Peso (kg)"
+                placeholderTextColor={darkMode ? "#888" : "#999"}
+                keyboardType="numeric"
+                value={pesoEjercicio}
+                onChangeText={setPesoEjercicio}
+              />
+
+              <TextInput
+                style={[styles.input, darkMode && styles.darkInput]}
+                placeholder="Series"
+                placeholderTextColor={darkMode ? "#888" : "#999"}
+                keyboardType="numeric"
+                value={series}
+                onChangeText={setSeries}
+              />
+
+              {/* GUARDAR */}
+              <TouchableOpacity
+                style={[styles.optionButton, darkMode && { backgroundColor: '#27894940' }]}
+                onPress={() => {
+                  if (modoEdicion) {
+                    // EDITAR
+                    const actualizado = {
+                      ...ejercicioEnEdicion,
+                      descripcion: descripcionEjercicio,
+                      series,
+                      repeticiones: repeticionesEjercicio,
+                      peso: pesoEjercicio,
+                    };
+
+                    const nuevaLista = ejercicios.map((e) =>
+                      e.id === ejercicioEnEdicion.id ? actualizado : e
+                    );
+
+                    setEjercicios(nuevaLista);
+                    actualizarRutina({ ...rutina, ejercicios: nuevaLista });
+                    setModoEdicion(false);
+
+                  } else {
+                    // AÑADIR
+                    const nuevo = {
+                      id: Date.now().toString(),
+                      nombre: ejercicioEnEdicion.nombre || ejercicioEnEdicion.name,
+                      animacion: ejercicioEnEdicion.animacion,
+                      image: ejercicioEnEdicion.image,
+                      gif: ejercicioEnEdicion.gif,
+                      descripcion: descripcionEjercicio,
+                      series,
+                      repeticiones: repeticionesEjercicio,
+                      peso: pesoEjercicio,
+                    };
+
+                    const nuevaLista = [...ejercicios, nuevo];
+                    setEjercicios(nuevaLista);
+                    actualizarRutina({ ...rutina, ejercicios: nuevaLista });
+                  }
+
+                  setDetallesVisible(false);
+                  setBuscadorVisible(false);
+                }}
+              >
+                <Ionicons
+                  name="checkmark-circle-outline"
+                  size={22}
+                  color="#3a9238ff"
+                />
+                <Text style={[styles.optionText, darkMode && styles.darkText]}>Guardar ejercicio</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.cancelButton, darkMode && { backgroundColor: '#2a2a2a' }]}
+                onPress={() => {
+                  setModoEdicion(false);
+                  setDetallesVisible(false);
+                }}
+              >
+                <Text style={styles.cancelText}>Cancelar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      </View>
+      <AppModal
+        visible={appModal.visible}
+        type={appModal.type}
+        title={appModal.title}
+        message={appModal.message}
+        confirmText="Entendido"
+        onConfirm={hideAppModal}
+        darkMode={darkMode}
+      />
+    </>
   );
 }
 

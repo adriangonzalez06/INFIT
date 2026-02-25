@@ -1,6 +1,7 @@
 // views/RuedaSettings.js
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image } from 'react-native';
+import AppModal from './AppModal';
 import { useNavigation } from '@react-navigation/native';
 import { getAuth, signOut } from 'firebase/auth';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,6 +13,9 @@ const RuedaSettings = () => {
   const navigation = useNavigation();
   const [user, setUser] = useState(null);
   const [darkMode, setDarkMode] = useState(false);
+  const [modal, setModal] = useState({ visible: false });
+  const showError = (msg) => setModal({ visible: true, message: msg });
+  const hideModal = () => setModal({ visible: false });
 
   // Cargar preferencia cada vez que entramos
   useFocusEffect(
@@ -40,7 +44,7 @@ const RuedaSettings = () => {
         routes: [{ name: 'Login' }],
       });
     } catch (error) {
-      Alert.alert('Error', 'No se pudo cerrar sesión');
+      showError('No se pudo cerrar la sesión. Inténtalo de nuevo.');
       console.error('Error al cerrar sesión:', error.message);
     }
   };
@@ -107,6 +111,15 @@ const RuedaSettings = () => {
           </TouchableOpacity>
         ))}
       </View>
+      <AppModal
+        visible={modal.visible}
+        type="error"
+        title="Error al cerrar sesión"
+        message={modal.message}
+        confirmText="Entendido"
+        onConfirm={hideModal}
+        darkMode={darkMode}
+      />
     </ScrollView>
   );
 };

@@ -8,10 +8,10 @@ import {
   Image,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   Modal,
   ActivityIndicator,
 } from "react-native";
+import AppModal from './AppModal';
 import { useFocusEffect } from '@react-navigation/native';
 import { getAuth } from 'firebase/auth';
 import * as ImagePicker from "expo-image-picker";
@@ -85,6 +85,9 @@ export default function Feed() {
   const [imageUri, setImageUri] = useState(undefined);
   const [submitting, setSubmitting] = useState(false);
   const [visible, setVisible] = useState(false);
+  const [appModal, setAppModal] = useState({ visible: false, type: 'info', title: '', message: '', onConfirm: null });
+  const showAppModal = (type, title, message, onCon = null) => setAppModal({ visible: true, type, title, message, onConfirm: onCon });
+  const hideAppModal = () => setAppModal(m => ({ ...m, visible: false }));
 
   // Comments
   const [commentVisible, setCommentVisible] = useState(false);
@@ -163,7 +166,7 @@ export default function Feed() {
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Permiso requerido", "Necesitamos acceso a tus fotos para adjuntar una imagen.");
+      showAppModal('warning', 'Permiso requerido', 'Necesitamos acceso a tus fotos para adjuntar una imagen.');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -177,7 +180,7 @@ export default function Feed() {
   // ── Publicar ──────────────────────────────────────────────────────────────
   const onPublish = async () => {
     if (!title.trim()) {
-      Alert.alert("Falta el título", "Por favor, escribe un título.");
+      showAppModal('warning', 'Falta el título', 'Por favor, escribe un título para tu publicación.');
       return;
     }
     setSubmitting(true);
@@ -224,7 +227,7 @@ export default function Feed() {
       setVisible(false);
     } catch (e) {
       console.error('Error al publicar:', e);
-      Alert.alert("Error", "No se pudo publicar. Intenta de nuevo.");
+      showAppModal('error', 'Error al publicar', 'No se pudo publicar la entrada. Inténtalo de nuevo.');
     } finally {
       setSubmitting(false);
     }
@@ -245,46 +248,25 @@ export default function Feed() {
   };
 
   // ── Eliminar publicación (cascade: borra comentarios primero) ─────────────
-  const deletePost = async (postId) => {
-    Alert.alert(
-      'Eliminar publicación',
-      '¿Estás seguro? Esta acción no se puede deshacer.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Eliminar',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              // 1. Borrar todos los comentarios de la subcolección
-              const comentariosRef = collection(db, 'publicaciones', postId, 'comentarios');
-              const comentariosSnap = await getDocs(comentariosRef);
-              const deletePromises = comentariosSnap.docs.map(c => deleteDoc(c.ref));
-              await Promise.all(deletePromises);
-
-              // 2. Borrar el documento padre
-              await deleteDoc(doc(db, 'publicaciones', postId));
-            } catch (e) {
-              console.error('Error al eliminar publicación:', e);
-              Alert.alert('Error', 'No se pudo eliminar la publicación.');
-            }
-          },
-        },
-      ]
-    );
+  const deletePost = (postId) => {
+    showAppModal('confirm', 'Eliminar publicación', '¿Estás seguro? Esta acción no se puede deshacer.', async () => {
+      try {
+        const comentariosRef = collection(db, 'publicaciones', postId, 'comentarios');
+        const comentariosSnap = await getDocs(comentariosRef);
+        const deletePromises = comentariosSnap.docs.map(c => deleteDoc(c.ref));
+        await Promise.all(deletePromises);
+        await deleteDoc(doc(db, 'publicaciones', postId));
+      } catch (e) {
+        console.error('Error al eliminar publicación:', e);
+        showAppModal('error', 'Error al eliminar', 'No se pudo eliminar la publicación. Inténtalo de nuevo.');
+      }
+    });
   };
 
   // ── Menú de opciones del post (solo dueño) ────────────────────────────────
   const openPostOptions = (post) => {
-    if (post.userId !== userId) return; // solo el dueño ve opciones
-    Alert.alert(
-      'Opciones',
-      null,
-      [
-        { text: 'Eliminar publicación', style: 'destructive', onPress: () => deletePost(post.id) },
-        { text: 'Cancelar', style: 'cancel' },
-      ]
-    );
+    if (post.userId !== userId) return;
+    showAppModal('confirm', 'Opciones', '¿Qué quieres hacer con esta publicación?', () => deletePost(post.id));
   };
 
   // ── Abrir comentarios ─────────────────────────────────────────────────────
@@ -370,99 +352,112 @@ export default function Feed() {
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <View style={[styles.container, darkMode && styles.darkContainer]}>
+    <>
+      <View style={[styles.container, darkMode && styles.darkContainer]}>
 
-      {/* Botón flotante nueva publicación */}
-      <TouchableOpacity style={[styles.primaryBtn, darkMode && styles.darkPrimaryBtn]} onPress={() => setVisible(true)}>
-        <Text style={styles.primaryBtnText}>+</Text>
-      </TouchableOpacity>
+        {/* Botón flotante nueva publicación */}
+        <TouchableOpacity style={[styles.primaryBtn, darkMode && styles.darkPrimaryBtn]} onPress={() => setVisible(true)}>
+          <Text style={styles.primaryBtnText}>+</Text>
+        </TouchableOpacity>
 
-      {/* ── Modal: nueva publicación ── */}
-      <Modal visible={visible} animationType="slide" transparent onRequestClose={() => setVisible(false)}>
-        <TouchableOpacity activeOpacity={1} style={styles.overlay} onPress={() => setVisible(false)}>
-          <TouchableOpacity activeOpacity={1} style={[styles.modalContent, darkMode && styles.darkModalContent]} onPress={() => { }}>
-            <Text style={[styles.modalTitle, darkMode && styles.darkModalTitle]}>Crear publicación</Text>
+        {/* ── Modal: nueva publicación ── */}
+        <Modal visible={visible} animationType="slide" transparent onRequestClose={() => setVisible(false)}>
+          <TouchableOpacity activeOpacity={1} style={styles.overlay} onPress={() => setVisible(false)}>
+            <TouchableOpacity activeOpacity={1} style={[styles.modalContent, darkMode && styles.darkModalContent]} onPress={() => { }}>
+              <Text style={[styles.modalTitle, darkMode && styles.darkModalTitle]}>Crear publicación</Text>
 
-            <TextInput
-              placeholder="Título"
-              placeholderTextColor={darkMode ? "#888" : "#999"}
-              value={title}
-              onChangeText={setTitle}
-              style={[styles.input, darkMode && styles.darkInput]}
-            />
-            <TextInput
-              placeholder="Contenido (opcional)"
-              placeholderTextColor={darkMode ? "#888" : "#999"}
-              value={content}
-              onChangeText={setContent}
-              style={[styles.input, styles.inputMultiline, darkMode && styles.darkInput]}
-              multiline
-            />
+              <TextInput
+                placeholder="Título"
+                placeholderTextColor={darkMode ? "#888" : "#999"}
+                value={title}
+                onChangeText={setTitle}
+                style={[styles.input, darkMode && styles.darkInput]}
+              />
+              <TextInput
+                placeholder="Contenido (opcional)"
+                placeholderTextColor={darkMode ? "#888" : "#999"}
+                value={content}
+                onChangeText={setContent}
+                style={[styles.input, styles.inputMultiline, darkMode && styles.darkInput]}
+                multiline
+              />
 
-            <View style={styles.imageRow}>
-              <TouchableOpacity style={styles.botonimg} onPress={pickImage}>
-                <Text style={styles.botonimoText}>
-                  {imageUri ? "Cambiar imagen" : "Adjuntar imagen"}
-                </Text>
-              </TouchableOpacity>
-              {imageUri && (
-                <TouchableOpacity onPress={removeImage} style={styles.removeBtn}>
-                  <Text style={styles.removeBtnText}>Quitar</Text>
+              <View style={styles.imageRow}>
+                <TouchableOpacity style={styles.botonimg} onPress={pickImage}>
+                  <Text style={styles.botonimoText}>
+                    {imageUri ? "Cambiar imagen" : "Adjuntar imagen"}
+                  </Text>
                 </TouchableOpacity>
+                {imageUri && (
+                  <TouchableOpacity onPress={removeImage} style={styles.removeBtn}>
+                    <Text style={styles.removeBtnText}>Quitar</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {imageUri && (
+                <Image source={{ uri: imageUri }} style={styles.previewImage} resizeMode="cover" />
               )}
-            </View>
 
-            {imageUri && (
-              <Image source={{ uri: imageUri }} style={styles.previewImage} resizeMode="cover" />
-            )}
+              <TouchableOpacity
+                style={[styles.publicarbtn, submitting && { opacity: 0.6 }]}
+                onPress={onPublish}
+                disabled={submitting}
+              >
+                {submitting
+                  ? <ActivityIndicator color={white} />
+                  : <Text style={styles.publicar}>Publicar</Text>
+                }
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.publicarbtn, submitting && { opacity: 0.6 }]}
-              onPress={onPublish}
-              disabled={submitting}
-            >
-              {submitting
-                ? <ActivityIndicator color={white} />
-                : <Text style={styles.publicar}>Publicar</Text>
-              }
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.cancelBtn} onPress={() => setVisible(false)}>
-              <Text style={[styles.cancelBtnText, darkMode && styles.darkTextSecondary]}>Cancelar</Text>
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => setVisible(false)}>
+                <Text style={[styles.cancelBtnText, darkMode && styles.darkTextSecondary]}>Cancelar</Text>
+              </TouchableOpacity>
             </TouchableOpacity>
           </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
+        </Modal>
 
-      {/* ── Modal: comentarios ── */}
-      {selectedPostId && (
-        <ComentariosModal
-          visible={commentVisible}
-          postId={selectedPostId}
-          userId={userId}
-          username={username}
-          avatarUrl={avatarUri}
-          darkMode={darkMode}
-          onClose={() => { setCommentVisible(false); setSelectedPostId(null); }}
-        />
-      )}
+        {/* ── Modal: comentarios ── */}
+        {selectedPostId && (
+          <ComentariosModal
+            visible={commentVisible}
+            postId={selectedPostId}
+            userId={userId}
+            username={username}
+            avatarUrl={avatarUri}
+            darkMode={darkMode}
+            onClose={() => { setCommentVisible(false); setSelectedPostId(null); }}
+          />
+        )}
 
-      {/* Lista de publicaciones */}
-      <Text style={[styles.sectionTitle, darkMode && styles.darkText]}>Publicaciones</Text>
+        {/* Lista de publicaciones */}
+        <Text style={[styles.sectionTitle, darkMode && styles.darkText]}>Publicaciones</Text>
 
-      {loading ? (
-        <ActivityIndicator style={{ marginTop: 40 }} size="large" color={primary} />
-      ) : (
-        <FlatList
-          data={posts}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-          contentContainerStyle={{ paddingBottom: 100 }}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
-    </View>
+        {loading ? (
+          <ActivityIndicator style={{ marginTop: 40 }} size="large" color={primary} />
+        ) : (
+          <FlatList
+            data={posts}
+            keyExtractor={(item) => item.id}
+            renderItem={renderItem}
+            ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+            contentContainerStyle={{ paddingBottom: 100 }}
+            showsVerticalScrollIndicator={false}
+          />
+        )}
+      </View>
+      <AppModal
+        visible={appModal.visible}
+        type={appModal.type}
+        title={appModal.title}
+        message={appModal.message}
+        confirmText={appModal.type === 'confirm' ? 'Eliminar' : 'Entendido'}
+        cancelText="Cancelar"
+        onConfirm={() => { hideAppModal(); appModal.onConfirm && appModal.onConfirm(); }}
+        onCancel={hideAppModal}
+        darkMode={darkMode}
+      />
+    </>
   );
 }
 
@@ -473,6 +468,9 @@ function ComentariosModal({ visible, postId, userId, username, avatarUrl, darkMo
   const [comentarios, setComentarios] = useState([]);
   const [texto, setTexto] = useState('');
   const [enviando, setEnviando] = useState(false);
+  const [cmModal, setCmModal] = useState({ visible: false, type: 'error', title: '', message: '' });
+  const showCmModal = (type, title, message) => setCmModal({ visible: true, type, title, message });
+  const hideCmModal = () => setCmModal(m => ({ ...m, visible: false }));
 
   // Suscribirse a la subcolección de comentarios en tiempo real
   useEffect(() => {
@@ -506,79 +504,90 @@ function ComentariosModal({ visible, postId, userId, username, avatarUrl, darkMo
       setTexto('');
     } catch (e) {
       console.error('Error al comentar:', e);
-      Alert.alert('Error', 'No se pudo enviar el comentario.');
+      showCmModal('error', 'Error al comentar', 'No se pudo enviar el comentario. Inténtalo de nuevo.');
     } finally {
       setEnviando(false);
     }
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <TouchableOpacity activeOpacity={1} style={styles.overlay} onPress={onClose}>
-        <TouchableOpacity activeOpacity={1} style={[styles.commentSheet, darkMode && styles.darkModalContent]} onPress={() => { }}>
+    <>
+      <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+        <TouchableOpacity activeOpacity={1} style={styles.overlay} onPress={onClose}>
+          <TouchableOpacity activeOpacity={1} style={[styles.commentSheet, darkMode && styles.darkModalContent]} onPress={() => { }}>
 
-          {/* Cabecera */}
-          <View style={styles.commentHeader}>
-            <Text style={[styles.modalTitle, darkMode && styles.darkModalTitle]}>Comentarios</Text>
-            <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={24} color={darkMode ? "#fff" : "#333"} />
-            </TouchableOpacity>
-          </View>
+            {/* Cabecera */}
+            <View style={styles.commentHeader}>
+              <Text style={[styles.modalTitle, darkMode && styles.darkModalTitle]}>Comentarios</Text>
+              <TouchableOpacity onPress={onClose}>
+                <Ionicons name="close" size={24} color={darkMode ? "#fff" : "#333"} />
+              </TouchableOpacity>
+            </View>
 
-          {/* Lista de comentarios */}
-          <FlatList
-            data={comentarios}
-            keyExtractor={(c) => c.id}
-            style={styles.commentList}
-            ListEmptyComponent={
-              <Text style={[styles.emptyText, darkMode && styles.darkTextSecondary]}>
-                Sé el primero en comentar 💬
-              </Text>
-            }
-            renderItem={({ item }) => {
-              const at = item.createdAt?.toDate ? item.createdAt.toDate() : new Date();
-              return (
-                <View style={styles.commentItem}>
-                  <Image
-                    source={item.avatarUrl ? { uri: item.avatarUrl } : require('../assets/avatar.png')}
-                    style={styles.commentAvatar}
-                  />
-                  <View style={[styles.commentBubble, darkMode && styles.darkCommentBubble]}>
-                    <Text style={[styles.commentUsername, darkMode && styles.darkText]}>{item.username}</Text>
-                    <Text style={[styles.commentText, darkMode && styles.darkTextSecondary]}>{item.texto}</Text>
-                    <Text style={styles.commentTime}>
-                      {at.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </Text>
-                  </View>
-                </View>
-              );
-            }}
-          />
-
-          {/* Input nuevo comentario */}
-          <View style={[styles.commentInputRow, darkMode && styles.darkCommentInputRow]}>
-            <TextInput
-              style={[styles.commentInput, darkMode && styles.darkInput]}
-              placeholder="Escribe un comentario..."
-              placeholderTextColor={darkMode ? "#888" : "#999"}
-              value={texto}
-              onChangeText={setTexto}
-            />
-            <TouchableOpacity
-              style={[styles.sendBtn, (!texto.trim() || enviando) && { opacity: 0.5 }]}
-              onPress={enviarComentario}
-              disabled={!texto.trim() || enviando}
-            >
-              {enviando
-                ? <ActivityIndicator color="#fff" size="small" />
-                : <Ionicons name="send" size={18} color="#fff" />
+            {/* Lista de comentarios */}
+            <FlatList
+              data={comentarios}
+              keyExtractor={(c) => c.id}
+              style={styles.commentList}
+              ListEmptyComponent={
+                <Text style={[styles.emptyText, darkMode && styles.darkTextSecondary]}>
+                  Sé el primero en comentar 💬
+                </Text>
               }
-            </TouchableOpacity>
-          </View>
+              renderItem={({ item }) => {
+                const at = item.createdAt?.toDate ? item.createdAt.toDate() : new Date();
+                return (
+                  <View style={styles.commentItem}>
+                    <Image
+                      source={item.avatarUrl ? { uri: item.avatarUrl } : require('../assets/avatar.png')}
+                      style={styles.commentAvatar}
+                    />
+                    <View style={[styles.commentBubble, darkMode && styles.darkCommentBubble]}>
+                      <Text style={[styles.commentUsername, darkMode && styles.darkText]}>{item.username}</Text>
+                      <Text style={[styles.commentText, darkMode && styles.darkTextSecondary]}>{item.texto}</Text>
+                      <Text style={styles.commentTime}>
+                        {at.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              }}
+            />
 
+            {/* Input nuevo comentario */}
+            <View style={[styles.commentInputRow, darkMode && styles.darkCommentInputRow]}>
+              <TextInput
+                style={[styles.commentInput, darkMode && styles.darkInput]}
+                placeholder="Escribe un comentario..."
+                placeholderTextColor={darkMode ? "#888" : "#999"}
+                value={texto}
+                onChangeText={setTexto}
+              />
+              <TouchableOpacity
+                style={[styles.sendBtn, (!texto.trim() || enviando) && { opacity: 0.5 }]}
+                onPress={enviarComentario}
+                disabled={!texto.trim() || enviando}
+              >
+                {enviando
+                  ? <ActivityIndicator color="#fff" size="small" />
+                  : <Ionicons name="send" size={18} color="#fff" />
+                }
+              </TouchableOpacity>
+            </View>
+
+          </TouchableOpacity>
         </TouchableOpacity>
-      </TouchableOpacity>
-    </Modal>
+      </Modal>
+      <AppModal
+        visible={cmModal.visible}
+        type={cmModal.type}
+        title={cmModal.title}
+        message={cmModal.message}
+        confirmText="Entendido"
+        onConfirm={hideCmModal}
+        darkMode={darkMode}
+      />
+    </>
   );
 }
 

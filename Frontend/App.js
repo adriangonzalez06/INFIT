@@ -41,6 +41,8 @@ import ListaGrupoRecetas from './views/ListaGrupoRecetas';
 import AddDietMenu from './views/AddDietMenu';
 import colors from './views/colors';
 import CreateDishMenu from "./views/CreateDishMenu";
+import ChangeEmailScreen from './views/change_email';
+import AppModal from './views/AppModal';
 
 import { initializeApp, getApps } from 'firebase/app';
 import { firebaseConfig } from './firebaseConfig';
@@ -58,6 +60,9 @@ function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [darkMode, setDarkMode] = useState(false);
+  const [modal, setModal] = useState({ visible: false, type: 'error', title: '', message: '' });
+  const showModal = (type, title, message) => setModal({ visible: true, type, title, message });
+  const hideModal = () => setModal(m => ({ ...m, visible: false }));
 
   useEffect(() => {
     const loadTheme = async () => {
@@ -69,7 +74,7 @@ function LoginScreen({ navigation }) {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Por favor, completa todos los campos.');
+      showModal('warning', 'Campos incompletos', 'Por favor, introduce tu correo y contraseña.');
       return;
     }
     try {
@@ -93,9 +98,8 @@ function LoginScreen({ navigation }) {
         streak = resp.data?.streak;
         nombreBackend = resp.data?.nombre;
 
-        // { changed code }} Si no viene userId, error obligatorio
         if (!userId) {
-          Alert.alert('Error', 'No se encontró el usuario en la base de datos');
+          showModal('error', 'Usuario no encontrado', 'No se encontró el usuario en la base de datos. Contacta con soporte.');
           return;
         }
 
@@ -106,10 +110,9 @@ function LoginScreen({ navigation }) {
         console.log('streak guardado en AsyncStorage:', streak || 0);
 
       } catch (e) {
-        // { changed code }} Si falla la consulta, NO navegar
         console.error('Error obteniendo usuario del backend:', e?.message || e);
-        Alert.alert('Error', 'No se pudo obtener los datos del usuario. Verifica tu conexión.');
-        return; // STOP: no navega
+        showModal('error', 'Error de conexión', 'No se pudo obtener los datos del usuario. Verifica tu conexión e inténtalo de nuevo.');
+        return;
       }
 
       // Actualizar displayName si viene del backend
@@ -126,7 +129,12 @@ function LoginScreen({ navigation }) {
       navigation.navigate('MainTabs');
     } catch (error) {
       console.error('Error en login:', error);
-      Alert.alert('Error', error.message || 'Error al iniciar sesión');
+      let msg = error.message || 'Error al iniciar sesión';
+      if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') msg = 'Contraseña incorrecta. Vuelve a intentarlo.';
+      else if (error.code === 'auth/user-not-found') msg = 'No existe ninguna cuenta con este correo.';
+      else if (error.code === 'auth/too-many-requests') msg = 'Demasiados intentos. Espera unos minutos.';
+      else if (error.code === 'auth/network-request-failed') msg = 'Sin conexión a Internet. Verifica tu red.';
+      showModal('error', 'No se pudo iniciar sesión', msg);
     }
   };
 
@@ -207,6 +215,15 @@ function LoginScreen({ navigation }) {
         </TouchableOpacity>
 
       </ScrollView>
+      <AppModal
+        visible={modal.visible}
+        type={modal.type}
+        title={modal.title}
+        message={modal.message}
+        confirmText="Entendido"
+        onConfirm={hideModal}
+        darkMode={darkMode}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -253,6 +270,7 @@ export default function App() {
           <Stack.Screen name="Challenges" component={Challenges} options={{ headerShown: false }} />
           <Stack.Screen name="AddDietMenu" component={AddDietMenu} options={{ headerShown: false }} />
           <Stack.Screen name="CreateDishMenu" component={CreateDishMenu} options={{ headerShown: false }} />
+          <Stack.Screen name="ChangeEmail" component={ChangeEmailScreen} options={{ headerShown: false }} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,8 +8,9 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Alert,
+  ActivityIndicator,
 } from 'react-native';
+import AppModal from './AppModal';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -40,8 +41,14 @@ function RegisterScreen({ navigation }) {
   const [usuario, setUsuario] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [modal, setModal] = useState({ visible: false, type: 'info', title: '', message: '' });
+  const showModal = (type, title, message) => setModal({ visible: true, type, title, message });
+  const hideModal = () => setModal(m => ({ ...m, visible: false }));
 
   // Cargar preferencia cada vez que entramos
   useFocusEffect(
@@ -60,13 +67,13 @@ function RegisterScreen({ navigation }) {
     // Validar campos
     if (!nombre || !email || !usuario || !password) {
       setError('Por favor, completa todos los campos.');
-      Alert.alert('Error', 'Por favor, completa todos los campos.');
+      showModal('warning', 'Campos incompletos', 'Por favor, rellena todos los campos del formulario.');
       return;
     }
 
     if (password !== confirmPassword) {
       setError('Las contraseñas no coinciden.');
-      Alert.alert('Error', 'Las contraseñas no coinciden.');
+      showModal('error', 'Las contraseñas no coinciden', 'Asegúrate de que ambas contraseñas sean iguales.');
       return;
     }
 
@@ -114,27 +121,19 @@ function RegisterScreen({ navigation }) {
       }
 
     } catch (error) {
-      // Mejor logging para diagnosticar Network Error
       console.error('Error al registrar:', error?.message || error);
-      console.error('Axios error details:', error?.toJSON ? error.toJSON() : error);
-      if (error?.response) {
-        console.error('Backend response:', error.response.status, error.response.data);
-      } else {
-        console.error('No response from backend (network/cors/firewall/host issue).');
-      }
+      showModal('error', 'Error al registrar', error?.message || 'No se pudo crear la cuenta. Inténtalo de nuevo.');
 
-      Alert.alert('Error', error?.message || 'Error al registrar');
-
-      // Rollback: intentar eliminar usuario de Firebase si existe
       const currentUser = auth.currentUser;
       if (currentUser) {
         try {
           await currentUser.delete();
-          console.warn('Rollback: Usuario de Firebase eliminado debido a error en backend.');
         } catch (e) {
-          console.warn('No se pudo eliminar el usuario de Firebase durante el rollback:', e?.message || e);
+          console.warn('Rollback failed:', e?.message || e);
         }
       }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -147,67 +146,110 @@ function RegisterScreen({ navigation }) {
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.headerRow}>
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={styles.backButton}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
               <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
             </TouchableOpacity>
-            <Text style={[styles.title, darkMode && styles.darkText]}>Crear cuenta</Text>
+            <View style={styles.titleContainer}>
+              <Text style={[styles.title, darkMode && styles.darkText]}>Crear cuenta</Text>
+              <Text style={[styles.subtitle, darkMode && styles.darkSubtitle]}>Únete a la familia INFIT</Text>
+            </View>
           </View>
 
-          <TextInput
-            style={[styles.input, darkMode && styles.darkInput]}
-            placeholder="Nombre completo"
-            placeholderTextColor={darkMode ? "#666" : "#999"}
-            value={nombre}
-            onChangeText={setNombre}
-          />
-          <TextInput
-            style={[styles.input, darkMode && styles.darkInput]}
-            placeholder="Correo electrónico"
-            placeholderTextColor={darkMode ? "#666" : "#999"}
-            keyboardType="email-address"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-          />
-          <TextInput
-            style={[styles.input, darkMode && styles.darkInput]}
-            placeholder="Nombre de usuario"
-            placeholderTextColor={darkMode ? "#666" : "#999"}
-            value={usuario}
-            onChangeText={setUsuario}
-          />
-          <TextInput
-            style={[styles.input, darkMode && styles.darkInput]}
-            placeholder="Contraseña"
-            placeholderTextColor={darkMode ? "#666" : "#999"}
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
-          <TextInput
-            style={[styles.input, darkMode && styles.darkInput]}
-            placeholder="Confirmar contraseña"
-            placeholderTextColor={darkMode ? "#666" : "#999"}
-            secureTextEntry
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-          />
+          <View style={styles.form}>
+            <View style={[styles.inputContainer, darkMode && styles.darkInputContainer]}>
+              <Ionicons name="person-outline" size={20} color={darkMode ? "#aaa" : "#888"} style={styles.inputIcon} />
+              <TextInput
+                style={[styles.input, darkMode && styles.darkInput]}
+                placeholder="Nombre completo"
+                placeholderTextColor={darkMode ? "#666" : "#999"}
+                value={nombre}
+                onChangeText={setNombre}
+              />
+            </View>
 
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+            <View style={[styles.inputContainer, darkMode && styles.darkInputContainer]}>
+              <Ionicons name="at-outline" size={20} color={darkMode ? "#aaa" : "#888"} style={styles.inputIcon} />
+              <TextInput
+                style={[styles.input, darkMode && styles.darkInput]}
+                placeholder="Nombre de usuario"
+                placeholderTextColor={darkMode ? "#666" : "#999"}
+                value={usuario}
+                onChangeText={setUsuario}
+              />
+            </View>
 
-          <TouchableOpacity style={styles.boton} onPress={(handleRegister)}>
-            <Text style={styles.botonTexto}>Registrarse</Text>
-          </TouchableOpacity>
+            <View style={[styles.inputContainer, darkMode && styles.darkInputContainer]}>
+              <Ionicons name="mail-outline" size={20} color={darkMode ? "#aaa" : "#888"} style={styles.inputIcon} />
+              <TextInput
+                style={[styles.input, darkMode && styles.darkInput]}
+                placeholder="Correo electrónico"
+                placeholderTextColor={darkMode ? "#666" : "#999"}
+                keyboardType="email-address"
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+              />
+            </View>
 
-          <TouchableOpacity style={styles.botonSecundario} onPress={() => navigation.navigate('Login')}>
-            <Text style={styles.botonTextoSecundario}>¿Ya tienes cuenta? Inicia sesión</Text>
-          </TouchableOpacity>
+            <View style={[styles.inputContainer, darkMode && styles.darkInputContainer]}>
+              <Ionicons name="lock-closed-outline" size={20} color={darkMode ? "#aaa" : "#888"} style={styles.inputIcon} />
+              <TextInput
+                style={[styles.input, darkMode && styles.darkInput, { flex: 1 }]}
+                placeholder="Contraseña"
+                placeholderTextColor={darkMode ? "#666" : "#999"}
+                secureTextEntry={!showPassword}
+                value={password}
+                onChangeText={setPassword}
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color={darkMode ? "#aaa" : "#888"} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={[styles.inputContainer, darkMode && styles.darkInputContainer]}>
+              <Ionicons name="lock-closed-outline" size={20} color={darkMode ? "#aaa" : "#888"} style={styles.inputIcon} />
+              <TextInput
+                style={[styles.input, darkMode && styles.darkInput, { flex: 1 }]}
+                placeholder="Confirmar contraseña"
+                placeholderTextColor={darkMode ? "#666" : "#999"}
+                secureTextEntry={!showConfirmPassword}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+              />
+              <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+                <Ionicons name={showConfirmPassword ? "eye-off-outline" : "eye-outline"} size={20} color={darkMode ? "#aaa" : "#888"} />
+              </TouchableOpacity>
+            </View>
+
+            {error ? <Text style={styles.error}>{error}</Text> : null}
+
+            <TouchableOpacity
+              style={[styles.boton, submitting && { opacity: 0.7 }]}
+              onPress={handleRegister}
+              disabled={submitting}
+            >
+              {submitting ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.botonTexto}>Registrarse</Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.botonSecundario} onPress={() => navigation.navigate('Login')}>
+              <Text style={styles.botonTextoSecundario}>¿Ya tienes cuenta? Inicia sesión</Text>
+            </TouchableOpacity>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      <AppModal
+        visible={modal.visible}
+        type={modal.type}
+        title={modal.title}
+        message={modal.message}
+        confirmText="Entendido"
+        onConfirm={hideModal}
+        darkMode={darkMode}
+      />
     </View>
   );
 }
@@ -217,92 +259,119 @@ export default RegisterScreen;
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.bg_gray,
+    backgroundColor: '#fff',
   },
   darkSafeArea: {
-    backgroundColor: '#121212',
+    backgroundColor: '#0f0f0f',
   },
   container: {
     flex: 1,
   },
-  scrollContainer: {
-    paddingTop: 60,
-    paddingHorizontal: 20,
-    paddingBottom: 60,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    flex: 1,
-    textAlign: 'center',
-    marginRight: 40, // Para compensar el espacio de la flecha y que el texto quede centrado
-  },
-  darkText: {
-    color: '#fff',
+  scrollContent: {
+    paddingTop: 40,
+    paddingHorizontal: 24,
+    paddingBottom: 40,
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 40,
     width: '100%',
-    marginBottom: 30,
+    minHeight: 60,
   },
   backButton: {
-    padding: 8,
+    position: 'absolute',
+    left: 0,
+    zIndex: 10,
+    padding: 4,
+  },
+  titleContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#1a1a1a',
+    letterSpacing: -0.5,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#666',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  darkSubtitle: {
+    color: '#aaa',
+  },
+  darkText: {
+    color: '#fff',
+  },
+  form: {
+    width: '100%',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#eee',
+    height: 56,
+  },
+  darkInputContainer: {
+    backgroundColor: '#1a1a1a',
+    borderColor: '#2a2a2a',
+  },
+  inputIcon: {
+    marginRight: 12,
   },
   input: {
-    marginVertical: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    width: '100%',
-    fontSize: 14,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 10,
-    backgroundColor: '#fff',
+    flex: 1,
+    fontSize: 16,
+    color: '#1a1a1a',
+    height: '100%',
   },
   darkInput: {
-    backgroundColor: '#1e1e1e',
-    borderColor: '#444',
     color: '#fff',
   },
   boton: {
     backgroundColor: '#ef2b2d',
-    padding: 15,
-    borderRadius: 8,
-    marginTop: 20,
+    height: 56,
+    borderRadius: 12,
+    marginTop: 24,
     alignItems: 'center',
-    width: '100%',
+    justifyContent: 'center',
+    shadowColor: '#ef2b2d',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   botonTexto: {
     color: '#fff',
-    fontWeight: 'bold',
+    fontWeight: '700',
     fontSize: 16,
   },
   botonSecundario: {
-    backgroundColor: 'transparent',
-    padding: 15,
-    borderRadius: 10,
-    marginTop: 15,
+    marginTop: 24,
     alignItems: 'center',
-    width: '100%',
-    borderWidth: 2,
-    borderColor: '#ef2b2d',
   },
   botonTextoSecundario: {
     color: '#ef2b2d',
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  link: {
-    marginTop: 20,
-    color: '#007AFF',
-    textAlign: 'center',
+    fontWeight: '600',
+    fontSize: 14,
   },
   error: {
     color: '#ef2b2d',
-    marginTop: 10,
     textAlign: 'center',
+    marginBottom: 16,
+    fontSize: 14,
+    fontWeight: '500',
   },
 });

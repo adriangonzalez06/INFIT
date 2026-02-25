@@ -24,25 +24,25 @@ import { BACKEND_URL } from '../src/config';
 const PRIMARY = '#ef2b2d';
 
 const lightTheme = {
-  bg: '#f4f4f4',
+  bg: '#f8f9fa',
   primary: PRIMARY,
   card: '#ffffff',
-  title: '#333333',
+  title: '#1a1a1a',
   subtle: '#666666',
-  hairline: '#cccccc',
-  challengeBg: ['#ffe8e8', '#e8fff1', '#e8f0ff', '#fff4e8'],
-  cardShadow: '#000'
+  hairline: '#eeeeee',
+  challengeBg: ['#fff0f0', '#f0fff4', '#f0f4ff', '#fffcf0'],
+  cardShadow: 'rgba(0,0,0,0.08)'
 };
 
 const darkTheme = {
-  bg: '#121212',
+  bg: '#0f0f0f',
   primary: '#ef2b2d',
-  card: '#1e1e1e',
+  card: '#1a1a1a',
   title: '#ffffff',
   subtle: '#aaaaaa',
-  hairline: '#222222',
-  challengeBg: ['#2c1515', '#152c1d', '#151c2c', '#2c2215'],
-  cardShadow: '#000'
+  hairline: '#2a2a2a',
+  challengeBg: ['#251515', '#152518', '#151825', '#252115'],
+  cardShadow: 'rgba(0,0,0,0.3)'
 };
 
 
@@ -114,6 +114,7 @@ export default function WelcomeScreen() {
   );
 
   const [userName, setUserName] = useState(null);
+  const [userAvatar, setUserAvatar] = useState(null);
   const [streak, setStreak] = useState(0);
 
   useEffect(() => {
@@ -123,40 +124,48 @@ export default function WelcomeScreen() {
         let name = (user.displayName && user.displayName.trim()) || null;
         let streakVal = 0;
 
-        // { changed code }} Cargar desde AsyncStorage primero (rápido)
+        // Cargar desde AsyncStorage primero (rápido)
         try {
           const savedStreak = await AsyncStorage.getItem('streak');
-          if (savedStreak) {
-            streakVal = Number(savedStreak);
-          }
+          const savedName = await AsyncStorage.getItem('userName');
+          const savedAvatar = await AsyncStorage.getItem('userAvatar');
+          if (savedStreak) setStreak(Number(savedStreak));
+          if (savedName) setUserName(savedName);
+          if (savedAvatar) setUserAvatar({ uri: savedAvatar });
         } catch (e) {
-          console.warn('Error cargando streak de AsyncStorage:', e?.message);
+          console.warn('Error cargando de AsyncStorage:', e?.message);
         }
 
         // Si no hay displayName en Firebase, intentar obtener del backend
-        if (!name) {
-          try {
-            const resp = await axios.get(
-              `${BACKEND_URL}/api/usuarios/buscar/email/${encodeURIComponent(user.email)}`,
-              { timeout: 5000 }
-            );
-            const nombreBackend = resp?.data?.nombre;
-            streakVal = resp?.data?.streak || streakVal; // { changed code }} usa backend si existe, sino usa AsyncStorage
-            if (nombreBackend) {
-              name = nombreBackend;
-              await AsyncStorage.setItem('userName', nombreBackend);
-              await AsyncStorage.setItem('streak', streakVal.toString());
+        try {
+          const resp = await axios.get(
+            `${BACKEND_URL}/api/usuarios/buscar/email/${encodeURIComponent(user.email)}`,
+            { timeout: 5000 }
+          );
+          if (resp.data) {
+            const { nombre, streak: bkStreak, photoURL } = resp.data;
+            if (nombre) {
+              name = nombre;
+              await AsyncStorage.setItem('userName', nombre);
             }
-          } catch (e) {
-            console.warn('No se pudo obtener nombre del backend:', e?.message || e);
-            // Aquí streakVal sigue siendo el valor de AsyncStorage
+            if (bkStreak !== undefined) {
+              streakVal = bkStreak;
+              await AsyncStorage.setItem('streak', bkStreak.toString());
+            }
+            if (photoURL) {
+              setUserAvatar({ uri: photoURL });
+              await AsyncStorage.setItem('userAvatar', photoURL);
+            }
           }
+        } catch (e) {
+          console.warn('No se pudo obtener datos del backend:', e?.message || e);
         }
 
-        setUserName(name || user.email || user.uid);
+        setUserName(name || user.displayName || user.email.split('@')[0]);
         setStreak(streakVal);
       } else {
         setUserName(null);
+        setUserAvatar(null);
         setStreak(0);
       }
     });
@@ -203,54 +212,62 @@ export default function WelcomeScreen() {
       overScrollMode="never"
       showsVerticalScrollIndicator={false}
     >
-      <StatusBar hidden={true} />
+      <StatusBar hidden={false} barStyle={isDark ? "light-content" : "dark-content"} />
 
-      {/* ── Dumbbell banner ─────────────────────────────────────────── */}
-      <ImageBackground
-        source={require('../assets/images/dumbbell_header.png')}
-        style={styles.dumbbellBanner}
-        resizeMode="cover"
-      >
-        {/* Texto centrado entre las dos mancuernas */}
-        <View style={styles.bannerTextWrap} pointerEvents="none">
-          <Text style={styles.bannerText}>Rutinas</Text>
+      {/* ── Header Seccion ── */}
+      <Animated.View style={[styles.header, { opacity: mountOpacity, transform: [{ translateY: mountTranslate }] }]}>
+        <View style={styles.headerTop}>
+          <View>
+            <Text style={[styles.greeting, { color: theme.title }]}>
+              ¡Hola, {userName || 'atleta'}! 👋
+            </Text>
+            <Text style={[styles.subtitle, { color: theme.subtle }]}>{message}</Text>
+          </View>
+          <TouchableOpacity onPress={() => navigation.navigate('Perfil')}>
+            <Image
+              source={userAvatar || require('../assets/avatar.png')}
+              style={styles.avatar}
+            />
+          </TouchableOpacity>
         </View>
-      </ImageBackground>
 
-      <Pressable onPress={() => navigation.navigate('Rutinas')}>
-        <Animated.View
-          style={[
-            styles.card,
-            {
-              backgroundColor: theme.card,
-              shadowColor: theme.cardShadow,
-              transform: [{ translateY: mountTranslate }],
-              opacity: mountOpacity,
-            },
-          ]}
+        <View style={[styles.streakChip, { borderColor: theme.hairline, backgroundColor: isDark ? '#1a1a1a' : '#fff' }]}>
+          <Ionicons name="flame" size={20} color={theme.primary} />
+          <Text style={[styles.streakChipText, { color: theme.title }]}>
+            {streak} Días de racha
+          </Text>
+        </View>
+      </Animated.View>
+
+      <View style={styles.cardsRow}>
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={() => navigation.navigate('Rutinas')}
+          style={[styles.smallCard, { backgroundColor: theme.card, shadowColor: theme.cardShadow }]}
         >
-          <Text style={[styles.cardTitle, { color: theme.title }]}>{ROUTINE_CARD_TEXT.title} </Text>
-          <Text style={[styles.cardDescription, { color: theme.subtle }]}>{ROUTINE_CARD_TEXT.last}</Text>
-        </Animated.View>
-      </Pressable>
+          <View style={[styles.iconCircle, { backgroundColor: '#fff0f0' }]}>
+            <Ionicons name="barbell" size={24} color={theme.primary} />
+          </View>
+          <Text style={[styles.cardTitle, { color: theme.title }]}>Rutinas</Text>
+          <Text style={[styles.cardDescription, { color: theme.subtle }]} numberOfLines={1}>
+            Sigue entrenando
+          </Text>
+        </TouchableOpacity>
 
-
-      <Pressable onPress={() => navigation.navigate('Alimentacion')}>
-        <Animated.View
-          style={[
-            styles.card,
-            {
-              backgroundColor: theme.card,
-              shadowColor: theme.cardShadow,
-              transform: [{ translateY: mountTranslate }],
-              opacity: mountOpacity,
-            },
-          ]}
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={() => navigation.navigate('Alimentacion')}
+          style={[styles.smallCard, { backgroundColor: theme.card, shadowColor: theme.cardShadow }]}
         >
-          <Text style={[styles.cardTitle, { color: theme.title }]}>{MEAL_CARD_TEXT.title}</Text>
-          <Text style={[styles.cardDescription, { color: theme.subtle }]}>{MEAL_CARD_TEXT.last}</Text>
-        </Animated.View>
-      </Pressable>
+          <View style={[styles.iconCircle, { backgroundColor: '#eff6ff' }]}>
+            <Ionicons name="restaurant" size={24} color="#3b82f6" />
+          </View>
+          <Text style={[styles.cardTitle, { color: theme.title }]}>Comidas</Text>
+          <Text style={[styles.cardDescription, { color: theme.subtle }]} numberOfLines={1}>
+            Cuida tu dieta
+          </Text>
+        </TouchableOpacity>
+      </View>
 
 
       <View style={{ marginTop: 16 }}>
@@ -287,188 +304,139 @@ export default function WelcomeScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 0,
-    paddingHorizontal: 0,
+    paddingBottom: 40,
   },
   header: {
     paddingHorizontal: 24,
-    paddingBottom: 16,
-    marginBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingTop: 60,
+    paddingBottom: 24,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 20,
   },
   avatar: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    marginBottom: 12,
-    marginTop: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 2,
+    borderColor: '#ef2b2d',
   },
   greeting: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '800',
-    marginBottom: 6,
-    textAlign: 'center',
+    marginBottom: 4,
   },
   subtitle: {
-    fontSize: 16,
-    marginBottom: 14,
-    textAlign: 'center',
+    fontSize: 15,
+    fontWeight: '500',
   },
   streakChip: {
-    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 2,
-    marginBottom: 12,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2,
   },
   streakChipText: {
     fontSize: 14,
     fontWeight: '700',
+    marginLeft: 8,
   },
-  startButton: {
-    marginTop: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 22,
-    borderRadius: 22,
-    elevation: 2,
+  cardsRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    justifyContent: 'space-between',
+    marginBottom: 24,
   },
-  startButtonText: {
-    color: '#fff',
-    fontWeight: '800',
-    fontSize: 16,
+  smallCard: {
+    flex: 0.48,
+    borderRadius: 20,
+    padding: 20,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 1,
+    shadowRadius: 12,
+    elevation: 6,
   },
-
-  card: {
+  iconCircle: {
+    width: 48,
+    height: 48,
     borderRadius: 14,
-    padding: 22,
-    marginTop: 12,
-    marginHorizontal: 16,
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   cardTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   cardDescription: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '500',
   },
-
   sectionHeaderRow: {
-    paddingHorizontal: 16,
-    marginBottom: 10,
+    paddingHorizontal: 24,
+    marginBottom: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  sectionTitle: { fontSize: 20, fontWeight: '800' },
-  sectionLink: { fontSize: 12, fontWeight: '800' },
-
-
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  sectionLink: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
   challengeCard: {
-    width: 260,
-    borderRadius: 16,
-    padding: 16,
-    shadowOpacity: 0.1,
+    width: 240,
+    borderRadius: 24,
+    padding: 20,
+    shadowOpacity: 0.3,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
     elevation: 4,
   },
-  challengeHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  dot: { width: 10, height: 10, borderRadius: 5, marginRight: 10 },
-  challengeTitle: { fontSize: 18, fontWeight: '800' },
-  challengeSubtitle: { fontSize: 14, fontWeight: '600', marginBottom: 14 },
-  cta: { alignSelf: 'flex-start', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 8 },
-  ctaText: { color: '#fff', fontWeight: '800', fontSize: 14 },
-
-  // ── Dumbbell Banner ────────────────────────────────────────────────────────
-  dumbbellBanner: {
-    width: '100%',
-    height: 160,
-    backgroundColor: '#f7f7f7',
-    overflow: 'hidden',
-    position: 'relative',
-    marginBottom: 8,
-  },
-  // blobs izquierda
-  blobLeft: {
-    position: 'absolute',
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    backgroundColor: '#264653',
-    top: -40,
-    left: -30,
-    opacity: 0.92,
-  },
-  glowLeft: {
-    position: 'absolute',
-    width: 110,
-    height: 110,
-    borderRadius: 55,
-    backgroundColor: '#e76f51',
-    top: 10,
-    left: 20,
-    opacity: 0.55,
-  },
-  // blobs derecha
-  blobRight: {
-    position: 'absolute',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#264653',
-    top: -20,
-    right: -20,
-    opacity: 0.92,
-  },
-  glowRight: {
-    position: 'absolute',
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#e76f51',
-    top: 30,
-    right: 20,
-    opacity: 0.55,
-  },
-  // mancuernas
-  dumbbellLeft: {
-    position: 'absolute',
-    bottom: 10,
-    left: 10,
-  },
-  dumbbellRight: {
-    position: 'absolute',
-    top: 8,
-    right: 14,
-  },
-  // texto central
-  bannerTextWrap: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: '30%',
-    right: '30%',
-    justifyContent: 'center',
+  challengeHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 12,
   },
-  bannerText: {
-    fontSize: 32,
-    fontWeight: '900',
-    color: '#264653',
-    letterSpacing: 1,
-    textShadowColor: 'rgba(255,255,255,0.7)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 10,
   },
-
-  headerImage: {
-    top: '-5%'
-  }
+  challengeTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+  },
+  challengeSubtitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 18,
+    marginBottom: 16,
+  },
+  cta: {
+    alignSelf: 'flex-start',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  ctaText: {
+    color: '#fff',
+    fontWeight: '800',
+    fontSize: 12,
+  },
 });

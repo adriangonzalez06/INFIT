@@ -22,6 +22,7 @@ import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import axios from 'axios';
 import * as ImagePicker from 'expo-image-picker';
 import { BACKEND_URL } from '../src/config';
+import AppModal from './AppModal';
 
 
 
@@ -35,11 +36,7 @@ async function ensureCameraPermission() {
 export async function openCameraForAvatar() {
   const ok = await ensureCameraPermission();
   if (!ok) {
-    Alert.alert(
-      'Permiso requerido',
-      'Activa el permiso de cámara en Ajustes para continuar.',
-      [{ text: 'Cancelar', style: 'cancel' }, { text: 'Abrir ajustes', onPress: () => Linking.openSettings() }]
-    );
+    showModal('warning', 'Permiso requerido', 'Activa el permiso de cámara en Ajustes para tomar una foto de perfil.');
     return null;
   }
 
@@ -99,7 +96,10 @@ export default function ProfileScreen() {
   const [userId, setUserId] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
-  const [recentRoutines, setRecentRoutines] = useState([]); // ←← rutinas recientes
+  const [recentRoutines, setRecentRoutines] = useState([]);
+  const [modal, setModal] = useState({ visible: false, type: 'error', title: '', message: '' });
+  const showModal = (type, title, message) => setModal({ visible: true, type, title, message });
+  const hideModal = () => setModal(m => ({ ...m, visible: false }));
 
   // Cargar preferencia de modo oscuro cada vez que la pantalla gana foco
   useFocusEffect(
@@ -277,20 +277,28 @@ export default function ProfileScreen() {
     const newPeso = parseFloat(pesoInput.replace(',', '.'));
     const newAltura = parseFloat(alturaInput.replace(',', '.'));
 
-    if (isNaN(newPeso) || isNaN(newAltura) || newPeso <= 0 || newAltura <= 0) {
-      console.warn('Valores inválidos');
-      alert('Por favor ingresa números válidos para peso y altura');
+    if (isNaN(newPeso) || isNaN(newAltura)) {
+      showModal('warning', 'Datos inválidos', 'Por favor ingresa números válidos para peso y altura.');
+      return;
+    }
+
+    if (newPeso < 20 || newPeso > 300) {
+      showModal('warning', 'Peso no válido', 'El peso debe estar entre 20 kg y 300 kg. Por favor revisa el valor introducido.');
+      return;
+    }
+
+    if (newAltura < 0.5 || newAltura > 2.5) {
+      showModal('warning', 'Altura no válida', 'La altura debe estar entre 0.5 m y 2.5 m. Por favor revisa el valor introducido.');
       return;
     }
 
     if (!userId) {
-      alert('Error: No se pudo obtener tu ID de usuario');
+      showModal('error', 'Sesión no encontrada', 'No se pudo obtener tu ID de usuario. Vuelve a iniciar sesión.');
       return;
     }
 
     setIsSaving(true);
     try {
-      // Actualizar en el backend
       const url = `${BACKEND_URL}/api/usuarios/${userId}`;
 
       console.log('Enviando petición a:', url);
@@ -315,23 +323,21 @@ export default function ProfileScreen() {
         throw new Error(`Error ${response.status}: ${errorData}`);
       }
 
-      // Actualizar en el estado local
       setUser((prev) =>
         prev ? { ...prev, peso: newPeso, altura: newAltura } : prev
       );
 
-      // Guardar en AsyncStorage
       await ReactNativeAsyncStorage.setItem('userWeight', String(newPeso));
       await ReactNativeAsyncStorage.setItem('userHeight', String(newAltura));
 
       console.log('Peso y altura actualizados exitosamente');
-      alert('¡Cambios guardados correctamente!');
+      setModalVisible(false);
+      showModal('success', '¡Cambios guardados!', 'Tu peso y altura se han actualizado correctamente.');
     } catch (e) {
       console.error('Error guardando peso/altura:', e);
-      alert(`Error al guardar los cambios: ${e.message}`);
+      showModal('error', 'Error al guardar', `No se pudieron guardar los cambios: ${e.message}`);
     } finally {
       setIsSaving(false);
-      setModalVisible(false);
     }
   };
 
@@ -394,23 +400,27 @@ export default function ProfileScreen() {
         animationType="slide"
         onRequestClose={() => setModalVisible(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Editar datos</Text>
+        <View style={[styles.modalOverlay, darkMode && { backgroundColor: 'rgba(0,0,0,0.75)' }]}>
+          <View style={[styles.modalContent, darkMode && { backgroundColor: '#1e1e1e' }]}>
+            <Text style={[styles.modalTitle, darkMode && { color: '#fff' }]}>Editar datos</Text>
 
+            <Text style={[{ fontSize: 12, color: darkMode ? '#aaa' : '#888', marginBottom: 4 }]}>Peso (20 – 300 kg)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, darkMode && { backgroundColor: '#2a2a2a', borderColor: '#444', color: '#fff' }]}
               value={pesoInput}
               onChangeText={setPesoInput}
               keyboardType="numeric"
               placeholder="Peso (kg)"
+              placeholderTextColor={darkMode ? '#666' : '#999'}
             />
+            <Text style={[{ fontSize: 12, color: darkMode ? '#aaa' : '#888', marginBottom: 4 }]}>Altura (0.5 – 2.5 m)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, darkMode && { backgroundColor: '#2a2a2a', borderColor: '#444', color: '#fff' }]}
               value={alturaInput}
               onChangeText={setAlturaInput}
               keyboardType="numeric"
               placeholder="Altura (m)"
+              placeholderTextColor={darkMode ? '#666' : '#999'}
             />
 
             <TouchableOpacity
@@ -422,10 +432,10 @@ export default function ProfileScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.saveButton, { backgroundColor: '#ddd', marginTop: 8 }]}
+              style={[styles.saveButton, { backgroundColor: darkMode ? '#333' : '#ddd', marginTop: 8 }]}
               onPress={() => setModalVisible(false)}
             >
-              <Text style={[styles.saveButtonText, { color: '#333' }]}>Cancelar</Text>
+              <Text style={[styles.saveButtonText, { color: darkMode ? '#ccc' : '#333' }]}>Cancelar</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -480,7 +490,7 @@ export default function ProfileScreen() {
 
                 // Guardia: asegurarse de que tenemos userId antes de empezar
                 if (!userId) {
-                  Alert.alert('Error', 'No se encontró tu ID de usuario. Vuelve a iniciar sesión.');
+                  showModal('error', 'Sesión no encontrada', 'No se encontró tu ID de usuario. Vuelve a iniciar sesión.');
                   return;
                 }
 
@@ -506,7 +516,7 @@ export default function ProfileScreen() {
                     sig = sigResp.data;
                   } catch (sigErr) {
                     console.error('[Avatar] Error obteniendo firma Cloudinary:', sigErr?.message || sigErr);
-                    Alert.alert('Error', 'No se pudo conectar con el servidor. ¿Está el backend arrancado?');
+                    showModal('error', 'Error de conexión', 'No se pudo conectar con el servidor. ¿Está el backend arrancado?');
                     return;
                   }
 
@@ -533,7 +543,7 @@ export default function ProfileScreen() {
                     if (!cloudinaryUrl) throw new Error('Cloudinary no devolvió URL');
                   } catch (upErr) {
                     console.error('[Avatar] Error subiendo a Cloudinary:', upErr?.response?.data || upErr?.message || upErr);
-                    Alert.alert('Error', 'No se pudo subir la imagen a Cloudinary. Revisa tus credenciales en el .env del backend.');
+                    showModal('error', 'Error al subir imagen', 'No se pudo subir la imagen a Cloudinary. Revisa tus credenciales en el .env del backend.');
                     return;
                   }
 
@@ -549,7 +559,7 @@ export default function ProfileScreen() {
                     );
                   } catch (saveErr) {
                     console.error('[Avatar] Error guardando URL en backend:', saveErr?.response?.data || saveErr?.message || saveErr);
-                    Alert.alert('Advertencia', 'La foto se subió pero no se pudo guardar en la base de datos. Inténtalo de nuevo.');
+                    showModal('warning', 'Foto subida', 'La foto se subió pero no se pudo guardar en la base de datos. Inténtalo de nuevo.');
                   }
 
                 } finally {
@@ -601,6 +611,15 @@ export default function ProfileScreen() {
       >
         <Text style={styles.botonTexto}>Añadir nuevo registro</Text>
       </TouchableOpacity>
+      <AppModal
+        visible={modal.visible}
+        type={modal.type}
+        title={modal.title}
+        message={modal.message}
+        confirmText="Entendido"
+        onConfirm={hideModal}
+        darkMode={darkMode}
+      />
     </ScrollView>
   );
 }

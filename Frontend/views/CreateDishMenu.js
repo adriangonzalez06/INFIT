@@ -1,8 +1,9 @@
 import React, { useState, useRef, useMemo, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput,
-  SafeAreaView, Image, ImageBackground, Animated, Dimensions, FlatList, Alert
+  SafeAreaView, Image, ImageBackground, Animated, Dimensions, FlatList
 } from 'react-native';
+import AppModal from './AppModal';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -136,6 +137,9 @@ export default function CreateDishMenu({ route }) {
   const [dishDescription, setDishDescription] = useState('');
   const [allDishes, setAllDishes] = useState([]);
   const [darkMode, setDarkMode] = useState(false);
+  const [appModal, setAppModal] = useState({ visible: false, type: 'info', title: '', message: '' });
+  const showAppModal = (type, title, message) => setAppModal({ visible: true, type, title, message });
+  const hideAppModal = () => setAppModal(m => ({ ...m, visible: false }));
 
   // Cargar preferencia cada vez que entramos
   useFocusEffect(
@@ -382,7 +386,7 @@ export default function CreateDishMenu({ route }) {
         handleSelectGrams(selectedIngredientIndex, parsedGrams);
         hideModal();
       } else {
-        Alert.alert('Error', 'Por favor ingrese una cantidad válida de gramos');
+        showAppModal('error', 'Cantidad inválida', 'Por favor ingrese una cantidad válida de gramos antes de continuar.');
       }
     }
   };
@@ -444,132 +448,141 @@ export default function CreateDishMenu({ route }) {
       setDishName('');
       setDishDescription('');
 
-      Alert.alert('Guardado', 'El plato se ha guardado correctamente.');
+      showAppModal('success', 'Plato guardado', 'El plato se ha guardado correctamente en tu colección.');
     } catch (err) {
       console.error('Error saving dish:', err);
-      Alert.alert('Error', 'No se pudo guardar el plato.');
+      showAppModal('error', 'Error al guardar', 'No se pudo guardar el plato. Verifica tu conexión e inténtalo de nuevo.');
     }
   };
 
   return (
+    <>
+      <View style={[styles.container, darkMode && { backgroundColor: '#121212' }]}>
+        <StatusBar style={darkMode ? "light" : "auto"} />
 
-    <View style={[styles.container, darkMode && { backgroundColor: '#121212' }]}>
-      <StatusBar style={darkMode ? "light" : "auto"} />
+        <Header title="Nuevo plato" showBackButton={true} />
 
-      <Header title="Nuevo plato" showBackButton={true} />
+        <ScrollView contentContainerStyle={[styles.scrollContent, darkMode && { backgroundColor: '#121212' }]} showsVerticalScrollIndicator={false}>
+          <View style={styles.grupoContainer}>
 
-      <ScrollView contentContainerStyle={[styles.scrollContent, darkMode && { backgroundColor: '#121212' }]} showsVerticalScrollIndicator={false}>
-        <View style={styles.grupoContainer}>
+            <LabelTextInput
+              label="Nombre del plato"
+              placeholder="Nombre..."
+              placeholderTextColor={darkMode ? "#666" : "#999"}
+              onChangeText={setName}
+              value={name}
+              style={[darkMode && { backgroundColor: '#2a2a2a', borderColor: '#444', color: '#fff' }]}
+            />
 
-          <LabelTextInput
-            label="Nombre del plato"
-            placeholder="Nombre..."
-            placeholderTextColor={darkMode ? "#666" : "#999"}
-            onChangeText={setName}
-            value={name}
-            style={[darkMode && { backgroundColor: '#2a2a2a', borderColor: '#444', color: '#fff' }]}
-          />
+            <Text style={[styles.grupoTitulo, { marginTop: 15 }, darkMode && { color: '#ef2b2d' }]}>Ingredientes</Text>
 
-          <Text style={[styles.grupoTitulo, { marginTop: 15 }, darkMode && { color: '#ef2b2d' }]}>Ingredientes</Text>
-
-          <TouchableOpacity
-            style={[styles.addDishButton, darkMode && { borderColor: '#444' }]}
-            onPress={() => searchMenuRef.current?.abrirMenu()}
-          >
-            <Text style={[styles.addDishButtonText, darkMode && { color: '#fff' }]}>+ Añadir ingrediente</Text>
-          </TouchableOpacity>
-
-          {renderIngredientList()}
-
-          <Text style={[styles.grupoTitulo, darkMode && { color: '#ef2b2d' }]}>Totales</Text>
-
-          <View style={styles.totalsContainer}>
-            <Text style={[styles.title_3, darkMode && { color: '#aaa' }]}>Calorías</Text>
-            <Text style={[styles.text, darkMode && { color: '#fff' }]}>{calculateTotals(dish).totalCalories} kcal</Text>
-          </View>
-
-          <View style={styles.totalsContainer}>
-            <Text style={[styles.title_3, darkMode && { color: '#aaa' }]}>Fibra</Text>
-            <Text style={[styles.text, darkMode && { color: '#fff' }]}>{calculateTotals(dish).totalFiber} g</Text>
-          </View>
-
-          <View style={styles.totalsContainer}>
-            <Text style={[styles.title_3, darkMode && { color: '#aaa' }]}>Carbohidratos</Text>
-            <Text style={[styles.text, darkMode && { color: '#fff' }]}>{calculateTotals(dish).totalCarbs} g</Text>
-          </View>
-
-          <View style={styles.totalsContainer}>
-            <Text style={[styles.title_3, darkMode && { color: '#aaa' }]}>Grasas</Text>
-            <Text style={[styles.text, darkMode && { color: '#fff' }]}>{calculateTotals(dish).totalFat} g</Text>
-          </View>
-
-          <View style={styles.totalsContainer}>
-            <Text style={[styles.title_3, darkMode && { color: '#aaa' }]}>Proteína</Text>
-            <Text style={[styles.text, darkMode && { color: '#fff' }]}>{calculateTotals(dish).totalProtein} g</Text>
-          </View>
-
-          <Text style={[styles.grupoTitulo, { marginTop: 10 }, darkMode && { color: '#ef2b2d' }]}>Elegir imagen</Text>
-
-          <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 10 }}>
-            <TouchableOpacity onPress={() => imgMenuRef.current?.abrirMenu()} style={{ width: '100%', alignItems: 'center', marginBottom: 20 }}>
-
-              {selectedUri && (
-                <Image
-                  source={getImageSource(selectedUri)}
-                  style={{
-                    width: '70%',
-                    height: 130,
-                    borderRadius: 12,
-                  }}
-                />
-              )}
-
+            <TouchableOpacity
+              style={[styles.addDishButton, darkMode && { borderColor: '#444' }]}
+              onPress={() => searchMenuRef.current?.abrirMenu()}
+            >
+              <Text style={[styles.addDishButtonText, darkMode && { color: '#fff' }]}>+ Añadir ingrediente</Text>
             </TouchableOpacity>
+
+            {renderIngredientList()}
+
+            <Text style={[styles.grupoTitulo, darkMode && { color: '#ef2b2d' }]}>Totales</Text>
+
+            <View style={styles.totalsContainer}>
+              <Text style={[styles.title_3, darkMode && { color: '#aaa' }]}>Calorías</Text>
+              <Text style={[styles.text, darkMode && { color: '#fff' }]}>{calculateTotals(dish).totalCalories} kcal</Text>
+            </View>
+
+            <View style={styles.totalsContainer}>
+              <Text style={[styles.title_3, darkMode && { color: '#aaa' }]}>Fibra</Text>
+              <Text style={[styles.text, darkMode && { color: '#fff' }]}>{calculateTotals(dish).totalFiber} g</Text>
+            </View>
+
+            <View style={styles.totalsContainer}>
+              <Text style={[styles.title_3, darkMode && { color: '#aaa' }]}>Carbohidratos</Text>
+              <Text style={[styles.text, darkMode && { color: '#fff' }]}>{calculateTotals(dish).totalCarbs} g</Text>
+            </View>
+
+            <View style={styles.totalsContainer}>
+              <Text style={[styles.title_3, darkMode && { color: '#aaa' }]}>Grasas</Text>
+              <Text style={[styles.text, darkMode && { color: '#fff' }]}>{calculateTotals(dish).totalFat} g</Text>
+            </View>
+
+            <View style={styles.totalsContainer}>
+              <Text style={[styles.title_3, darkMode && { color: '#aaa' }]}>Proteína</Text>
+              <Text style={[styles.text, darkMode && { color: '#fff' }]}>{calculateTotals(dish).totalProtein} g</Text>
+            </View>
+
+            <Text style={[styles.grupoTitulo, { marginTop: 10 }, darkMode && { color: '#ef2b2d' }]}>Elegir imagen</Text>
+
+            <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 10 }}>
+              <TouchableOpacity onPress={() => imgMenuRef.current?.abrirMenu()} style={{ width: '100%', alignItems: 'center', marginBottom: 20 }}>
+
+                {selectedUri && (
+                  <Image
+                    source={getImageSource(selectedUri)}
+                    style={{
+                      width: '70%',
+                      height: 130,
+                      borderRadius: 12,
+                    }}
+                  />
+                )}
+
+              </TouchableOpacity>
+            </View>
+
+            {renderSaveChangesButton(creatingDish)}
+
           </View>
+        </ScrollView>
 
-          {renderSaveChangesButton(creatingDish)}
+        {/* render modal para seleccionar gramos */}
+        {renderSelectGramsModal()}
 
-        </View>
-      </ScrollView>
+        {/*menu buscar ingredientes*/}
+        <SearchMenu
+          ref={searchMenuRef}
+          data={allAvailableIngredients}
+          dataButton="Todos los ingredientes"
+          title="Agregar ingrediente al plato"
+          searchFields={["name"]}
+          renderCustomItem={renderIngredientItemMenu}
+          onSelectItem={handleAddIngredient}
+          searchPlaceholder="Buscar ingrediente..."
+          height={height}
+          numColumns={1}
+        />
 
-      {/* render modal para seleccionar gramos */}
-      {renderSelectGramsModal()}
+        {/*menu buscar imagenes*/}
+        <SearchMenu
+          ref={imgMenuRef}
+          data={images}
+          title="Seleccionar imagen"
+          searchFields={["name"]}
+          renderCustomItem={renderImageItemMenu}
+          onSelectItem={(item) => handleSetImage(item.url)}
+          searchPlaceholder="Buscar imagen..."
+          height={height}
+          numColumns={2}
+          columnWrapperStyle={{
+            justifyContent: 'space-between'
+          }}
+          contentContainerStyle={{
+            paddingHorizontal: 8,
+            paddingBottom: 20
+          }}
+        />
 
-      {/*menu buscar ingredientes*/}
-      <SearchMenu
-        ref={searchMenuRef}
-        data={allAvailableIngredients}
-        dataButton="Todos los ingredientes"
-        title="Agregar ingrediente al plato"
-        searchFields={["name"]}
-        renderCustomItem={renderIngredientItemMenu}
-        onSelectItem={handleAddIngredient}
-        searchPlaceholder="Buscar ingrediente..."
-        height={height}
-        numColumns={1}
+      </View>
+      <AppModal
+        visible={appModal.visible}
+        type={appModal.type}
+        title={appModal.title}
+        message={appModal.message}
+        confirmText="Entendido"
+        onConfirm={hideAppModal}
+        darkMode={darkMode}
       />
-
-      {/*menu buscar imagenes*/}
-      <SearchMenu
-        ref={imgMenuRef}
-        data={images}
-        title="Seleccionar imagen"
-        searchFields={["name"]}
-        renderCustomItem={renderImageItemMenu}
-        onSelectItem={(item) => handleSetImage(item.url)}
-        searchPlaceholder="Buscar imagen..."
-        height={height}
-        numColumns={2}
-        columnWrapperStyle={{
-          justifyContent: 'space-between'
-        }}
-        contentContainerStyle={{
-          paddingHorizontal: 8,
-          paddingBottom: 20
-        }}
-      />
-
-    </View>
+    </>
   );
-
 };
