@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput, Platform,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput, Platform, SafeAreaView, useColorScheme
 } from 'react-native';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Header from '../src/components/Header';
@@ -10,6 +10,7 @@ import { StatusBar } from 'expo-status-bar';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import axios from 'axios';
 import { BACKEND_URL } from '../src/config';
+import colors from './colors';
 
 
 const SUGERENCIAS = {
@@ -25,11 +26,11 @@ const rutinasPredefinidas = [
     id: 'piernas',
     nombre: 'Piernas explosivas',
     ejercicios: [
-      { id: 'p1', nombre: 'Sentadillas', series: '4', repeticiones: '12', peso: '60', animacion: require('../assets/ejercicios/sentadilla.json') },
-      { id: 'p2', nombre: 'Zancadas', series: '3', repeticiones: '10', peso: '20', image: 'https://media.istockphoto.com/id/1310156903/photo/young-woman-doing-lunges-exercise-at-home.jpg?s=612x612&w=0&k=20&c=JCcun30_jK-9_I0E6-I6tUaM0V7QO8_l7v5Z1S_V8_M=' },
-      { id: 'p3', nombre: 'Peso muerto rumano', series: '4', repeticiones: '10', peso: '50', image: 'https://images.squarespace-cdn.com/content/v1/594c3dcd37c58189856cc33b/1589139825444-2L3LXZO3M5ZG1Z3Z3V3Z/Romanian+Deadlift' },
-      { id: 'p4', nombre: 'Prensa de piernas', series: '3', repeticiones: '15', peso: '100', image: 'https://www.verywellfit.com/thmb/Jz_vHwKk_lG5n2u0Y2G9X_4V-I8=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/81-3120071-Leg-Press-GIF-669357e6005740348705009a259c7d81.gif' },
-      { id: 'p5', nombre: 'Extensión de cuádriceps', series: '3', repeticiones: '12', peso: '40', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/LEG-EXTENSION.gif' },
+      { id: 'p1', nombre: 'Sentadillas', series: '4', repeticiones: '12', peso: '60' },
+      { id: 'p2', nombre: 'Zancadas', series: '3', repeticiones: '10', peso: '20' },
+      { id: 'p3', nombre: 'Peso muerto rumano', series: '4', repeticiones: '10', peso: '50' },
+      { id: 'p4', nombre: 'Prensa de piernas', series: '3', repeticiones: '15', peso: '100' },
+      { id: 'p5', nombre: 'Extensión de cuádriceps', series: '3', repeticiones: '12', peso: '40' },
     ],
     dificultad: 'Intermedio',
     color: '#ef2b2d',
@@ -38,11 +39,11 @@ const rutinasPredefinidas = [
     id: 'espalda',
     nombre: 'Espalda fuerte',
     ejercicios: [
-      { id: 'e1', nombre: 'Dominadas', series: '4', repeticiones: '8', peso: '0', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/PULL-UP.gif' },
-      { id: 'e2', nombre: 'Remo con barra', series: '4', repeticiones: '10', peso: '40', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/BARBELL-BENT-OVER-ROW.gif' },
-      { id: 'e3', nombre: 'Peso muerto', series: '3', repeticiones: '8', peso: '80', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/BARBELL-DEADLIFT.gif' },
-      { id: 'e4', nombre: 'Jalón al pecho', series: '4', repeticiones: '12', peso: '50', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/LAT-PULLDOWN.gif' },
-      { id: 'e5', nombre: 'Remo en polea baja', series: '3', repeticiones: '12', peso: '45', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/04/Seated-Cable-Row.gif' },
+      { id: 'e1', nombre: 'Dominadas', series: '4', repeticiones: '8', peso: '0' },
+      { id: 'e2', nombre: 'Remo con barra', series: '4', repeticiones: '10', peso: '40' },
+      { id: 'e3', nombre: 'Peso muerto', series: '3', repeticiones: '8', peso: '80' },
+      { id: 'e4', nombre: 'Jalón al pecho', series: '4', repeticiones: '12', peso: '50' },
+      { id: 'e5', nombre: 'Remo en polea baja', series: '3', repeticiones: '12', peso: '45' },
     ],
     dificultad: 'Avanzado',
     color: '#2a9d8f',
@@ -51,11 +52,11 @@ const rutinasPredefinidas = [
     id: 'pecho',
     nombre: 'Pecho definido',
     ejercicios: [
-      { id: 'c1', nombre: 'Press banca', series: '4', repeticiones: '10', peso: '60', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/BARBELL-BENCH-PRESS.gif' },
-      { id: 'c2', nombre: 'Flexiones', series: '3', repeticiones: '20', peso: '0', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/PUSH-UP.gif' },
-      { id: 'c3', nombre: 'Press inclinado', series: '4', repeticiones: '10', peso: '50', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/INCLINE-BARBELL-BENCH-PRESS.gif' },
-      { id: 'c4', nombre: 'Aperturas con mancuernas', series: '3', repeticiones: '12', peso: '15', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/DUMBBELL-FLY.gif' },
-      { id: 'c5', nombre: 'Fondos en paralelas', series: '3', repeticiones: '10', peso: '0', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/06/Triceps-Dips.gif' },
+      { id: 'c1', nombre: 'Press banca', series: '4', repeticiones: '10', peso: '60' },
+      { id: 'c2', nombre: 'Flexiones', series: '3', repeticiones: '20', peso: '0' },
+      { id: 'c3', nombre: 'Press inclinado', series: '4', repeticiones: '10', peso: '50' },
+      { id: 'c4', nombre: 'Aperturas con mancuernas', series: '3', repeticiones: '12', peso: '15' },
+      { id: 'c5', nombre: 'Fondos en paralelas', series: '3', repeticiones: '10', peso: '0' },
     ],
     dificultad: 'Principiante',
     color: '#f4a261',
@@ -65,90 +66,40 @@ const rutinasPredefinidas = [
 export default function Rutinas() {
   const navigation = useNavigation();
   const [rutinas, setRutinas] = useState({ grupo1: [] });
-  const [predefinidas, setPredefinidas] = useState([]); // ← separadas del estado de rutinas de usuario
   const [modalVisible, setModalVisible] = useState(false);
   const [grupoActivo, setGrupoActivo] = useState(null);
   const [nombreRutina, setNombreRutina] = useState('');
   const [sugerencias, setSugerencias] = useState([]);
   const [dificultad, setDificultad] = useState(null);
   const [userName, setUserName] = useState('');
-  const [userId, setUserId] = useState(null); // ← ID del usuario en Firestore
   const [opcionesVisible, setOpcionesVisible] = useState(false);
   const [rutinaSeleccionada, setRutinaSeleccionada] = useState(null);
-  const [darkMode, setDarkMode] = useState(false);
 
-  // Cargar preferencia de modo oscuro cada vez que la pantalla gana foco
-  useFocusEffect(
-    useCallback(() => {
-      const loadTheme = async () => {
-        const savedTheme = await AsyncStorage.getItem("darkMode");
-        setDarkMode(savedTheme === "true");
-      };
-      loadTheme();
-    }, [])
-  );
+  const colorScheme = useColorScheme();
+  const darkMode = colorScheme === 'dark';
+
+  const predefinidas = rutinas.predefinidas || rutinasPredefinidas;
 
   useEffect(() => {
-    // 1a. Cargar rutinas del usuario — primero caché local, luego Firestore
+    // 1. Cargar rutinas de AsyncStorage
     const cargarRutinas = async () => {
       try {
-        // Caché instantánea para que la UI no parpadee
-        const cached = await AsyncStorage.getItem('rutinas');
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          setRutinas({ grupo1: parsed.grupo1 || [] });
-        }
-
-        // Intentar obtener del backend para tener la versión más reciente
-        const uid = await AsyncStorage.getItem('userId');
-        if (uid) {
-          setUserId(uid);
-          try {
-            const resp = await axios.get(`${BACKEND_URL}/api/routines/${uid}`, { timeout: 8000 });
-            const fromServer = resp.data || [];
-            // El backend devuelve { id, name, exercises, ... } — adaptamos al formato frontend
-            const grupo1 = fromServer.map(r => ({
-              id: r.id,
-              nombre: r.name || r.nombre || 'Sin nombre',
-              ejercicios: r.exercises || r.ejercicios || [],
-              dificultad: r.dificultad || 'Sin definir',
-              color: r.color || '#264653',
-            }));
-            const nuevas = { grupo1 };
-            setRutinas(nuevas);
-            await AsyncStorage.setItem('rutinas', JSON.stringify(nuevas));
-          } catch (netErr) {
-            console.warn('[Rutinas] Error cargando rutinas del backend (usando caché):', netErr.message);
-          }
+        const data = await AsyncStorage.getItem('rutinas');
+        if (data) {
+          const parsed = JSON.parse(data);
+          // Asegurar que existan las claves básicas
+          setRutinas({
+            grupo1: parsed.grupo1 || [],
+            predefinidas: parsed.predefinidas || rutinasPredefinidas
+          });
+        } else {
+          setRutinas({ grupo1: [], predefinidas: rutinasPredefinidas });
         }
       } catch (e) {
         console.error('Error cargando rutinas:', e);
       }
     };
     cargarRutinas();
-
-    // 1b. Cargar rutinas predefinidas — caché AsyncStorage primero, luego backend
-    const cargarPredefinidas = async () => {
-      try {
-        const cached = await AsyncStorage.getItem('predefinedRoutines');
-        if (cached) {
-          // Usar caché: mezclar animaciones/imágenes locales sobre datos de Firestore
-          const fromCache = JSON.parse(cached);
-          setPredefinidas(mergeWithLocalAssets(fromCache));
-          return; // no hacemos petición de red
-        }
-        // Sin caché → pedir al backend
-        const resp = await axios.get(`${BACKEND_URL}/api/routines/predefined`, { timeout: 8000 });
-        const fromServer = resp.data || [];
-        await AsyncStorage.setItem('predefinedRoutines', JSON.stringify(fromServer));
-        setPredefinidas(mergeWithLocalAssets(fromServer));
-      } catch (e) {
-        console.warn('[Rutinas] No se pudieron cargar las predefinidas del backend, usando locales:', e.message);
-        // Fallback a las constantes locales si el backend no responde
-        setPredefinidas(rutinasPredefinidas);
-      }
-    };
-    cargarPredefinidas();
 
     // 2. Cargar nombre de usuario (Quick cache + Firebase listener)
     const setupIdentidad = async () => {
@@ -159,8 +110,9 @@ export default function Rutinas() {
       const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
         if (firebaseUser) {
           try {
+            const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
             const resp = await axios.get(
-              `${BACKEND_URL}/api/usuarios/buscar/email/${encodeURIComponent(firebaseUser.email)}`,
+              `http://${host}:8082/api/usuarios/buscar/email/${encodeURIComponent(firebaseUser.email)}`,
               { timeout: 5000 }
             );
             if (resp.data && resp.data.nombre) {
@@ -207,41 +159,20 @@ export default function Rutinas() {
     if (!nombreRutina.trim()) return;
 
     const nuevaRutina = {
-      id: Date.now().toString(), // ID temporal local
+      id: Date.now().toString(),
       nombre: nombreRutina.trim(),
       ejercicios: sugerencias,
       dificultad: dificultad || 'Sin definir',
       color: '#264653',
     };
 
-    // Guardar en el estado y en el caché local inmediatamente
     const nuevasRutinas = {
       ...rutinas,
       [grupoActivo]: [...(rutinas[grupoActivo] || []), nuevaRutina],
     };
+
     setRutinas(nuevasRutinas);
     await guardarEnStorage(nuevasRutinas);
-
-    // Persistir en Firestore en background
-    if (userId) {
-      try {
-        await axios.post(
-          `${BACKEND_URL}/api/routines/${userId}`,
-          {
-            name: nuevaRutina.nombre,
-            exercises: nuevaRutina.ejercicios,
-            dificultad: nuevaRutina.dificultad,
-            color: nuevaRutina.color,
-          },
-          { timeout: 8000 }
-        );
-        console.log('[Rutinas] Rutina guardada en Firestore ✅');
-      } catch (e) {
-        console.warn('[Rutinas] Error guardando rutina en Firestore (guardada solo local):', e.message);
-      }
-    } else {
-      console.warn('[Rutinas] Sin userId — rutina guardada solo en local');
-    }
 
     setNombreRutina('');
     setSugerencias([]);
@@ -250,26 +181,6 @@ export default function Rutinas() {
   };
 
   const handleEntrarRutina = (rutina, grupoKey) => {
-    // ── Registrar rutina reciente en AsyncStorage ──────────────────────────
-    (async () => {
-      try {
-        const raw = await AsyncStorage.getItem('recentRoutines');
-        const prev = raw ? JSON.parse(raw) : [];
-        const entry = {
-          id: rutina.id,
-          nombre: rutina.nombre,
-          dificultad: rutina.dificultad || 'Sin definir',
-          color: rutina.color || '#264653',
-          openedAt: Date.now(),
-        };
-        // Eliminar si ya estaba y poner al principio (más reciente primero)
-        const updated = [entry, ...prev.filter(r => r.id !== rutina.id)].slice(0, 5);
-        await AsyncStorage.setItem('recentRoutines', JSON.stringify(updated));
-      } catch (e) {
-        console.warn('[Rutinas] No se pudo guardar rutina reciente:', e.message);
-      }
-    })();
-
     navigation.navigate('PantallaRutina', {
       rutina,
       grupoKey,
@@ -288,7 +199,6 @@ export default function Rutinas() {
     });
   };
 
-
   const handleLongPress = (rutina) => {
     setRutinaSeleccionada(rutina);
     setOpcionesVisible(true);
@@ -301,20 +211,6 @@ export default function Rutinas() {
     };
     setRutinas(nuevasRutinas);
     await guardarEnStorage(nuevasRutinas);
-
-    // Eliminar del backend
-    if (userId && rutinaSeleccionada.id) {
-      try {
-        await axios.delete(
-          `${BACKEND_URL}/api/routines/${userId}/${rutinaSeleccionada.id}`,
-          { timeout: 8000 }
-        );
-        console.log('[Rutinas] Rutina eliminada de Firestore ✅');
-      } catch (e) {
-        console.warn('[Rutinas] Error eliminando rutina del backend:', e.message);
-      }
-    }
-
     setOpcionesVisible(false);
   };
 
@@ -326,48 +222,19 @@ export default function Rutinas() {
     };
     setRutinas(nuevasRutinas);
     await guardarEnStorage(nuevasRutinas);
-
-    // Guardar copia en el backend
-    if (userId) {
-      try {
-        await axios.post(
-          `${BACKEND_URL}/api/routines/${userId}`,
-          {
-            name: copia.nombre,
-            exercises: copia.ejercicios,
-            dificultad: copia.dificultad,
-            color: copia.color,
-          },
-          { timeout: 8000 }
-        );
-        console.log('[Rutinas] Rutina duplicada en Firestore ✅');
-      } catch (e) {
-        console.warn('[Rutinas] Error duplicando rutina en Firestore:', e.message);
-      }
-    }
-
     setOpcionesVisible(false);
-  };
-
-  // Mezcla datos de Firestore con animaciones/imágenes definidas localmente
-  const mergeWithLocalAssets = (serverRoutines) => {
-    return serverRoutines.map(sr => {
-      const local = rutinasPredefinidas.find(r => r.id === sr.id);
-      if (!local) return sr;
-      const mergedEjercicios = (sr.ejercicios || []).map(se => {
-        const le = local.ejercicios.find(e => e.id === se.id || e.nombre === se.nombre);
-        if (!le) return se;
-        return { ...se, image: le.image, animacion: le.animacion };
-      });
-      return { ...local, ...sr, ejercicios: mergedEjercicios };
-    });
   };
 
   const renderGrupo = (titulo, rutinasGrupo, grupoKey) => {
     return (
       <View style={styles.grupoContainer}>
         <Text style={[styles.grupoTitulo, darkMode && styles.darkText]}>{titulo}</Text>
-        <View style={styles.rutinasRow}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.horizontalScrollContent}
+        >
+
           {(rutinasGrupo || []).map((rutina) => (
             <TouchableOpacity
               key={rutina.id}
@@ -383,26 +250,32 @@ export default function Rutinas() {
             </TouchableOpacity>
           ))}
           <TouchableOpacity
-            style={[styles.addCard, darkMode && styles.darkAddCard]}
+            style={styles.addCard}
             onPress={() => handleAddRutina(grupoKey)}
           >
-            <Ionicons name="add" size={32} color="#ef2b2d" />
+            <Ionicons name="add" size={32} color={darkMode ? "#fff" : "#333"} />
+            <Text style={[styles.addText, darkMode && styles.darkText]}>Nueva</Text>
           </TouchableOpacity>
-        </View>
+        </ScrollView>
       </View>
     );
   };
 
   const renderPredefinidas = () => (
     <View style={styles.grupoContainer}>
-      <Text style={[styles.grupoTitulo, darkMode && styles.darkText]}>Rutinas recomendadas</Text>
-      <View style={styles.rutinasRow}>
+      <Text style={[styles.grupoTitulo, darkMode && styles.darkText]}>Recomendadas para ti</Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.horizontalScrollContent}
+      >
         {(predefinidas.length > 0 ? predefinidas : rutinasPredefinidas).map((rutina) => (
+
           <TouchableOpacity
             key={rutina.id}
             style={[styles.rutinaCard, { backgroundColor: rutina.color }]}
             onPress={() => handleEntrarRutina(rutina, 'predefinidas')}
-          // onLongPress desactivado en rutinas predefinidas
+
           >
             <Ionicons name="barbell" size={24} color="#fff" />
             <Text style={styles.rutinaTexto}>{rutina.nombre}</Text>
@@ -411,57 +284,114 @@ export default function Rutinas() {
             </Text>
           </TouchableOpacity>
         ))}
+      </ScrollView>
+    </View>
+  );
+
+  const renderRetos = () => (
+    <View style={styles.grupoContainer}>
+      <View style={styles.sectionHeaderRow}>
+        <Text style={[styles.grupoTitulo, darkMode && styles.darkText]}>Retos Diarios</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('Challenges')}>
+          <Text style={styles.verTodosText}>Ver todos</Text>
+        </TouchableOpacity>
       </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.horizontalScrollContent}
+      >
+        <TouchableOpacity
+          style={[styles.challengeCard, { backgroundColor: '#FF9500' }]}
+          onPress={() => navigation.navigate('Challenges')}
+        >
+          <Ionicons name="water" size={28} color="#fff" />
+          <Text style={styles.challengeTitle}>Hidratación</Text>
+          <Text style={styles.challengeSubText}>2L de agua hoy</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.challengeCard, { backgroundColor: '#4CD964' }]}
+          onPress={() => navigation.navigate('Challenges')}
+        >
+          <Ionicons name="walk" size={28} color="#fff" />
+          <Text style={styles.challengeTitle}>Actividad</Text>
+          <Text style={styles.challengeSubText}>8.000 pasos</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.challengeCard, { backgroundColor: '#5856D6' }]}
+          onPress={() => navigation.navigate('Challenges')}
+        >
+          <Ionicons name="fitness" size={28} color="#fff" />
+          <Text style={styles.challengeTitle}>Movilidad</Text>
+          <Text style={styles.challengeSubText}>5 min estirar</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </View>
   );
 
   return (
-    <View style={[styles.container, darkMode && styles.darkContainer]}>
+    <SafeAreaView style={[styles.container, darkMode && styles.darkContainer]}>
       <StatusBar style={darkMode ? "light" : "auto"} />
-      <Header title="Rutinas" showBackButton={false} />
 
-      <View style={[styles.greetingContainer, darkMode && { backgroundColor: '#121212' }]}>
-        <Text style={[styles.greetingText, darkMode && styles.darkText]}>Hola {userName || 'usuario'},</Text>
-        <Text style={[styles.subGreetingText, darkMode && styles.darkTextSecondary]}>¿listo para entrenar?</Text>
+      <View style={[styles.header, darkMode && styles.darkHeader]}>
+        <Text style={[styles.headerTitle, darkMode && styles.darkText]}>Rutinas INFIT</Text>
       </View>
 
-      <ScrollView contentContainerStyle={[styles.scrollContent, darkMode && { backgroundColor: '#121212' }]} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[styles.scrollContent, darkMode && { backgroundColor: colors.bg_dark }]}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={[styles.greetingContainer, darkMode && { backgroundColor: colors.bg_dark }]}>
+          <Text style={[styles.greetingText, darkMode && styles.darkText]}>Hola {userName || 'usuario'},</Text>
+          <Text style={[styles.subGreetingText, darkMode && styles.darkTextSecondary]}>¿Listo para superar tus límites hoy?</Text>
+        </View>
+
         {renderPredefinidas()}
+        {renderRetos()}
         {renderGrupo('Mis rutinas personalizadas', rutinas.grupo1, 'grupo1')}
       </ScrollView>
 
       {/* Modal para crear rutina */}
-      <Modal visible={modalVisible} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, darkMode && styles.darkModal]}>
+      <Modal visible={modalVisible} transparent animationType="slide">
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setModalVisible(false)}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            style={[styles.modalContent, darkMode && styles.darkModal]}
+          >
+            <View style={styles.bottomSheetIndicator} />
             <Text style={[styles.modalTitle, darkMode && styles.darkText]}>Crear rutina</Text>
             <TextInput
-              style={[styles.input, darkMode && { borderColor: '#444', backgroundColor: '#1e1e1e', color: '#fff' }]}
+              style={[styles.input, darkMode && { borderColor: '#444', backgroundColor: colors.bg_dark, color: '#fff' }]}
+
               placeholder="Ej. Piernas explosivas"
-              placeholderTextColor={darkMode ? '#888' : '#aaa'}
               value={nombreRutina}
               onChangeText={setNombreRutina}
             />
             {sugerencias.length > 0 && (
               <View style={styles.sugerenciasContainer}>
-                <Text style={[styles.sugerenciasTitulo, darkMode && styles.darkText]}>Ejercicios sugeridos:</Text>
+                <Text style={styles.sugerenciasTitulo}>Ejercicios sugeridos:</Text>
                 <View style={styles.chipsContainer}>
                   {sugerencias.map((ejercicio, index) => (
-                    <View key={index} style={[styles.chip, darkMode && { borderColor: '#555' }]}>
-                      <Text style={[styles.chipText, darkMode && styles.darkText]}>{ejercicio}</Text>
+                    <View key={index} style={styles.chip}>
+                      <Text style={styles.chipText}>{ejercicio}</Text>
                     </View>
                   ))}
                 </View>
               </View>
             )}
-            <Text style={[styles.sugerenciasTitulo, darkMode && styles.darkText]}>Dificultad:</Text>
+            <Text style={styles.sugerenciasTitulo}>Dificultad:</Text>
             <View style={styles.chipsContainer}>
               {DIFICULTADES.map((nivel) => (
                 <TouchableOpacity
                   key={nivel}
                   style={[
                     styles.chip,
-                    darkMode && { borderColor: '#555' },
                     dificultad === nivel && styles.chipSelected,
                   ]}
                   onPress={() => setDificultad(nivel)}
@@ -469,7 +399,6 @@ export default function Rutinas() {
                   <Text
                     style={[
                       styles.chipText,
-                      darkMode && styles.darkText,
                       dificultad === nivel && styles.chipTextSelected,
                     ]}
                   >
@@ -486,141 +415,204 @@ export default function Rutinas() {
                 <Text style={styles.modalButtonText}>Cancelar</Text>
               </TouchableOpacity>
             </View>
-          </View>
-        </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
 
       {/* Modal de opciones (long press) */}
-      <Modal visible={opcionesVisible} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, darkMode && styles.darkModal]}>
-            <Text style={[styles.modalTitle, darkMode && styles.darkText]}>Opciones</Text>
-            <TouchableOpacity onPress={() => {
-              if (rutinaSeleccionada) handleEntrarRutina(rutinaSeleccionada, 'grupo1');
-            }}>
-              <Text style={[styles.modalButtonText, { color: darkMode ? '#ccc' : '#333', marginBottom: 12 }]}>Editar</Text>
+      <Modal visible={opcionesVisible} transparent animationType="slide">
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setOpcionesVisible(false)}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            style={[styles.modalContent, darkMode && styles.darkModal]}
+          >
+            <View style={styles.bottomSheetIndicator} />
+            <Text style={[styles.modalTitle, darkMode && styles.darkText]}>Opciones de rutina</Text>
+
+            <TouchableOpacity
+              style={styles.optionItem}
+              onPress={() => {
+                if (rutinaSeleccionada) handleEntrarRutina(rutinaSeleccionada, 'grupo1');
+                setOpcionesVisible(false);
+              }}
+            >
+              <Ionicons name="create-outline" size={22} color={darkMode ? "#ccc" : "#333"} />
+              <Text style={[styles.modalButtonText, { color: darkMode ? '#ccc' : '#333' }]}>Editar rutina</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={handleDuplicarRutina}>
-              <Text style={[styles.modalButtonText, { color: darkMode ? '#ccc' : '#333', marginBottom: 12 }]}>Duplicar</Text>
+
+            <TouchableOpacity style={styles.optionItem} onPress={handleDuplicarRutina}>
+              <Ionicons name="copy-outline" size={22} color={darkMode ? "#ccc" : "#333"} />
+              <Text style={[styles.modalButtonText, { color: darkMode ? '#ccc' : '#333' }]}>Duplicar</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={handleEliminarRutina}>
-              <Text style={[styles.modalButtonText, { color: '#ef2b2d', marginBottom: 12 }]}>Eliminar</Text>
+
+            <TouchableOpacity style={styles.optionItem} onPress={handleEliminarRutina}>
+              <Ionicons name="trash-outline" size={22} color="#ef2b2d" />
+              <Text style={[styles.modalButtonText, { color: '#ef2b2d' }]}>Eliminar</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setOpcionesVisible(false)}>
-              <Text style={[styles.modalButtonText, { color: darkMode ? '#888' : '#666' }]}>Cancelar</Text>
+
+            <TouchableOpacity
+              style={[styles.modalButton, { backgroundColor: darkMode ? '#333' : '#eee', marginTop: 20, flex: 0 }]}
+              onPress={() => setOpcionesVisible(false)}
+            >
+              <Text style={[styles.modalButtonText, { color: darkMode ? '#888' : '#666' }]}>Cerrar</Text>
+
             </TouchableOpacity>
-          </View>
-        </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 60,
-    paddingHorizontal: 20,
     backgroundColor: '#fff',
   },
   darkContainer: {
-    backgroundColor: '#121212',
+    backgroundColor: colors.bg_dark,
   },
-  greetingContainer: {
-    paddingVertical: 15,
-    marginBottom: 10,
 
+  greetingContainer: {
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    marginBottom: 5,
   },
   greetingText: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-    textAlign: 'center',
-  },
-  darkText: {
-    color: '#fff',
-  },
-  darkTextSecondary: {
-    color: '#aaa',
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#1a1a1a',
+    letterSpacing: -0.5,
   },
   subGreetingText: {
-    fontSize: 18,
+    fontSize: 16,
     color: '#666',
-    marginTop: 2,
-    position: 'center',
-    textAlign: 'center',
+    marginTop: 4,
+    fontWeight: '500',
   },
   scrollContent: {
-    paddingBottom: 40,
+    paddingBottom: 100,
+  },
+  header: {
+    paddingTop: Platform.OS === 'android' ? 40 : 15,
+    paddingBottom: 15,
+    paddingHorizontal: 20,
+    backgroundColor: '#FFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEE',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  darkHeader: {
+    backgroundColor: '#1e1e1e',
+    borderBottomColor: '#333',
+    borderTopColor: '#333',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.dark_gray || '#333',
   },
   grupoContainer: {
     marginBottom: 30,
   },
   grupoTitulo: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 10,
-    color: '#333',
-    textAlign: 'center',
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 15,
+    color: '#1a1a1a',
+    paddingHorizontal: 20,
   },
-  rutinasRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    justifyContent: 'center',
+  horizontalScrollContent: {
+    paddingHorizontal: 15,
+    paddingBottom: 10,
+
   },
   rutinaCard: {
-    width: 140,
-    height: 120,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 10,
+    width: 160,
+    height: 180,
+    borderRadius: 20,
+    justifyContent: 'flex-end',
+    alignItems: 'flex-start',
+    padding: 20,
+    marginHorizontal: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 6,
   },
   rutinaTexto: {
-    fontSize: 16,
+    fontSize: 18,
     color: '#fff',
-    fontWeight: '600',
-    marginTop: 8,
-    textAlign: 'center',
+    fontWeight: '700',
+    marginTop: 10,
+    lineHeight: 22,
   },
   rutinaSubTexto: {
-    fontSize: 12,
-    color: '#fff',
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.8)',
+    fontWeight: '500',
     marginTop: 4,
   },
   addCard: {
-    width: 140,
-    height: 120,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#ef2b2d',
+    width: 160,
+    height: 180,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: '#ccc',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#fafafa',
+    marginHorizontal: 5,
   },
   darkAddCard: {
-    backgroundColor: '#1e1e1e',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderColor: '#444',
   },
+  addText: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '600',
+    marginTop: 5,
+  },
+  bottomSheetIndicator: {
+    width: 40,
+    height: 5,
+    backgroundColor: '#ccc',
+    borderRadius: 3,
+    alignSelf: 'center',
+    marginBottom: 15,
+  },
+
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
   },
   modalContent: {
     backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 12,
-    width: '85%',
-  },
-  darkModal: {
-    backgroundColor: '#1e1e1e',
+    padding: 24,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    width: '100%',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 20,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
+    fontSize: 24,
+    fontWeight: '800',
+    marginBottom: 20,
+    color: '#1a1a1a',
+    letterSpacing: -0.5,
   },
   input: {
     borderWidth: 1,
@@ -666,12 +658,59 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     backgroundColor: '#ef2b2d',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
+    paddingVertical: 14,
+    borderRadius: 16,
+    flex: 1,
+    alignItems: 'center',
+    marginHorizontal: 5,
   },
   modalButtonText: {
     color: '#fff',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  optionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    gap: 15,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingRight: 20,
+    marginBottom: 5,
+  },
+  verTodosText: {
+    color: '#ef2b2d',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  challengeCard: {
+    width: 140,
+    height: 140,
+    borderRadius: 24,
+    padding: 18,
+    marginHorizontal: 5,
+    justifyContent: 'space-between',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  challengeTitle: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: '800',
+    marginTop: 8,
+  },
+  challengeSubText: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.9)',
     fontWeight: '600',
   },
 });
