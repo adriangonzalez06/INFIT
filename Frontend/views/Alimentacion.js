@@ -12,7 +12,9 @@ import Dish from '../src/objects/Dish.js';
 import Diet from '../src/objects/Diet.js';
 import DietGroup from '../src/objects/DietGroup.js';
 import { getAllMeals } from '../src/services/MealsService';
-import Header from '../src/components/Header';
+
+import colors from './colors';
+
 import { BACKEND_URL } from '../src/config';
 
 export default function Alimentacion() {
@@ -242,8 +244,9 @@ export default function Alimentacion() {
     return (
       <TouchableOpacity
         key={diet.id}
-        style={[styles.recipeCards, styles.recetaCard, darkMode && { backgroundColor: '#000', borderColor: '#000' }]}
+        style={[styles.recetaCard, styles.recipeCards, darkMode && styles.darkRecipeCard]}
         onPress={() => handleEnterDiet(diet)}>
+
         <ImageBackground
           source={imageSource}
           resizeMode="cover"
@@ -259,53 +262,97 @@ export default function Alimentacion() {
     if (!show) return null;
     return (
       <TouchableOpacity
-        style={[styles.addCard, darkMode && { backgroundColor: '#000' }]}
+        style={[styles.addCard, darkMode && { backgroundColor: colors.bg_dark }]}
         onPress={() => handleCreateNewDiet(group)}>
         <Ionicons name="add" size={32} color="#ef2b2d" />
       </TouchableOpacity>
     );
   };
 
+
   const renderGrupo = (group) => (
     <View style={styles.grupoContainer}>
-      <Text style={[styles.grupoTitulo, darkMode && { color: '#fff' }]}>{group.name}</Text>
+      <Text
+        style={[
+          styles.grupoTitulo,
+          { paddingHorizontal: 20 },
+          darkMode && { color: '#fff' }
+        ]}
+      >
+        {group.name}
+      </Text>
+
       <View style={styles.recetasRow}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 15 }}
+        >
+          {/* Primeras 3 recetas */}
           {group.recipes.slice(0, 3).map((diet) => renderRecetaCard(diet))}
 
+          {/* Botón de añadir (solo grupos editables) */}
           {showAddCard(group.canEdit, group)}
 
-          <TouchableOpacity
-            style={[styles.seeMoreCard, darkMode && { backgroundColor: '#000', borderColor: '#fff' }]}
-            onPress={() => handleEnterGrupoCompleto(group)}>
-            <Ionicons name="arrow-forward" size={24} color={darkMode ? '#fff' : '#111114'} />
-            <Text style={{ color: darkMode ? '#fff' : '#111114', fontWeight: '600' }}>Ver más</Text>
-          </TouchableOpacity>
+          {/* Botón VER MÁS (solo grupos NO editables) */}
+          {!group.canEdit && (
+            <TouchableOpacity
+              style={[styles.seeMoreCard, darkMode && styles.darkSeeMoreCard]}
+              onPress={() => handleEnterGrupoCompleto(group)}
+            >
+              <Ionicons
+                name="arrow-forward"
+                size={24}
+                color={darkMode ? '#fff' : '#111114'}
+              />
+              <Text
+                style={{
+                  color: darkMode ? '#fff' : '#111114',
+                  fontWeight: '600',
+                  marginTop: 8
+                }}
+              >
+                Ver más
+              </Text>
+            </TouchableOpacity>
+          )}
+
         </ScrollView>
       </View>
     </View>
   );
 
+
+
   /* ---------- render principal ---------- */
   return (
-    <View style={[styles.container, darkMode && { backgroundColor: '#000' }]}>
+    <SafeAreaView style={[styles.container, darkMode && { backgroundColor: colors.bg_dark }]}>
+
+
       <StatusBar
-        style={darkMode ? 'light' : 'auto'}
-        backgroundColor={darkMode ? '#000' : 'transparent'}
-        translucent={true}
+        style={darkMode ? 'light' : 'dark'}
+        backgroundColor={darkMode ? colors.bg_dark : '#fff'}
+        translucent={false}
       />
 
-      <Header title="Alimentación" showBackButton={false} darkMode={darkMode} />
+
+      <View style={[styles.header, darkMode && styles.darkHeader]}>
+        <Text style={[styles.headerTitle, darkMode && styles.darkText]}>Alimentación</Text>
+      </View>
 
       <ScrollView
-        contentContainerStyle={[styles.scrollContent, darkMode && { backgroundColor: '#000' }]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: 20 },
+          darkMode && { backgroundColor: colors.bg_dark }
+        ]}
         showsVerticalScrollIndicator={false}>
-        <SafeAreaView>
-          {renderGrupo(recipesGroups.g1)}
-          {renderGrupo(recipesGroups.g2)}
-          {renderGrupo(recipesGroups.g3)}
-        </SafeAreaView>
+
+        {renderGrupo(recipesGroups.g1)}
+        {renderGrupo(recipesGroups.g2)}
+        {renderGrupo(recipesGroups.g3)}
       </ScrollView>
-    </View>
+    </SafeAreaView>
+
   );
 }

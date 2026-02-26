@@ -28,24 +28,21 @@ export default function ListaGrupoRecetas({ route }) {
 
 
   {/* render a card */ }
-  const renderDietCard = (diet) => {
-    return (
-      <TouchableOpacity
-        key={diet.id}
-        style={[styles.recipeCards, styles.recetaCardGroup, darkMode && { backgroundColor: '#000', borderColor: '#000' }]}
-        onPress={() => handleEnterDiet(diet)}
-      >
-        <ImageBackground
-          source={typeof diet.imgUrl === 'number' ? diet.imgUrl : { uri: diet.imgUrl }}
-          resizeMode="cover"
-          style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', zIndex: -1, borderRadius: 14, overflow: 'hidden' }}
-        >
-          <Text style={styles.recetaTextoTitulo}>{diet.name}</Text>
-          <Text style={styles.recetaTexto}>Subtítulo</Text>
-        </ImageBackground>
-      </TouchableOpacity>
-    );
-  };
+  <TouchableOpacity
+    key={diet.id}
+    style={[styles.recetaCardGroup, styles.recipeCards, darkMode && styles.darkRecipeCard]}
+    onPress={() => handleEnterDiet(diet)}
+  >
+    <ImageBackground
+      source={typeof diet.imgUrl === 'number' ? diet.imgUrl : { uri: diet.imgUrl }}
+      resizeMode="cover"
+      style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', borderRadius: 14, overflow: 'hidden' }}
+    >
+      <Text style={styles.recetaTextoTitulo}>{diet.name}</Text>
+      <Text style={styles.recetaTexto}>Subtítulo</Text>
+    </ImageBackground>
+  </TouchableOpacity>
+
 
 
   {/*Enter a diet card handler*/ }
@@ -60,27 +57,27 @@ export default function ListaGrupoRecetas({ route }) {
 
   return (
 
-    <View style={[styles.container, darkMode && { backgroundColor: '#000' }]}>
-      <StatusBar style={darkMode ? "light" : "auto"} />
+    <SafeAreaView style={[styles.container, darkMode && { backgroundColor: colors.bg_dark }]}>
+      <StatusBar style={darkMode ? "light" : "dark"} backgroundColor={darkMode ? colors.bg_dark : '#fff'} translucent={false} />
 
-      <View style={styles.header}>
-        {/* go back button */}
+      <View style={[styles.header, darkMode && styles.darkHeader]}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
         </TouchableOpacity>
-        {/* title */}
-        <Text style={[styles.title, darkMode && { color: '#fff' }]}>{name}</Text>
+        <Text style={[styles.headerTitle, darkMode && styles.darkText]}>{name}</Text>
       </View>
 
+
       {/* render groups */}
-      <ScrollView contentContainerStyle={[styles.scrollContent, darkMode && { backgroundColor: '#000' }]} showsVerticalScrollIndicator={false}>
-
-        {recipes.map((diet) => (
-          renderDietCard(diet)
-        ))}
-
+      <ScrollView contentContainerStyle={[styles.scrollContent, darkMode && { backgroundColor: colors.bg_dark }]} showsVerticalScrollIndicator={false}>
+        <View style={{ paddingTop: 10 }}>
+          {recipes.map((diet) => (
+            renderDietCard(diet)
+          ))}
+        </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
+
 
   );
 }

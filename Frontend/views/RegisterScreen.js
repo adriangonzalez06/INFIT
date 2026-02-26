@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   darkSafeArea: {
-    backgroundColor: '#0f0f0f',
+    backgroundColor: colors.bg_dark,
   },
   container: {
     flex: 1,

@@ -10,20 +10,35 @@ export default StyleSheet.create({
   //general styles
   container: {
     flex: 1,
-    padding: 25,
     backgroundColor: colors.bg_gray,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
     width: '100%',
   },
+
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    paddingTop: Platform.OS === 'android' ? 40 : 15,
+    paddingBottom: 15,
+    paddingHorizontal: 20,
+    backgroundColor: '#FFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEE',
     alignItems: 'center',
-    margin: 20,
-    
+    justifyContent: 'center',
   },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.dark_gray || '#333',
+  },
+  darkHeader: {
+    backgroundColor: colors.bg_dark,
+    borderBottomColor: '#222',
+    borderTopWidth: 0,
+  },
+  darkText: {
+    color: '#ffffff',
+  },
+
+
   backButton: {
     position: 'absolute',
     left: 0,
@@ -49,8 +64,9 @@ export default StyleSheet.create({
 
   grupoContainer: {
     marginBottom: 30,
-    width: width - 50,
+    width: '100%',
   },
+
 
   title: {
     fontSize: 22,
@@ -154,7 +170,6 @@ export default StyleSheet.create({
   //both cards
   recipeCards: {
     borderColor: colors.light_gray,
-    color: colors.white,
     borderRadius: 14,
     borderWidth: 1,
     backgroundColor: colors.white,
@@ -162,26 +177,35 @@ export default StyleSheet.create({
     marginBottom: 10,
     alignItems: 'flex-start',
     justifyContent: 'flex-end',
+    overflow: 'hidden',
     // iOS shadow
     shadowColor: colors.black,
-    shadowOffset: { width: 7, height: 7 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
     // Android shadow
-    elevation: 5,
+    elevation: 3,
   },
+  darkRecipeCard: {
+    backgroundColor: colors.bg_dark,
+    borderColor: '#333',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+
   //all recipes in group list only
   recetaCardGroup: {
-    width: width - width * 0.2,
-    height: 150,
-    margin: 10,
+    width: width * 0.9,
+    height: 160,
+    marginVertical: 10,
+    alignSelf: 'center',
   },
-  //recipes in recipe main list only (vista alimentacion)
   recetaCard: {
-    width: 250,
+    width: width * 0.65,
     height: 150,
-    marginRight: 25,
+    marginRight: 15,
   },
+
 
   shadow: {
     // iOS shadow
@@ -205,29 +229,39 @@ export default StyleSheet.create({
     marginRight: 25,
   },
   seeMoreCard: {
-    width: 105,
-    height: 105,
-    backgroundColor: colors.white,
+    width: 100,
+    height: 100,
     borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.medium_gray,
+    borderWidth: 2,
+    borderColor: colors.primary,
+    borderStyle: 'dashed',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
     alignSelf: 'center',
+    marginRight: 12,
   },
+  darkSeeMoreCard: {
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderColor: '#ef2b2d', // colors.primary
+  },
+
 
   // Recipe Screen Styles
   dishContainer: {
     borderWidth: 1,
     borderColor: colors.light_gray,
-    borderRadius: 10,
+    borderRadius: 12,
     padding: 15,
-    marginBottom: 20,
+    marginBottom: 15,
     backgroundColor: colors.white,
-    textAlign: 'left',
     flexDirection: 'row',
+    alignItems: 'center',
   },
+  darkDishContainer: {
+    backgroundColor: '#1a1a1f',
+    borderColor: '#333',
+  },
+
 
   dishImage: {
     width: '40%',
@@ -236,9 +270,14 @@ export default StyleSheet.create({
     marginRight: 10,
   },
   dishTitle: {
-    fontSize: 20,
+    fontSize: 18,
+    fontWeight: '600',
     color: colors.dark_gray,
   },
+  darkDishTitle: {
+    color: '#fff',
+  },
+
   dishSubtitle: {
     fontSize: 16,
     color: colors.medium_gray,
@@ -247,8 +286,12 @@ export default StyleSheet.create({
     fontSize: 14,
     color: colors.dark_gray,
     textAlign: 'left',
-    marginBottom: 5,
+    marginBottom: 2,
   },
+  darkDishText: {
+    color: '#aaa',
+  },
+
 
   totalsContainer: {
     flexDirection: 'row',

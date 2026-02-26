@@ -10,6 +10,8 @@ import {
   StyleSheet,
   Modal,
   ActivityIndicator,
+  Platform,
+  SafeAreaView,
 } from "react-native";
 import AppModal from './AppModal';
 import { useFocusEffect } from '@react-navigation/native';
@@ -19,6 +21,7 @@ import colors from "./colors";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
+import { StatusBar } from 'expo-status-bar';
 
 // Firestore
 import { db } from '../firebaseConfig';
@@ -352,100 +355,102 @@ export default function Feed() {
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <>
-      <View style={[styles.container, darkMode && styles.darkContainer]}>
+    <SafeAreaView style={[styles.container, darkMode && styles.darkContainer]}>
+      <StatusBar style={darkMode ? "light" : "dark"} backgroundColor={darkMode ? colors.bg_dark : "#fff"} translucent={false} />
 
-        {/* Botón flotante nueva publicación */}
-        <TouchableOpacity style={[styles.primaryBtn, darkMode && styles.darkPrimaryBtn]} onPress={() => setVisible(true)}>
-          <Text style={styles.primaryBtnText}>+</Text>
-        </TouchableOpacity>
+      <View style={[styles.header, darkMode && styles.darkHeader]}>
+        <Text style={[styles.headerTitle, darkMode && styles.darkText]}>Publicaciones</Text>
+      </View>
 
-        {/* ── Modal: nueva publicación ── */}
-        <Modal visible={visible} animationType="slide" transparent onRequestClose={() => setVisible(false)}>
-          <TouchableOpacity activeOpacity={1} style={styles.overlay} onPress={() => setVisible(false)}>
-            <TouchableOpacity activeOpacity={1} style={[styles.modalContent, darkMode && styles.darkModalContent]} onPress={() => { }}>
-              <Text style={[styles.modalTitle, darkMode && styles.darkModalTitle]}>Crear publicación</Text>
+      {/* Botón flotante nueva publicación */}
+      <TouchableOpacity style={[styles.primaryBtn, darkMode && styles.darkPrimaryBtn]} onPress={() => setVisible(true)}>
+        <Text style={styles.primaryBtnText}>+</Text>
+      </TouchableOpacity>
 
-              <TextInput
-                placeholder="Título"
-                placeholderTextColor={darkMode ? "#888" : "#999"}
-                value={title}
-                onChangeText={setTitle}
-                style={[styles.input, darkMode && styles.darkInput]}
-              />
-              <TextInput
-                placeholder="Contenido (opcional)"
-                placeholderTextColor={darkMode ? "#888" : "#999"}
-                value={content}
-                onChangeText={setContent}
-                style={[styles.input, styles.inputMultiline, darkMode && styles.darkInput]}
-                multiline
-              />
+      {/* ── Modal: nueva publicación ── */}
+      <Modal visible={visible} animationType="slide" transparent onRequestClose={() => setVisible(false)}>
+        <TouchableOpacity activeOpacity={1} style={styles.overlay} onPress={() => setVisible(false)}>
+          <TouchableOpacity activeOpacity={1} style={[styles.modalContent, darkMode && styles.darkModalContent]} onPress={() => { }}>
+            <Text style={[styles.modalTitle, darkMode && styles.darkModalTitle]}>Crear publicación</Text>
 
-              <View style={styles.imageRow}>
-                <TouchableOpacity style={styles.botonimg} onPress={pickImage}>
-                  <Text style={styles.botonimoText}>
-                    {imageUri ? "Cambiar imagen" : "Adjuntar imagen"}
-                  </Text>
-                </TouchableOpacity>
-                {imageUri && (
-                  <TouchableOpacity onPress={removeImage} style={styles.removeBtn}>
-                    <Text style={styles.removeBtnText}>Quitar</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
+            <TextInput
+              placeholder="Título"
+              placeholderTextColor={darkMode ? "#888" : "#999"}
+              value={title}
+              onChangeText={setTitle}
+              style={[styles.input, darkMode && styles.darkInput]}
+            />
+            <TextInput
+              placeholder="Contenido (opcional)"
+              placeholderTextColor={darkMode ? "#888" : "#999"}
+              value={content}
+              onChangeText={setContent}
+              style={[styles.input, styles.inputMultiline, darkMode && styles.darkInput]}
+              multiline
+            />
 
+            <View style={styles.imageRow}>
+              <TouchableOpacity style={styles.botonimg} onPress={pickImage}>
+                <Text style={styles.botonimoText}>
+                  {imageUri ? "Cambiar imagen" : "Adjuntar imagen"}
+                </Text>
+              </TouchableOpacity>
               {imageUri && (
-                <Image source={{ uri: imageUri }} style={styles.previewImage} resizeMode="cover" />
+                <TouchableOpacity onPress={removeImage} style={styles.removeBtn}>
+                  <Text style={styles.removeBtnText}>Quitar</Text>
+                </TouchableOpacity>
               )}
+            </View>
 
-              <TouchableOpacity
-                style={[styles.publicarbtn, submitting && { opacity: 0.6 }]}
-                onPress={onPublish}
-                disabled={submitting}
-              >
-                {submitting
-                  ? <ActivityIndicator color={white} />
-                  : <Text style={styles.publicar}>Publicar</Text>
-                }
-              </TouchableOpacity>
+            {imageUri && (
+              <Image source={{ uri: imageUri }} style={styles.previewImage} resizeMode="cover" />
+            )}
 
-              <TouchableOpacity style={styles.cancelBtn} onPress={() => setVisible(false)}>
-                <Text style={[styles.cancelBtnText, darkMode && styles.darkTextSecondary]}>Cancelar</Text>
-              </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.publicarbtn, submitting && { opacity: 0.6 }]}
+              onPress={onPublish}
+              disabled={submitting}
+            >
+              {submitting
+                ? <ActivityIndicator color={white} />
+                : <Text style={styles.publicar}>Publicar</Text>
+              }
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.cancelBtn} onPress={() => setVisible(false)}>
+              <Text style={[styles.cancelBtnText, darkMode && styles.darkTextSecondary]}>Cancelar</Text>
             </TouchableOpacity>
           </TouchableOpacity>
-        </Modal>
+        </TouchableOpacity>
+      </Modal>
 
-        {/* ── Modal: comentarios ── */}
-        {selectedPostId && (
-          <ComentariosModal
-            visible={commentVisible}
-            postId={selectedPostId}
-            userId={userId}
-            username={username}
-            avatarUrl={avatarUri}
-            darkMode={darkMode}
-            onClose={() => { setCommentVisible(false); setSelectedPostId(null); }}
-          />
-        )}
+      {/* ── Modal: comentarios ── */}
+      {selectedPostId && (
+        <ComentariosModal
+          visible={commentVisible}
+          postId={selectedPostId}
+          userId={userId}
+          username={username}
+          avatarUrl={avatarUri}
+          darkMode={darkMode}
+          onClose={() => { setCommentVisible(false); setSelectedPostId(null); }}
+        />
+      )}
 
-        {/* Lista de publicaciones */}
-        <Text style={[styles.sectionTitle, darkMode && styles.darkText]}>Publicaciones</Text>
+      {/* Lista de publicaciones */}
 
-        {loading ? (
-          <ActivityIndicator style={{ marginTop: 40 }} size="large" color={primary} />
-        ) : (
-          <FlatList
-            data={posts}
-            keyExtractor={(item) => item.id}
-            renderItem={renderItem}
-            ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-            contentContainerStyle={{ paddingBottom: 100 }}
-            showsVerticalScrollIndicator={false}
-          />
-        )}
-      </View>
+      {loading ? (
+        <ActivityIndicator style={{ marginTop: 40 }} size="large" color={primary} />
+      ) : (
+        <FlatList
+          data={posts}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+          contentContainerStyle={{ paddingBottom: 100 }}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
       <AppModal
         visible={appModal.visible}
         type={appModal.type}
@@ -457,7 +462,7 @@ export default function Feed() {
         onCancel={hideAppModal}
         darkMode={darkMode}
       />
-    </>
+    </SafeAreaView >
   );
 }
 
@@ -593,8 +598,28 @@ function ComentariosModal({ visible, postId, userId, username, avatarUrl, darkMo
 
 // ─────────────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: "#fff" },
-  darkContainer: { backgroundColor: "#121212" },
+  container: { flex: 1, backgroundColor: "#fff" },
+  darkContainer: { backgroundColor: colors.bg_dark },
+  header: {
+    paddingTop: Platform.OS === 'android' ? 40 : 15,
+    paddingBottom: 15,
+    paddingHorizontal: 20,
+    backgroundColor: '#FFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEE',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  darkHeader: {
+    backgroundColor: colors.bg_dark,
+    borderBottomColor: '#333',
+    borderTopColor: '#333',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.dark_gray || '#333',
+  },
 
   // ── Botón flotante ──────────────────────────────────────────────────────
   primaryBtn: {

@@ -8,7 +8,7 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView
+  SafeAreaView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -122,13 +122,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg_gray || '#F5F5F7',
   },
   darkContainer: {
-    backgroundColor: '#121212',
+    backgroundColor: colors.bg_dark,
   },
   inner: {
     flex: 1,
   },
   header: {
-    paddingVertical: 15,
+    paddingTop: Platform.OS === 'android' ? 40 : 15,
+    paddingBottom: 15,
     paddingHorizontal: 20,
     backgroundColor: '#FFF',
     borderBottomWidth: 1,
@@ -137,7 +138,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   darkHeader: {
-    backgroundColor: '#1e1e1e',
+    backgroundColor: colors.bg_dark,
     borderBottomColor: '#333',
     borderTopColor: '#333',
   },
@@ -180,7 +181,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 4,
   },
   darkBotBubble: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: '#4a4a4a',
   },
   messageText: {
     fontSize: 16,

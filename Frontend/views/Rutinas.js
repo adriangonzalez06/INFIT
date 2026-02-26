@@ -76,7 +76,31 @@ export default function Rutinas() {
   const [rutinaSeleccionada, setRutinaSeleccionada] = useState(null);
 
   const colorScheme = useColorScheme();
-  const darkMode = colorScheme === 'dark';
+  const [darkMode, setDarkMode] = useState(colorScheme === 'dark');
+
+  // Cargar preferencia de tema
+  useEffect(() => {
+    const loadTheme = async () => {
+      try {
+        const savedTheme = await AsyncStorage.getItem("darkMode");
+        if (savedTheme !== null) {
+          setDarkMode(savedTheme === "true");
+        }
+      } catch (e) {
+        console.error("Error loading theme:", e);
+      }
+    };
+
+    loadTheme();
+
+    // Listener para actualizar cuando se vuelve a la pantalla
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadTheme();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
 
   const predefinidas = rutinas.predefinidas || rutinasPredefinidas;
 
@@ -229,37 +253,41 @@ export default function Rutinas() {
     return (
       <View style={styles.grupoContainer}>
         <Text style={[styles.grupoTitulo, darkMode && styles.darkText]}>{titulo}</Text>
+
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.horizontalScrollContent}
-        >
-
-          {(rutinasGrupo || []).map((rutina) => (
-            <TouchableOpacity
-              key={rutina.id}
-              style={[styles.rutinaCard, { backgroundColor: rutina.color || '#ccc' }]}
-              onPress={() => handleEntrarRutina(rutina, grupoKey)}
-              onLongPress={() => handleLongPress(rutina)}
-            >
-              <Ionicons name="barbell" size={24} color="#fff" />
-              <Text style={styles.rutinaTexto}>{rutina.nombre}</Text>
-              <Text style={styles.rutinaSubTexto}>
-                {rutina.ejercicios.length} ejercicios
-              </Text>
-            </TouchableOpacity>
-          ))}
+          contentContainerStyle={[styles.horizontalScrollContent, darkMode && { backgroundColor: colors.bg_dark }]}
+          style={darkMode && { backgroundColor: colors.bg_dark }}
+        >          {(rutinasGrupo || []).map((rutina) => (
           <TouchableOpacity
-            style={styles.addCard}
+            key={rutina.id}
+            style={[styles.rutinaCard, darkMode && styles.darkCard, { backgroundColor: rutina.color || (darkMode ? '#1a1a1a' : '#ccc') }]}
+            onPress={() => handleEntrarRutina(rutina, grupoKey)}
+            onLongPress={() => handleLongPress(rutina)}
+          >
+            <Ionicons name="barbell" size={24} color="#fff" />
+            <Text style={styles.rutinaTexto}>{rutina.nombre}</Text>
+            <Text style={styles.rutinaSubTexto}>
+              {rutina.ejercicios.length} ejercicios
+            </Text>
+          </TouchableOpacity>
+        ))}
+
+          <TouchableOpacity
+            style={[styles.addCard, darkMode && styles.darkAddCard]}
             onPress={() => handleAddRutina(grupoKey)}
           >
             <Ionicons name="add" size={32} color={darkMode ? "#fff" : "#333"} />
             <Text style={[styles.addText, darkMode && styles.darkText]}>Nueva</Text>
           </TouchableOpacity>
+
+
         </ScrollView>
       </View>
     );
   };
+
 
   const renderPredefinidas = () => (
     <View style={styles.grupoContainer}>
@@ -267,15 +295,14 @@ export default function Rutinas() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.horizontalScrollContent}
+        contentContainerStyle={[styles.horizontalScrollContent, darkMode && { backgroundColor: colors.bg_dark }]}
+        style={darkMode && { backgroundColor: colors.bg_dark }}
       >
         {(predefinidas.length > 0 ? predefinidas : rutinasPredefinidas).map((rutina) => (
-
           <TouchableOpacity
             key={rutina.id}
-            style={[styles.rutinaCard, { backgroundColor: rutina.color }]}
+            style={[styles.rutinaCard, darkMode && styles.darkCard, { backgroundColor: rutina.color || (darkMode ? '#1a1a1a' : '#ccc') }]}
             onPress={() => handleEntrarRutina(rutina, 'predefinidas')}
-
           >
             <Ionicons name="barbell" size={24} color="#fff" />
             <Text style={styles.rutinaTexto}>{rutina.nombre}</Text>
@@ -285,6 +312,7 @@ export default function Rutinas() {
           </TouchableOpacity>
         ))}
       </ScrollView>
+
     </View>
   );
 
@@ -333,9 +361,10 @@ export default function Rutinas() {
 
   return (
     <SafeAreaView style={[styles.container, darkMode && styles.darkContainer]}>
-      <StatusBar style={darkMode ? "light" : "auto"} />
+      <StatusBar style={darkMode ? "light" : "dark"} backgroundColor={darkMode ? colors.bg_dark : "#fff"} translucent={false} />
 
       <View style={[styles.header, darkMode && styles.darkHeader]}>
+
         <Text style={[styles.headerTitle, darkMode && styles.darkText]}>Rutinas INFIT</Text>
       </View>
 
@@ -364,25 +393,28 @@ export default function Rutinas() {
             activeOpacity={1}
             style={[styles.modalContent, darkMode && styles.darkModal]}
           >
-            <View style={styles.bottomSheetIndicator} />
+            <View style={[styles.bottomSheetIndicator, darkMode && { backgroundColor: '#444' }]} />
+
             <Text style={[styles.modalTitle, darkMode && styles.darkText]}>Crear rutina</Text>
             <TextInput
-              style={[styles.input, darkMode && { borderColor: '#444', backgroundColor: colors.bg_dark, color: '#fff' }]}
-
+              style={[styles.input, darkMode && styles.darkInput]}
               placeholder="Ej. Piernas explosivas"
+              placeholderTextColor={darkMode ? "#888" : "#999"}
               value={nombreRutina}
               onChangeText={setNombreRutina}
             />
+
             {sugerencias.length > 0 && (
               <View style={styles.sugerenciasContainer}>
                 <Text style={styles.sugerenciasTitulo}>Ejercicios sugeridos:</Text>
                 <View style={styles.chipsContainer}>
                   {sugerencias.map((ejercicio, index) => (
-                    <View key={index} style={styles.chip}>
-                      <Text style={styles.chipText}>{ejercicio}</Text>
+                    <View key={index} style={[styles.chip, darkMode && styles.darkChip]}>
+                      <Text style={[styles.chipText, darkMode && styles.darkText]}>{ejercicio}</Text>
                     </View>
                   ))}
                 </View>
+
               </View>
             )}
             <Text style={styles.sugerenciasTitulo}>Dificultad:</Text>
@@ -392,6 +424,7 @@ export default function Rutinas() {
                   key={nivel}
                   style={[
                     styles.chip,
+                    darkMode && styles.darkChip,
                     dificultad === nivel && styles.chipSelected,
                   ]}
                   onPress={() => setDificultad(nivel)}
@@ -399,12 +432,14 @@ export default function Rutinas() {
                   <Text
                     style={[
                       styles.chipText,
+                      darkMode && styles.darkText,
                       dificultad === nivel && styles.chipTextSelected,
                     ]}
                   >
                     {nivel}
                   </Text>
                 </TouchableOpacity>
+
               ))}
             </View>
             <View style={styles.modalButtons}>
@@ -430,11 +465,12 @@ export default function Rutinas() {
             activeOpacity={1}
             style={[styles.modalContent, darkMode && styles.darkModal]}
           >
-            <View style={styles.bottomSheetIndicator} />
+            <View style={[styles.bottomSheetIndicator, darkMode && { backgroundColor: '#444' }]} />
+
             <Text style={[styles.modalTitle, darkMode && styles.darkText]}>Opciones de rutina</Text>
 
             <TouchableOpacity
-              style={styles.optionItem}
+              style={[styles.optionItem, darkMode && styles.darkOptionItem]}
               onPress={() => {
                 if (rutinaSeleccionada) handleEntrarRutina(rutinaSeleccionada, 'grupo1');
                 setOpcionesVisible(false);
@@ -444,15 +480,18 @@ export default function Rutinas() {
               <Text style={[styles.modalButtonText, { color: darkMode ? '#ccc' : '#333' }]}>Editar rutina</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.optionItem} onPress={handleDuplicarRutina}>
+
+            <TouchableOpacity style={[styles.optionItem, darkMode && styles.darkOptionItem]} onPress={handleDuplicarRutina}>
               <Ionicons name="copy-outline" size={22} color={darkMode ? "#ccc" : "#333"} />
               <Text style={[styles.modalButtonText, { color: darkMode ? '#ccc' : '#333' }]}>Duplicar</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.optionItem} onPress={handleEliminarRutina}>
+
+            <TouchableOpacity style={[styles.optionItem, darkMode && styles.darkOptionItem]} onPress={handleEliminarRutina}>
               <Ionicons name="trash-outline" size={22} color="#ef2b2d" />
               <Text style={[styles.modalButtonText, { color: '#ef2b2d' }]}>Eliminar</Text>
             </TouchableOpacity>
+
 
             <TouchableOpacity
               style={[styles.modalButton, { backgroundColor: darkMode ? '#333' : '#eee', marginTop: 20, flex: 0 }]}
@@ -476,6 +515,13 @@ const styles = StyleSheet.create({
   darkContainer: {
     backgroundColor: colors.bg_dark,
   },
+  darkHeader: {
+    backgroundColor: colors.bg_dark,
+    borderBottomColor: '#333',
+    borderTopColor: '#333',
+  },
+
+
 
   greetingContainer: {
     paddingVertical: 20,
@@ -507,12 +553,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  darkHeader: {
-    backgroundColor: '#1e1e1e',
-    borderBottomColor: '#333',
-    borderTopColor: '#333',
-  },
   headerTitle: {
+
     fontSize: 18,
     fontWeight: '700',
     color: colors.dark_gray || '#333',
@@ -533,18 +575,24 @@ const styles = StyleSheet.create({
 
   },
   rutinaCard: {
-    width: 160,
-    height: 180,
-    borderRadius: 20,
+    width: 170,
+    height: 190,
+    borderRadius: 24,
     justifyContent: 'flex-end',
     alignItems: 'flex-start',
     padding: 20,
-    marginHorizontal: 5,
+    marginHorizontal: 8,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 6,
+    shadowRadius: 15,
+    elevation: 8,
+  },
+  darkCard: {
+    shadowColor: "transparent",
+    shadowOpacity: 0,
+    elevation: 0,
+    backgroundColor: '#1a1a1a',
   },
   rutinaTexto: {
     fontSize: 18,
@@ -560,21 +608,23 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   addCard: {
-    width: 160,
-    height: 180,
-    borderRadius: 20,
-    borderWidth: 1,
+    width: 170,
+    height: 190,
+    borderRadius: 24,
+    borderWidth: 2,
     borderStyle: 'dashed',
-    borderColor: '#ccc',
+    borderColor: '#ddd',
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#fafafa',
-    marginHorizontal: 5,
+    marginHorizontal: 8,
   },
+
   darkAddCard: {
     backgroundColor: 'rgba(255,255,255,0.05)',
     borderColor: '#444',
   },
+
   addText: {
     fontSize: 14,
     color: '#666',
@@ -640,6 +690,11 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 12,
   },
+  darkChip: {
+    borderColor: '#444',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+  },
+
   chipSelected: {
     backgroundColor: '#ef2b2d',
     borderColor: '#ef2b2d',
@@ -677,6 +732,11 @@ const styles = StyleSheet.create({
     borderBottomColor: '#eee',
     gap: 15,
   },
+  darkOptionItem: {
+    borderBottomColor: '#333',
+  },
+
+
   sectionHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -712,5 +772,23 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: 'rgba(255,255,255,0.9)',
     fontWeight: '600',
+  },
+  darkText: {
+    color: '#fff',
+  },
+  darkTextSecondary: {
+    color: '#aaa',
+  },
+  darkModal: {
+    backgroundColor: colors.bg_dark,
+  },
+  darkInput: {
+    borderColor: '#444',
+    backgroundColor: colors.bg_dark,
+    color: '#fff',
+  },
+  darkChip: {
+    borderColor: '#444',
+    backgroundColor: 'rgba(255,255,255,0.05)',
   },
 });

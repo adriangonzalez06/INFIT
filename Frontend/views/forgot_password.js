@@ -145,7 +145,7 @@ export default function ForgotPassword({ navigation }) {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg_gray },
-  darkSafeArea: { backgroundColor: '#121212' },
+  darkSafeArea: { backgroundColor: colors.bg_dark },
   container: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 60, paddingBottom: 40, alignItems: 'center' },
   backButton: { padding: 8 },
   headerRow: { flexDirection: 'row', alignItems: 'center', width: '100%', marginBottom: 30 },

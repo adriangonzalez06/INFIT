@@ -203,20 +203,21 @@ export default function AddDietMenu({ route }) {
   {/*componente personalizado para renderizar items en el SearchMenu*/ }
   const renderDishItemMenu = ({ item }) => (
     <TouchableOpacity onPress={() => { handleAddDish(item); searchMenuRef.current?.cerrarMenu?.(); }}>
-      <View style={[styles.dishContainer]}>
+      <View style={[styles.dishContainer, darkMode && styles.darkDishContainer, { marginBottom: 10 }]}>
         <Image
           style={[styles.dishImage, { width: 80, height: 80, borderRadius: 8 }]}
           source={typeof item.imgUrl === 'number' ? item.imgUrl : { uri: item.imgUrl }}
         />
         <View style={{ marginLeft: 10, flex: 1 }}>
-          <Text style={[styles.dishTitle, { fontSize: 14 }]}>{item.name}</Text>
-          <Text style={styles.dishText}>{item.getTotalCalories()} kcal</Text>
+          <Text style={[styles.dishTitle, darkMode && styles.darkDishTitle, { fontSize: 16 }]}>{item.name}</Text>
+          <Text style={[styles.dishText, darkMode && styles.darkDishText]}>{item.getTotalCalories()} kcal</Text>
           {/*render labels vegano vegetariano*/}
           <RenderLabels dish={item} />
         </View>
       </View>
     </TouchableOpacity>
   );
+
 
   const renderImageItemMenu = ({ item }) => (
     <TouchableOpacity onPress={() => { handleSetImage(item.url); imgMenuRef.current?.cerrarMenu?.(); }} style={styles.chooseImage}>
@@ -274,15 +275,16 @@ export default function AddDietMenu({ route }) {
 
     return (
       <TouchableOpacity key={dish.id} onPress={() => showModal(dish.getIngredientsWithGrams())} onLongPress={() => handleDeleteDish(index)}>
-        <View style={styles.dishContainer}>
+        <View style={[styles.dishContainer, darkMode && styles.darkDishContainer]}>
           <Image
             style={styles.dishImage}
             source={typeof dish.imgUrl === 'number' ? dish.imgUrl : { uri: dish.imgUrl }}
           />
           <View style={{ margin: 5, flex: 1 }}>
-            <Text style={styles.dishTitle}>{dish.name}</Text>
+            <Text style={[styles.dishTitle, darkMode && styles.darkDishTitle]}>{dish.name}</Text>
             <Text style={styles.dishSubtitle}>Calorías</Text>
-            <Text style={styles.dishText}>{calculateDishTotals(dish).totalCalories} kcal</Text>
+            <Text style={[styles.dishText, darkMode && styles.darkDishText]}>{calculateDishTotals(dish).totalCalories} kcal</Text>
+
 
             {/*etiquetas de vegetariano, vegano y sin gluten*/}
             <RenderLabels dish={dish} />
@@ -310,10 +312,11 @@ export default function AddDietMenu({ route }) {
   {/*renderizar lista de ingredientes dentro del modal*/ }
   const renderIngredientsModal = () => (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={hideModal}>
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
+      <View style={[styles.modalOverlay, darkMode && { backgroundColor: 'rgba(0,0,0,0.8)' }]}>
+        <View style={[styles.modalContent, darkMode && { backgroundColor: colors.bg_dark, borderColor: '#333', borderWidth: 1 }]}>
           <ScrollView>
-            <Text style={styles.grupoTitulo}>Ingredientes</Text>
+            <Text style={[styles.grupoTitulo, darkMode && styles.darkText]}>Ingredientes</Text>
+
 
             {Array.isArray(selectedIngredients) &&
               selectedIngredients.map((item) => renderIngredientObject(item))
@@ -578,8 +581,8 @@ export default function AddDietMenu({ route }) {
 
   return (
     <>
-      <View style={[styles.container, darkMode && { backgroundColor: '#111' }]}>
-        <StatusBar style={darkMode ? 'light' : 'auto'} backgroundColor={darkMode ? '#111' : 'transparent'} translucent={true} />
+      <View style={[styles.container, darkMode && { backgroundColor: colors.bg_dark }]}>
+        <StatusBar style={darkMode ? 'light' : 'auto'} backgroundColor={darkMode ? '#000' : 'transparent'} translucent={true} />
 
         <Header title={screenTitle} showBackButton={true} darkMode={darkMode} />
 

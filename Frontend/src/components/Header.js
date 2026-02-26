@@ -3,6 +3,7 @@ import {
     View,
     Text,
     TouchableOpacity,
+    Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import styles from '../../views/stylesheet'
@@ -16,24 +17,20 @@ export const Header = forwardRef(({
 
     const navigation = useNavigation();
 
-    const renderBackButton = (showBackButton) => {
-        if (showBackButton) {
-            return (
-                <TouchableOpacity onPress={() => navigation.goBack()}>
+    return (
+        <View style={[styles.header, darkMode && styles.darkHeader]}>
+            {showBackButton && (
+                <TouchableOpacity
+                    style={[styles.backButton, { top: Platform.OS === 'android' ? 48 : 23, left: 20 }]}
+                    onPress={() => navigation.goBack()}
+                >
                     <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
                 </TouchableOpacity>
-            );
-        }
-        return null;
-    };
-
-    return (
-        <View style={styles.header}>
-            {renderBackButton(showBackButton)}
-            {/* title */}
-            <Text style={[styles.title, darkMode && { color: '#ef2b2d' }]}>{title}</Text>
+            )}
+            <Text style={[styles.headerTitle, darkMode && styles.darkText]}>{title}</Text>
         </View>
     );
+
 });
 
 

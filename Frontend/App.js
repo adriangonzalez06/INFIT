@@ -21,7 +21,7 @@ import {
 } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage'; // { changed code }
 
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import Challenges from './views/Challenges';
@@ -229,9 +229,17 @@ function LoginScreen({ navigation }) {
 }
 
 export default function App() {
+  const transparentTheme = {
+    ...DefaultTheme,
+    colors: {
+      ...DefaultTheme.colors,
+      background: 'transparent',
+    },
+  };
+
   return (
     <SafeAreaProvider>
-      <NavigationContainer>
+      <NavigationContainer theme={transparentTheme}>
         <Stack.Navigator initialRouteName="Login">
           <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Registro" component={RegisterScreen} options={{ headerShown: false }} />
@@ -280,10 +288,10 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.bg_gray,
+    backgroundColor: colors.bg_dark,
   },
   darkContainer: {
-    backgroundColor: '#121212',
+    backgroundColor: colors.bg_dark,
   },
   scrollContainer: {
     paddingTop: 60,

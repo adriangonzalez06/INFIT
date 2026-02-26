@@ -1,4 +1,3 @@
-
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import {
   View,
@@ -10,14 +9,16 @@ import {
   LayoutAnimation,
   UIManager,
   SafeAreaView,
+  TouchableOpacity,
+  Platform,
+  Dimensions,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { useNavigation } from '@react-navigation/native';
+import { StatusBar } from 'expo-status-bar';
+import colors from './colors';
+const { width } = Dimensions.get('window');
 // Habilitar LayoutAnimation en Android
 if (UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -30,53 +31,68 @@ if (UIManager.setLayoutAnimationEnabledExperimental) {
 const DAILY_CHALLENGES = [
   {
     id: 'agua',
-    title: 'Bebe 2L de agua',
-    description: 'Mantente hidratado durante el día.',
-    icon: '',
+    title: 'Hidratación',
+    description: 'Bebe 2L de agua para mantenerte al 100%.',
+    icon: 'water',
     points: 10,
+    color: '#007AFF',
   },
   {
     id: 'pasos',
-    title: 'Camina 8.000 pasos',
-    description: 'Suma actividad moderada a tu día.',
-    icon: '️',
+    title: 'Caminata Diaria',
+    description: 'Camina 8.000 pasos para activar tu corazón.',
+    icon: 'walk',
     points: 15,
+    color: '#FF9500',
   },
   {
     id: 'estiramientos',
-    title: '5 minutos de estiramientos',
-    description: 'Mejora movilidad y previene lesiones.',
-    icon: '',
+    title: 'Movilidad',
+    description: '5 minutos de estiramientos revitalizantes.',
+    icon: 'fitness',
     points: 10,
+    color: '#5856D6',
   },
 ];
 
 const WEEKLY_CHALLENGES = [
   {
     id: 'sesiones',
-    title: 'Completa 4 sesiones de ejercicio',
-    description: 'Cualquier rutina marcada como completada cuenta.',
-    icon: '',
+    title: 'Guerrero Semanal',
+    description: 'Completa 4 sesiones de entrenamiento.',
+    icon: 'barbell',
     points: 50,
-    target: 4, // progreso incremental
+    target: 4,
+    color: '#ef2b2d',
   },
   {
     id: 'recetas-saludables',
-    title: 'Registra 5 comidas saludables',
-    description: 'Añade platos con frutas, verduras o proteína magra.',
-    icon: '',
+    title: 'Chef Saludable',
+    description: 'Registra 5 comidas nutritivas.',
+    icon: 'restaurant',
     points: 40,
     target: 5,
+    color: '#4CD964',
   },
   {
     id: 'descanso',
-    title: 'Duerme 7h al menos 3 días',
-    description: 'Cuida tu recuperación durante la semana.',
-    icon: '',
+    title: 'Recuperación',
+    description: 'Duerme 7h al menos 3 días esta semana.',
+    icon: 'moon',
     points: 30,
     target: 3,
+    color: '#34C759',
   },
 ];
+
+/* -----------------------------
+   Claves de almacenamiento
+------------------------------ */
+
+const STORAGE_KEYS = {
+  daily: (key) => `challenges_daily_${key}`,
+  weekly: (key) => `challenges_weekly_${key}`,
+};
 
 /* -----------------------------
    Helpers de fecha / claves
@@ -97,25 +113,26 @@ const weekKey = () => {
   return `${y}-${m}-${y}`; // clave única para esa semana
 };
 
-const ProgressBar = ({ progress = 0, color = '#4CAF50', height = 10 }) => {
+const ProgressBar = ({ progress = 0, color = '#ef2b2d', height = 8, isDark = false }) => {
   const anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.timing(anim, {
+    Animated.spring(anim, {
       toValue: Math.max(0, Math.min(1, progress)),
-      duration: 500,
       useNativeDriver: false,
+      tension: 20,
+      friction: 7,
     }).start();
   }, [progress]);
 
-  const width = anim.interpolate({
+  const widthRaw = anim.interpolate({
     inputRange: [0, 1],
     outputRange: ['0%', '100%'],
   });
 
   return (
-    <View style={[styles.progressContainer, { height }]}>
-      <Animated.View style={[styles.progressFill, { width, backgroundColor: color }]} />
+    <View style={[styles.progressContainer, { height }, isDark && styles.progressContainerDark]}>
+      <Animated.View style={[styles.progressFill, { width: widthRaw, backgroundColor: color }]} />
     </View>
   );
 };
@@ -131,19 +148,13 @@ export default function ChallengesScreen() {
   const navigation = useNavigation();
   const [isDark, setIsDark] = useState(false);
 
-  // Cargar preferencia cada vez que entramos
   useFocusEffect(
     useCallback(() => {
-      const loadTheme = async () => {
-        const savedTheme = await AsyncStorage.getItem("darkMode");
-        setIsDark(savedTheme === "true");
-      };
-      loadTheme();
+      AsyncStorage.getItem('darkMode').then(val => setIsDark(val === 'true'));
     }, [])
   );
 
   const [activeTab, setActiveTab] = useState('Diarios');
-  const [filter, setFilter] = useState('Todos');
 
   // Estado diario: { id: boolean }
   const [dailyState, setDailyState] = useState({});
@@ -251,29 +262,11 @@ export default function ChallengesScreen() {
     };
   }, [weeklyState]);
 
-  /* -------- Filtros -------- */
+  /* -------- Listado -------- */
 
-  const filteredDaily = useMemo(() => {
-    switch (filter) {
-      case 'Pendientes':
-        return DAILY_CHALLENGES.filter((c) => !dailyState[c.id]);
-      case 'Completados':
-        return DAILY_CHALLENGES.filter((c) => !!dailyState[c.id]);
-      default:
-        return DAILY_CHALLENGES;
-    }
-  }, [filter, dailyState]);
+  const data = activeTab === 'Diarios' ? DAILY_CHALLENGES : WEEKLY_CHALLENGES;
 
-  const filteredWeekly = useMemo(() => {
-    switch (filter) {
-      case 'Pendientes':
-        return WEEKLY_CHALLENGES.filter((c) => (weeklyState[c.id] ?? 0) < c.target);
-      case 'Completados':
-        return WEEKLY_CHALLENGES.filter((c) => (weeklyState[c.id] ?? 0) >= c.target);
-      default:
-        return WEEKLY_CHALLENGES;
-    }
-  }, [filter, weeklyState]);
+  /* -------- Render de tarjetas -------- */
 
   /* -------- Render de tarjetas -------- */
 
@@ -281,33 +274,35 @@ export default function ChallengesScreen() {
     const completed = !!dailyState[item.id];
     return (
       <View style={[styles.card, isDark && styles.cardDark]}>
-
-        <View style={styles.cardHeader}>
-          <Text style={styles.icon}>{item.icon}</Text>
-          <Text style={[styles.cardTitle, isDark && styles.textDark]}>{item.title}</Text>
-          <View style={[styles.pointsBadge, isDark && styles.darkPointsBadge]}>
-            <Text style={styles.pointsText}>+{item.points} XP</Text>
+        <View style={styles.cardMain}>
+          <View style={[styles.iconWrapper, { backgroundColor: item.color + '20' }]}>
+            <Ionicons name={item.icon} size={24} color={item.color} />
+          </View>
+          <View style={styles.cardTextContainer}>
+            <View style={styles.titleRow}>
+              <Text style={[styles.cardTitle, isDark && styles.textDark]}>{item.title}</Text>
+              <View style={[styles.pointsBadge, isDark && styles.darkPointsBadge]}>
+                <Text style={styles.pointsText}>+{item.points} XP</Text>
+              </View>
+            </View>
+            <Text style={[styles.cardDesc, isDark && styles.textDarkSecondary]}>{item.description}</Text>
           </View>
         </View>
 
-
-        <Text style={[styles.cardDesc, isDark && styles.textDark]}>{item.description}</Text>
-
-        <View style={styles.cardActions}>
-          <Pressable
+        <View style={styles.cardFooter}>
+          <TouchableOpacity
             onPress={() => toggleDaily(item.id)}
-            style={({ pressed }) => [
-              styles.primaryBtn,
-              completed && styles.primaryBtnDone,
-              pressed && { transform: [{ scale: 0.98 }] },
+            activeOpacity={0.7}
+            style={[
+              styles.actionBtn,
+              completed ? styles.btnSuccess : styles.btnOutline,
             ]}
           >
-            <Text style={styles.primaryBtnText}>{completed ? 'Completado' : 'Marcar como hecho'}</Text>
-          </Pressable>
-
-          <Text style={[styles.statusText, completed ? styles.statusDone : styles.statusPending]}>
-            {completed ? '✅' : '⏳'} {completed ? 'Listo' : 'Pendiente'}
-          </Text>
+            {completed && <Ionicons name="checkmark-circle" size={18} color="#fff" style={{ marginRight: 6 }} />}
+            <Text style={[styles.actionBtnText, completed && styles.textWhite]}>
+              {completed ? 'Completado' : 'Marcar progreso'}
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
     );
@@ -315,44 +310,56 @@ export default function ChallengesScreen() {
 
   const renderWeeklyItem = ({ item }) => {
     const current = weeklyState[item.id] ?? 0;
+    const isCompleted = current >= item.target;
     const pct = Math.min(1, current / item.target);
 
     return (
       <View style={[styles.card, isDark && styles.cardDark]}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.icon}>{item.icon}</Text>
-          <Text style={[styles.cardTitle, isDark && styles.textDark]}>{item.title}</Text>
-          <View style={[styles.pointsBadge, isDark && styles.darkPointsBadge]}>
-            <Text style={styles.pointsText}>+{item.points} XP</Text>
+        <View style={styles.cardMain}>
+          <View style={[styles.iconWrapper, { backgroundColor: item.color + '20' }]}>
+            <Ionicons name={item.icon} size={24} color={item.color} />
+          </View>
+          <View style={styles.cardTextContainer}>
+            <View style={styles.titleRow}>
+              <Text style={[styles.cardTitle, isDark && styles.textDark]}>{item.title}</Text>
+              <View style={[styles.pointsBadge, isDark && styles.darkPointsBadge]}>
+                <Text style={styles.pointsText}>+{item.points} XP</Text>
+              </View>
+            </View>
+            <Text style={[styles.cardDesc, isDark && styles.textDarkSecondary]}>{item.description}</Text>
           </View>
         </View>
-        <Text style={[styles.cardDesc, isDark && styles.textDark]}>{item.description}</Text>
 
-        <View style={styles.progressRow}>
-          <ProgressBar progress={pct} color="#4CAF50" />
-          <Text style={[styles.progressLabel, isDark && styles.textDark]}>
-            {current} / {item.target}
-          </Text>
+        <View style={styles.progressSection}>
+          <View style={styles.progressInfo}>
+            <Text style={[styles.progressCount, isDark && styles.textDark]}>{current} / {item.target}</Text>
+            <Text style={[styles.progressPercent, isDark && styles.textDarkSecondary]}>{Math.round(pct * 100)}%</Text>
+          </View>
+          <ProgressBar progress={pct} color={item.color} height={6} isDark={isDark} />
         </View>
 
-        <View style={styles.cardActions}>
-          <Pressable
+        <View style={styles.cardActionsRow}>
+          <TouchableOpacity
             onPress={() => incrementWeekly(item.id, -1)}
-            style={({ pressed }) => [styles.secondaryBtn, isDark && styles.darkSecondaryBtn, pressed && { opacity: 0.8 }]}
+            style={[styles.miniBtn, isDark && styles.btnDark]}
           >
-            <Text style={[styles.secondaryBtnText, isDark && styles.darkSecondaryBtnText]}>−</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => incrementWeekly(item.id, +1)}
-            style={({ pressed }) => [styles.primaryBtn, pressed && { transform: [{ scale: 0.98 }] }]}
-          >
-            <Text style={styles.primaryBtnText}>+ Progreso</Text>
-          </Pressable>
-        </View>
+            <Ionicons name="remove" size={20} color={isDark ? "#fff" : "#333"} />
+          </TouchableOpacity>
 
-        <Text style={[styles.statusText, current >= item.target ? styles.statusDone : styles.statusPending]}>
-          {current >= item.target ? '✅ Completado' : '⏳ En progreso'}
-        </Text>
+          <TouchableOpacity
+            onPress={() => incrementWeekly(item.id, 1)}
+            style={[styles.primaryActionBtn, isCompleted && styles.btnSuccess]}
+          >
+            <Text style={styles.textWhite}>{isCompleted ? '¡Logrado!' : 'Actualizar'}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => incrementWeekly(item.id, 1)}
+            style={[styles.miniBtn, isDark && styles.btnDark]}
+          >
+            <Ionicons name="add" size={20} color={isDark ? "#fff" : "#333"} />
+          </TouchableOpacity>
+        </View>
       </View>
     );
   };
@@ -363,60 +370,91 @@ export default function ChallengesScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, isDark && styles.safeDark]}>
-      <View style={styles.container}>
-        <Text style={styles.title}>Mis rutinas</Text>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
-        </TouchableOpacity>
-        <Text style={[styles.title, isDark && styles.textDark]}>Retos</Text>
-        <Text style={[styles.subtitle, isDark && styles.textDark]}>
-          {activeTab === 'Diarios'
-            ? `Hoy (${dailyKey})`
-            : `Semana desde lunes (${weekKeyState})`}
-        </Text>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <View style={[styles.mainContainer, isDark && styles.mainContainerDark]}>
+        {/* Header Section */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={[styles.backBtn, isDark && styles.backBtnDark]}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="chevron-back" size={24} color={isDark ? "#fff" : "#1a1a1a"} />
+          </TouchableOpacity>
+          <View style={styles.headerTitles}>
+            <Text style={[styles.mainTitle, isDark && styles.textDark]}>Tus Logros</Text>
+            <Text style={[styles.dateSub, isDark && styles.textDarkSecondary]}>
+              {activeTab === 'Diarios' ? dailyKey : `Semana ${weekKeyState}`}
+            </Text>
+          </View>
+          <TouchableOpacity style={[styles.profileBtn, isDark && styles.profileBtnDark]}>
+            <Ionicons name="trophy" size={20} color="#ef2b2d" />
+          </TouchableOpacity>
+        </View>
 
+        {/* Global Progress Card */}
+        <View style={[styles.metricsCard, isDark && styles.cardDark]}>
+          <View style={styles.metricsHeader}>
+            <View>
+              <Text style={[styles.metricsTitle, isDark && styles.textDark]}>Nivel de Actividad</Text>
+              <Text style={[styles.metricsSub, isDark && styles.textDarkSecondary]}>
+                {headerMetrics.done || headerMetrics.completed} de {headerMetrics.total} completados
+              </Text>
+            </View>
+            <View style={styles.xpBox}>
+              <Text style={styles.xpValue}>{headerMetrics.pointsEarned}</Text>
+              <Text style={styles.xpLabel}>XP</Text>
+            </View>
+          </View>
+          <View style={styles.progressWrapper}>
+            <ProgressBar progress={headerMetrics.progress} color="#ef2b2d" height={10} isDark={isDark} />
+            <View style={styles.progressLabels}>
+              <Text style={styles.progressSideLabel}>0%</Text>
+              <Text style={styles.progressSideLabel}>100%</Text>
+            </View>
+          </View>
+        </View>
 
-        {/* Tabs */}
-        <View style={styles.tabs}>
+        {/* Tabs Control */}
+        <View style={[styles.tabBar, isDark && styles.tabBarDark]}>
           {TABS.map((t) => (
-            <Pressable
+            <TouchableOpacity
               key={t}
               onPress={() => {
                 LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                 setActiveTab(t);
               }}
               style={[
-                styles.tab,
-                isDark && styles.tabDark,
-                activeTab === t && styles.tabActive,
-                activeTab === t && isDark && styles.tabActiveDark,
+                styles.tabItem,
+                activeTab === t && styles.tabItemActive,
               ]}
             >
-              <Text style={[styles.tabText, isDark && styles.textDark, activeTab === t && styles.tabTextActive]}>{t}</Text>
-            </Pressable>
+              <Text style={[
+                styles.tabItemText,
+                isDark && styles.textDark,
+                activeTab === t && styles.tabItemTextActive
+              ]}>
+                {t}
+              </Text>
+              {activeTab === t && <View style={styles.tabIndicator} />}
+            </TouchableOpacity>
           ))}
         </View>
 
-        {/* Métricas y progreso global */}
-        <View style={[styles.metrics, isDark && styles.cardDark]}>
-          <Text style={[styles.metricsText, isDark && styles.textDark]}>
-            {activeTab === 'Diarios'
-              ? `Completados: ${headerMetrics.done} / ${headerMetrics.total}`
-              : `Retos completados: ${headerMetrics.completed} / ${headerMetrics.total}`}
-          </Text>
-          <ProgressBar progress={headerMetrics.progress} color="#4CAF50" height={12} />
-          <Text style={[styles.metricsTextSmall, isDark && styles.textDark]}>
-            XP: {headerMetrics.pointsEarned} / {headerMetrics.pointsTotal}
-          </Text>
-        </View>
-
-        {/* Listado */}
+        {/* List Section */}
         <FlatList
-          data={activeTab === 'Diarios' ? filteredDaily : filteredWeekly}
+          data={data}
           keyExtractor={(item) => item.id}
           renderItem={activeTab === 'Diarios' ? renderDailyItem : renderWeeklyItem}
-          contentContainerStyle={{ paddingBottom: 24 }}
+          contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Ionicons name="ribbon-outline" size={60} color={isDark ? "#333" : "#ddd"} />
+              <Text style={[styles.emptyText, isDark && styles.textDarkSecondary]}>
+                No hay retos en esta sección
+              </Text>
+            </View>
+          }
         />
       </View>
     </SafeAreaView>
@@ -425,106 +463,231 @@ export default function ChallengesScreen() {
 
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#FAFAFA' },
-  safeDark: { backgroundColor: '#111' },
-  container: { flex: 1, paddingHorizontal: 16, paddingTop: 12 },
-  title: { fontSize: 28, fontWeight: '800', color: '#222' },
-  subtitle: { fontSize: 14, color: '#666', marginBottom: 10 },
-
-  tabs: { flexDirection: 'row', gap: 8, marginBottom: 12 },
-  tab: {
-    flex: 1, paddingVertical: 10, borderRadius: 12, borderWidth: 1,
-    borderColor: '#DDD', alignItems: 'center', backgroundColor: '#FFF',
+  safe: { flex: 1, backgroundColor: colors.white },
+  safeDark: { backgroundColor: colors.bg_dark },
+  mainContainer: { flex: 1, backgroundColor: colors.white },
+  mainContainerDark: { backgroundColor: colors.bg_dark },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 40 : 50,
+    paddingBottom: 20,
   },
-  tabActive: { borderColor: '#4CAF50', backgroundColor: '#E8F5E9' },
-  tabActiveDark: { backgroundColor: '#1b3b20', borderColor: '#4CAF50' },
-  tabDark: { backgroundColor: '#1e1e1e', borderColor: '#333' },
-  tabText: { fontSize: 14, color: '#555', fontWeight: '600' },
-  tabTextActive: { color: '#2E7D32' },
-
-  metrics: {
-    backgroundColor: '#FFF', borderRadius: 14, padding: 12, marginBottom: 12,
-    elevation: 3,
+  backBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-  metricsText: { fontSize: 16, color: '#333', marginBottom: 6, fontWeight: '600' },
-  metricsTextSmall: { fontSize: 13, color: '#555', marginTop: 8 },
-
-  filters: { flexDirection: 'row', gap: 8, marginBottom: 12 },
-  filterPill: {
-    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999,
-    borderWidth: 1, borderColor: '#DDD', backgroundColor: '#FFF',
+  backBtnDark: { backgroundColor: '#3a3a3a' },
+  headerTitles: { alignItems: 'center' },
+  mainTitle: { fontSize: 22, fontWeight: '900', color: '#1a1a1a', letterSpacing: -0.5 },
+  dateSub: { fontSize: 13, color: '#888', fontWeight: '600', marginTop: 2 },
+  profileBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-  filterPillActive: { borderColor: '#4CAF50', backgroundColor: '#E8F5E9' },
-  filterText: { fontSize: 13, color: '#555', fontWeight: '600' },
-  filterTextActive: { color: '#2E7D32' },
+  profileBtnDark: { backgroundColor: '#3a3a3a' },
 
-  card: {
-    backgroundColor: '#E0E0E0', borderRadius: 14, padding: 12, marginBottom: 12,
-    elevation:
-      0,
+  metricsCard: {
+    marginHorizontal: 20,
+    backgroundColor: '#fff',
+    borderRadius: 28,
+    padding: 24,
+    marginBottom: 25,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
   },
-  cardDark: { backgroundColor: '#1A1A1A' },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  icon: { fontSize: 26 },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: '#222', flex: 1 },
-  cardDesc: { fontSize: 13, color: '#666', marginTop: 6 },
-
-  pointsBadge: {
-    paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999,
-    backgroundColor: '#FFF3E0', borderWidth: 1, borderColor: '#FFE0B2',
+  metricsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
   },
-  darkPointsBadge: {
-    backgroundColor: '#2d1b00',
-    borderColor: '#4d3b10',
+  metricsTitle: { fontSize: 18, fontWeight: '800', color: '#1a1a1a' },
+  metricsSub: { fontSize: 13, color: '#888', fontWeight: '600', marginTop: 4 },
+  xpBox: {
+    backgroundColor: '#ef2b2d',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  pointsText: { fontSize: 12, color: '#FB8C00', fontWeight: '700' },
-
-  cardActions: {
-    flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 10,
+  xpValue: { color: '#fff', fontSize: 17, fontWeight: '900' },
+  xpLabel: { color: 'rgba(255,255,255,0.8)', fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
+  progressWrapper: { gap: 8 },
+  progressLabels: {
+    flexDirection: 'row',
     justifyContent: 'space-between',
   },
+  progressSideLabel: { fontSize: 11, color: '#bbb', fontWeight: '700' },
 
-  primaryBtn: {
-    flex: 1, backgroundColor: '#4CAF50', paddingVertical: 12, borderRadius: 10,
+  tabBar: {
+    flexDirection: 'row',
+    marginHorizontal: 20,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 6,
+    marginBottom: 20,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+  },
+  tabBarDark: { backgroundColor: '#3a3a3a' },
+  tabItem: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderRadius: 16,
+    position: 'relative',
+  },
+  tabItemActive: { backgroundColor: 'transparent' },
+  tabItemText: { fontSize: 14, fontWeight: '700', color: '#888' },
+  tabItemTextActive: { color: '#ef2b2d' },
+  tabIndicator: {
+    position: 'absolute',
+    bottom: 6,
+    width: 20,
+    height: 3,
+    backgroundColor: '#ef2b2d',
+    borderRadius: 2,
+  },
+
+  listContent: { paddingHorizontal: 20, paddingBottom: 40 },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 28,
+    padding: 20,
+    marginBottom: 16,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+  },
+  cardDark: { backgroundColor: '#474747ff', elevation: 0 },
+  cardMain: { flexDirection: 'row', gap: 16 },
+  iconWrapper: {
+    width: 60,
+    height: 60,
+    borderRadius: 20,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  primaryBtnDone: { backgroundColor: '#7CB342' },
-  primaryBtnText: { color: '#FFF', fontWeight: '800' },
-
-  secondaryBtn: {
-    width: 44, height: 44, borderRadius: 10, backgroundColor: '#EEE',
-    alignItems: 'center', justifyContent: 'center',
+  cardTextContainer: { flex: 1 },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
   },
-  secondaryBtnText: { fontSize: 20, fontWeight: '800', color: '#333' },
-  darkSecondaryBtn: { backgroundColor: '#333' },
-  darkSecondaryBtnText: { color: '#eee' },
+  cardTitle: { fontSize: 17, fontWeight: '800', color: '#1a1a1a' },
+  cardDesc: { fontSize: 13, color: '#888', lineHeight: 18, fontWeight: '500' },
+  pointsBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    backgroundColor: 'rgba(239, 43, 45, 0.08)',
+  },
+  darkPointsBadge: { backgroundColor: 'rgba(239, 43, 45, 0.15)' },
+  pointsText: { fontSize: 11, color: '#ef2b2d', fontWeight: '800' },
 
-  statusText: { marginTop: 8, fontSize: 13, fontWeight: '700' },
-  statusDone: { color: '#2E7D32' },
-  statusPending: { color: '#8D6E63' },
+  cardFooter: {
+    marginTop: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+  actionBtn: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 14,
+    alignItems: 'center',
+  },
+  btnOutline: {
+    borderWidth: 1.5,
+    borderColor: '#ef2b2d20',
+    backgroundColor: '#ef2b2d05',
+  },
+  btnSuccess: { backgroundColor: '#34C759' },
+  btnDark: { backgroundColor: '#333' },
+  actionBtnText: { fontSize: 13, fontWeight: '800', color: '#ef2b2d' },
+  textWhite: { color: '#fff', fontWeight: '800' },
+
+  progressSection: { marginTop: 18, gap: 10 },
+  progressInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+  },
+  progressCount: { fontSize: 20, fontWeight: '900', color: '#1a1a1a' },
+  progressPercent: { fontSize: 14, fontWeight: '700', color: '#888' },
+
+  cardActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 18,
+  },
+  miniBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  primaryActionBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: '#ef2b2d',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  emptyState: { alignItems: 'center', marginTop: 60, gap: 15 },
+  emptyText: { fontSize: 15, color: '#aaa', fontWeight: '600' },
 
   progressContainer: {
-    width: '100%', backgroundColor: '#E0E0E0', borderRadius: 999, overflow: 'hidden',
+    backgroundColor: '#f0f0f0',
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  progressContainerDark: {
+    backgroundColor: '#3a3a3a',
   },
   progressFill: {
-    height: '100%', borderRadius: 999,
+    height: '100%',
+    borderRadius: 10,
   },
-
-  progressRow: { marginTop: 10, gap: 6 },
-  progressLabel: { fontSize: 12, color: '#555', alignSelf: 'flex-end' },
-
-  textDark: { color: '#EEE' },
-
-
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#ef2b2d',
-    marginBottom: 20,
-    textAlign: 'center',
-  }
-}
-
-);
+  textDarkSecondary: { color: '#fff' },
+  textDark: { color: '#fff' },
+});
 
 

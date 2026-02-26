@@ -4,7 +4,9 @@ export default {
   medium_gray: '#30383a',
   gray: '#ccc',
   light_gray: '#dddbd1',
-  bg_gray: '#f4f4f4',
+  bg_dark: '#2b2a2aff',
+  bg_gray: '#f9f9f9',
+
   white: '#ffffff',
   black: '#000000',
   medium_green: '#28a745',

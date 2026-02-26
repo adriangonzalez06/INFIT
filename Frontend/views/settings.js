@@ -11,6 +11,7 @@ import {
   Platform,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import colors from "./colors";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getAuth, signOut } from "firebase/auth";
 import { initializeApp, getApps } from "firebase/app";
@@ -229,7 +230,7 @@ const styles = StyleSheet.create({
     paddingTop: 60,
   },
   darkContainer: {
-    backgroundColor: "#121212",
+    backgroundColor: colors.bg_dark,
   },
   header: {
     flexDirection: "row",
