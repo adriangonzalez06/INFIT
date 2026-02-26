@@ -67,6 +67,9 @@ try {
   const userspremiumRouter = require('./routes/userspremium');
   app.use('/api/userspremium', userspremiumRouter);
 
+  const ingredientsRouter = require('./routes/ingredients');
+  app.use('/api/ingredients', ingredientsRouter);
+
   console.log('✅ Todas las rutas cargadas correctamente');
 } catch (e) {
   console.error('Error cargando routes/users.routes:', e);

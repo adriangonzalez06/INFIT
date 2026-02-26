@@ -61,10 +61,10 @@ export default function PantallaRutina({ route, navigation }) {
   useEffect(() => {
     const init = async () => {
       try {
-        const id = await AsyncStorage.getItem('userId');
+        const id = await AsyncStorage.getItem('userDocId');
         if (id) setUserId(id);
       } catch (e) {
-        console.error('Error getting userId:', e);
+        console.error('Error getting userDocId:', e);
       }
     };
     init();

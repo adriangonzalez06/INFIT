@@ -256,6 +256,9 @@ usuarioCtl.getUsuByEmail = async (req, res) => {
     try {
         const { email } = req.params;
         const emailNorm = normalizeEmail(email);
+        console.log('🔍 Buscando usuario con email:', email);
+        console.log('📧 Email normalizado:', emailNorm);
+        
         if (!emailNorm) {
             return res.status(400).json({ message: 'Email inválido' });
         }
@@ -268,10 +271,21 @@ usuarioCtl.getUsuByEmail = async (req, res) => {
         }
 
         const qSnap = await db.collection('users').where('email', '==', emailNorm).limit(1).get();
-        if (qSnap.empty) return res.status(404).json({ message: 'Usuario no encontrado' });
+        
+        if (qSnap.empty) {
+            console.log('❌ Usuario no encontrado con email:', emailNorm);
+            return res.status(404).json({ message: 'Usuario no encontrado' });
+        }
 
         const doc = qSnap.docs[0];
-        return res.status(200).json({ id: doc.id, ...doc.data() });
+        const userData = { id: doc.id, ...doc.data() };
+        
+        console.log('✅ Usuario encontrado:');
+        console.log('   ID del documento:', doc.id);
+        console.log('   Email en BD:', userData.email);
+        console.log('   Nombre:', userData.nombre);
+        
+        return res.status(200).json(userData);
     } catch (error) {
         console.error('[getUsuByEmail] Error:', error && (error.stack || error));
         return res.status(500).json({ message: 'Error al obtener usuario por email' });

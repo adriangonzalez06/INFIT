@@ -31,7 +31,7 @@ infopersonalizeddietCtl.create = async (req, res) => {
     try {
         const newItem = req.body;
         
-        // Validar que tenga al menos los campos básicos
+        // Validar que tenga los campos requeridos
         if (!newItem.name) {
             return res.status(400).json({ message: 'El nombre de la dieta es requerido' });
         }
@@ -40,38 +40,49 @@ infopersonalizeddietCtl.create = async (req, res) => {
             return res.status(400).json({ message: 'El userID es requerido' });
         }
 
-        // Preparar datos para Firestore - asegurar que todos sean serializables
+        console.log('📝 Inicio de guardado de dieta:', newItem.name);
+        console.log('👤 UserID:', newItem.userID);
+
+        // Asegurar que el documento del usuario existe (si no existe, crearlo)
+        const userRef = firestoreService.getDb().collection('users').doc(newItem.userID);
+        const userDoc = await userRef.get();
+        
+        if (!userDoc.exists) {
+            console.log(`⚠️  Usuario ${newItem.userID} no existe. Creando documento...`);
+            await userRef.set({
+                createdAt: new Date().toISOString(),
+                id: newItem.userID
+            });
+            console.log(`✅ Documento de usuario creado`);
+        } else {
+            console.log(`✅ Usuario ${newItem.userID} ya existe`);
+        }
+
+        // Preparar datos para Firestore - simplificado
         const dietData = {
+            userID: newItem.userID,
             name: newItem.name,
             description: newItem.description || '',
-            // weeklyDishes se recibe como objeto con claves numéricas desde el frontend
-            // Ej: {"0": [...], "1": [...], ...}
-            weeklyDishes: newItem.weeklyDishes || {},
-            // Usar imagen por defecto si no se proporciona
             imgUrl: newItem.imgUrl || 'https://via.placeholder.com/300x300?text=Dieta+Personalizada',
-            type_diet: newItem.type_diet || 'personalizada',
-            number_meals: newItem.number_meals || 5,
-            // Campos opcionales si existen
-            ...(newItem.ai_model && { ai_model: newItem.ai_model }),
-            ...(newItem.carbohydrates && { carbohydrates: newItem.carbohydrates }),
-            ...(newItem.proteins && { proteins: newItem.proteins }),
-            ...(newItem.micronutrients && { micronutrient: newItem.micronutrients }),
-            ...(newItem.personal_specifications && { personal_specifications: newItem.personal_specifications }),
-            ...(newItem.vegetarian !== undefined && { vegetarian: newItem.vegetarian }),
-            ...(newItem.vegan !== undefined && { vegan: newItem.vegan }),
+            weeklyDishes: newItem.weeklyDishes || {},
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
         };
 
-        console.log('📝 Guardando dieta personalizada:', dietData.name, 'para usuario:', newItem.userID);
-        console.log('📋 Datos completos de la dieta:', JSON.stringify(dietData, null, 2));
+        console.log('📋 Guardando dieta con datos:', {
+            userID: dietData.userID,
+            name: dietData.name,
+            diasConPlatos: Object.keys(dietData.weeklyDishes).length
+        });
 
         // Guardar en subcollección users/userId/infopersonalizeddiet
         const docId = await firestoreService.createSubcollection('users', newItem.userID, 'infopersonalizeddiet', dietData);
         
-        console.log('✅ Dieta guardada exitosamente en subcollección con ID:', docId);
+        console.log('✅ Dieta guardada exitosamente con ID:', docId);
         
-        // Verificar que se guardó correctamente leyendo el documento
+        // Verificar que se guardó correctamente
         const savedDiet = await firestoreService.getSubcollectionDoc('users', newItem.userID, 'infopersonalizeddiet', docId);
-        console.log('✅ Dieta verificada en Firestore:', JSON.stringify(savedDiet, null, 2));
+        console.log('✅ Dieta verificada en Firestore - Confirmado guardado');
         
         res.json({ 
             message: 'Dieta personalizada creada correctamente', 
@@ -79,11 +90,12 @@ infopersonalizeddietCtl.create = async (req, res) => {
             diet: savedDiet
         });
     } catch (error) {
-        console.error('❌ Error en crear dieta:', error);
+        console.error('❌ Error al crear dieta:', error);
+        console.error('Stack:', error.stack);
         res.status(500).json({ 
             message: 'Error al crear dieta personalizada', 
             error: error.message,
-            details: error.toString()
+            details: error.stack
         });
     }
 }

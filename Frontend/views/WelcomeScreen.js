@@ -100,7 +100,7 @@ export default function WelcomeScreen() {
         let name = (user.displayName && user.displayName.trim()) || null;
         let streakVal = 0;
 
-        // { changed code }} Cargar desde AsyncStorage primero (rápido)
+        // Cargar desde AsyncStorage primero (rápido)
         try {
           const savedStreak = await AsyncStorage.getItem('streak');
           if (savedStreak) {
@@ -119,7 +119,8 @@ export default function WelcomeScreen() {
               { timeout: 5000 }
             );
             const nombreBackend = resp?.data?.nombre;
-            streakVal = resp?.data?.streak || streakVal; // { changed code }} usa backend si existe, sino usa AsyncStorage
+            streakVal = resp?.data?.streak || streakVal;
+            
             if (nombreBackend) {
                name = nombreBackend;
                await AsyncStorage.setItem('userName', nombreBackend);
@@ -127,13 +128,13 @@ export default function WelcomeScreen() {
              }
            } catch (e) {
              console.warn('No se pudo obtener nombre del backend:', e?.message || e);
-             // Aquí streakVal sigue siendo el valor de AsyncStorage
            }
          }
 
          setUserName(name || user.email || user.uid);
          setStreak(streakVal);
        } else {
+         // Usuario no autenticado - limpiar datos
          setUserName(null);
          setStreak(0);
        }

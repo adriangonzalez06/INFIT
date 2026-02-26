@@ -4,7 +4,7 @@ import {
   SafeAreaView, Image, ImageBackground, Animated, Dimensions, FlatList, Alert, ToastAndroid
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import styles from './stylesheet';
 import { useRoute } from '@react-navigation/native';
@@ -13,7 +13,7 @@ import Dish from '../src/objects/Dish';
 import { SearchMenu } from '../src/components/SearchMenu';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Alimentacion from './Alimentacion';
-import { getAllMeals } from '../src/services/MealsService';
+import { getAllMeals, getUserMeals } from '../src/services/MealsService';
 
 import Header from '../src/components/Header';
 import style from './stylesheet';
@@ -113,96 +113,132 @@ export default function AddDietMenu({ route }) {
 
   {/*array de todos los platos desde Firestore*/ }
   const [allAvailableDishes, setAllAvailableDishes] = useState([]);
+  {/*array de mis platos creados por el usuario*/ }
+  const [myDishes, setMyDishes] = useState([]);
 
-  {/*cargar platos desde Firestore al montar el componente*/ }
-  useEffect(() => {
-    const loadMeals = async () => {
-      try {
-        const meals = await getAllMeals();
-        if (meals && meals.length > 0) {
-          console.log('📊 Primera comida de Firestore:', JSON.stringify(meals[0], null, 2));
-          const dishesFromDB = meals.map((meal, index) =>
-            new Dish(
-              meal.id || index,
-              meal.name,
-              meal.imgUrl || require('../assets/images/images_dish/dish_01.jpg'),
-              [],  // Don't pass Firestore string ingredients - use dish macros instead
-              meal.vegetarian || false,
-              meal.vegan || false,
-              meal.gluten_free || false,
-              meal.calories || meal.kcal || 0,
-              meal.fiber || 0,
-              meal.carbs || 0,
-              meal.fat || 0,
-              meal.protein || 0
-            )
-          );
-          console.log('✅ Platos cargados en AddDietMenu:', dishesFromDB.length);
-          console.log('📋 Primer plato objeto:', dishesFromDB[0]);
-          setAllAvailableDishes(dishesFromDB);
+  {/*función para cargar platos desde Firestore*/ }
+  const loadMeals = async () => {
+    try {
+      // Obtener userID del AsyncStorage
+      const userDocId = await AsyncStorage.getItem("userDocId");
+      
+      const meals = await getAllMeals();
+      if (meals && meals.length > 0) {
+        console.log('📊 Primera comida de Firestore:', JSON.stringify(meals[0], null, 2));
+        const dishesFromDB = meals.map((meal, index) =>
+          new Dish(
+            meal.id || index,
+            meal.name,
+            meal.imgUrl || require('../assets/images/images_dish/dish_01.jpg'),
+            [],  // Don't pass Firestore string ingredients - use dish macros instead
+            meal.vegetarian || false,
+            meal.vegan || false,
+            meal.gluten_free || false,
+            meal.calories || meal.kcal || 0,
+            meal.fiber || 0,
+            meal.carbs || 0,
+            meal.fat || 0,
+            meal.protein || 0
+          )
+        );
+        console.log('✅ Platos cargados en AddDietMenu:', dishesFromDB.length);
+        console.log('📋 Primer plato objeto:', dishesFromDB[0]);
+        setAllAvailableDishes(dishesFromDB);
 
-          // Enriquecer dieta existente con macros de Firestore
-          if (!creatingRecipe && diet && diet.weeklyDishes) {
-            const enrichedWeeklyDishes = diet.weeklyDishes.map(dayDishes =>
-              (dayDishes || []).map(dishFromDiet => {
-                // Buscar este dish en los meals de Firestore
-                const firebaseDish = dishesFromDB.find(d => d.id === dishFromDiet.id || d.name === dishFromDiet.name);
-                if (firebaseDish && (!dishFromDiet.fiber && !dishFromDiet.carbs && !dishFromDiet.fat && !dishFromDiet.protein)) {
-                  // Si el dish no tiene macros pero lo encontramos en Firestore, copiarlos
-                  console.log(`🔄 Enriqueciendo ${dishFromDiet.name} con macros de Firestore`);
-                  return new Dish(
-                    dishFromDiet.id,
-                    dishFromDiet.name,
-                    dishFromDiet.imgUrl || firebaseDish.imgUrl,
-                    [],
-                    dishFromDiet.vegetarian,
-                    dishFromDiet.vegan,
-                    dishFromDiet.gluten_free,
-                    firebaseDish.calories,
-                    firebaseDish.fiber,
-                    firebaseDish.carbs,
-                    firebaseDish.fat,
-                    firebaseDish.protein
-                  );
-                }
-                return dishFromDiet;
-              })
+        // Cargar solo los platos del usuario actual para "Mis platos"
+        if (userDocId) {
+          const userMealsData = await getUserMeals(userDocId);
+          if (userMealsData && userMealsData.length > 0) {
+            const userDishesFromDB = userMealsData.map((meal, index) =>
+              new Dish(
+                meal.id || index,
+                meal.name,
+                meal.imgUrl || require('../assets/images/images_dish/dish_01.jpg'),
+                [],
+                meal.vegetarian || false,
+                meal.vegan || false,
+                meal.gluten_free || false,
+                meal.calories || meal.kcal || 0,
+                meal.fiber || 0,
+                meal.carbs || 0,
+                meal.fat || 0,
+                meal.protein || 0
+              )
             );
-            diet.weeklyDishes = enrichedWeeklyDishes;
-            // Actualizar estado de dishes con los datos enriquecidos
-            setDishes(diet.getDishesForDay(0));
-            setAllDishes(diet.getAllDishes());
+            console.log(`✅ Platos del usuario cargados: ${userDishesFromDB.length}`);
+            setMyDishes(userDishesFromDB);
+          } else {
+            console.log('ℹ️ El usuario no tiene platos creados aún');
+            setMyDishes([]);
           }
-
-        } else {
-          // Si no hay platos de Firestore, usar fallback
-          const fallbackDishes = [
-            new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), [], true, true, false),
-            new Dish(2, "Carne", require('../assets/images/images_dish/dish_02.jpg'), [], false, false, false),
-            new Dish(3, "Postre", require('../assets/images/images_dish/dish_03.jpg'), [], false, false, false),
-            new Dish(4, "Pescado", require('../assets/images/images_dish/dish_04.jpg'), [], false, false, false),
-            new Dish(5, "Sopa", require('../assets/images/images_dish/dish_05.jpg'), [], true, true, false),
-            new Dish(6, "Pasta", require('../assets/images/images_dish/dish_06.jpg'), [], false, false, false),
-          ];
-          setAllAvailableDishes(fallbackDishes);
-          console.log('⚠️  Usando platos de fallback');
         }
-      } catch (error) {
-        console.error('❌ Error cargando platos:', error);
-        // Fallback en caso de error
+
+        // Enriquecer dieta existente con macros de Firestore
+        if (!creatingRecipe && diet && diet.weeklyDishes) {
+          const enrichedWeeklyDishes = diet.weeklyDishes.map(dayDishes =>
+            (dayDishes || []).map(dishFromDiet => {
+              // Buscar este dish en los meals de Firestore
+              const firebaseDish = dishesFromDB.find(d => d.id === dishFromDiet.id || d.name === dishFromDiet.name);
+              if (firebaseDish && (!dishFromDiet.fiber && !dishFromDiet.carbs && !dishFromDiet.fat && !dishFromDiet.protein)) {
+                // Si el dish no tiene macros pero lo encontramos en Firestore, copiarlos
+                console.log(`🔄 Enriqueciendo ${dishFromDiet.name} con macros de Firestore`);
+                return new Dish(
+                  dishFromDiet.id,
+                  dishFromDiet.name,
+                  dishFromDiet.imgUrl || firebaseDish.imgUrl,
+                  [],
+                  dishFromDiet.vegetarian,
+                  dishFromDiet.vegan,
+                  dishFromDiet.gluten_free,
+                  firebaseDish.calories,
+                  firebaseDish.fiber,
+                  firebaseDish.carbs,
+                  firebaseDish.fat,
+                  firebaseDish.protein
+                );
+              }
+              return dishFromDiet;
+            })
+          );
+          diet.weeklyDishes = enrichedWeeklyDishes;
+          // Actualizar estado de dishes con los datos enriquecidos
+          setDishes(diet.getDishesForDay(0));
+          setAllDishes(diet.getAllDishes());
+        }
+
+      } else {
+        // Si no hay platos de Firestore, usar fallback
         const fallbackDishes = [
           new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), [], true, true, false),
           new Dish(2, "Carne", require('../assets/images/images_dish/dish_02.jpg'), [], false, false, false),
           new Dish(3, "Postre", require('../assets/images/images_dish/dish_03.jpg'), [], false, false, false),
+          new Dish(4, "Pescado", require('../assets/images/images_dish/dish_04.jpg'), [], false, false, false),
+          new Dish(5, "Sopa", require('../assets/images/images_dish/dish_05.jpg'), [], true, true, false),
+          new Dish(6, "Pasta", require('../assets/images/images_dish/dish_06.jpg'), [], false, false, false),
         ];
         setAllAvailableDishes(fallbackDishes);
+        setMyDishes([]);
+        console.log('⚠️  Usando platos de fallback');
       }
-    };
+    } catch (error) {
+      console.error('❌ Error cargando platos:', error);
+      // Fallback en caso de error
+      const fallbackDishes = [
+        new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), [], true, true, false),
+        new Dish(2, "Carne", require('../assets/images/images_dish/dish_02.jpg'), [], false, false, false),
+        new Dish(3, "Postre", require('../assets/images/images_dish/dish_03.jpg'), [], false, false, false),
+      ];
+      setAllAvailableDishes(fallbackDishes);
+      setMyDishes([]);
+    }
+  };
 
-    loadMeals();
-  }, []);
-  {/*array de mis platos favoritos*/ }
-  const myDishes = [dish1, dish3];
+  {/*cargar platos cuando la pantalla se enfoca (cada vez que vuelves a esta pantalla)*/ }
+  useFocusEffect(
+    React.useCallback(() => {
+      loadMeals();
+    }, [creatingRecipe, diet])
+  );
 
   {/*datos de la dieta*/ }
   {/*selectedDay: 0 = Lunes, 1 = Martes, ... 6 = Domingo*/ }
@@ -295,8 +331,24 @@ export default function AddDietMenu({ route }) {
       return;
     };
 
+    {/*Asegurar que el plato tenga todas las propiedades de macros*/ }
+    const dishToAdd = selectedDish instanceof Dish ? selectedDish : new Dish(
+      selectedDish.id,
+      selectedDish.name,
+      selectedDish.imgUrl || require('../assets/images/images_dish/dish_01.jpg'),
+      selectedDish.ingredients || [],
+      selectedDish.vegetarian || false,
+      selectedDish.vegan || false,
+      selectedDish.gluten_free || false,
+      selectedDish.calories || selectedDish.kcal || 0,
+      selectedDish.fiber || 0,
+      selectedDish.carbs || 0,
+      selectedDish.fat || 0,
+      selectedDish.protein || 0
+    );
+
     {/*Añade el plato al día seleccionado dentro de newDiet*/ }
-    diet.addDishToDay(selectedDay, selectedDish);
+    diet.addDishToDay(selectedDay, dishToAdd);
     {/*Actualiza el estado local para re-renderizar la lista del día*/ }
     setDishes([...diet.getDishesForDay(selectedDay)]);
     setAllDishes([...diet.getAllDishes()]);
@@ -450,14 +502,21 @@ export default function AddDietMenu({ route }) {
     } else if (dish && (dish.calories !== undefined || dish.fiber !== undefined || dish.carbs !== undefined || dish.fat !== undefined || dish.protein !== undefined)) {
       console.log('♻️ Usando macros del dish:', { cal: dish.calories, fiber: dish.fiber, carbs: dish.carbs, fat: dish.fat, protein: dish.protein });
       // Si no hay ingredientes pero hay macros en el plato, usarlos
-      totalCalories = dish.calories || 0;
-      totalFiber = dish.fiber || 0;
-      totalCarbs = dish.carbs || 0;
-      totalFat = dish.fat || 0;
-      totalProtein = dish.protein || 0;
+      totalCalories = Number(dish.calories) || 0;
+      totalFiber = Number(dish.fiber) || 0;
+      totalCarbs = Number(dish.carbs) || 0;
+      totalFat = Number(dish.fat) || 0;
+      totalProtein = Number(dish.protein) || 0;
     } else {
-      console.log('⚠️ No hay ingredientes ni macros en el dish');
+      console.log('⚠️ No hay ingredientes ni macros en el dish:', dish);
     }
+
+    // Validar que no haya NaN
+    totalCalories = isNaN(totalCalories) ? 0 : totalCalories;
+    totalFiber = isNaN(totalFiber) ? 0 : totalFiber;
+    totalCarbs = isNaN(totalCarbs) ? 0 : totalCarbs;
+    totalFat = isNaN(totalFat) ? 0 : totalFat;
+    totalProtein = isNaN(totalProtein) ? 0 : totalProtein;
 
     console.log('📊 Totales calculados:', { totalCalories, totalFiber, totalCarbs, totalFat, totalProtein });
     return { totalCalories, totalFiber, totalCarbs, totalFat, totalProtein, }
@@ -492,11 +551,11 @@ export default function AddDietMenu({ route }) {
         });
       } else if (dish && (dish.calories !== undefined || dish.fiber !== undefined || dish.carbs !== undefined || dish.fat !== undefined || dish.protein !== undefined)) {
         // Si no hay ingredientes pero hay macros en el plato, usarlos
-        totalCalories += (dish.calories || 0);
-        totalFiber += (dish.fiber || 0);
-        totalCarbs += (dish.carbs || 0);
-        totalFat += (dish.fat || 0);
-        totalProtein += (dish.protein || 0);
+        totalCalories += Number(dish.calories) || 0;
+        totalFiber += Number(dish.fiber) || 0;
+        totalCarbs += Number(dish.carbs) || 0;
+        totalFat += Number(dish.fat) || 0;
+        totalProtein += Number(dish.protein) || 0;
       }
     });
 
@@ -538,11 +597,11 @@ export default function AddDietMenu({ route }) {
           });
         } else if (dish && (dish.calories !== undefined || dish.fiber !== undefined || dish.carbs !== undefined || dish.fat !== undefined || dish.protein !== undefined)) {
           // Si no hay ingredientes pero hay macros en el plato, usarlos
-          totalCalories += (dish.calories || 0);
-          totalFiber += (dish.fiber || 0);
-          totalCarbs += (dish.carbs || 0);
-          totalFat += (dish.fat || 0);
-          totalProtein += (dish.protein || 0);
+          totalCalories += Number(dish.calories) || 0;
+          totalFiber += Number(dish.fiber) || 0;
+          totalCarbs += Number(dish.carbs) || 0;
+          totalFat += Number(dish.fat) || 0;
+          totalProtein += Number(dish.protein) || 0;
         }
       });
     });
@@ -558,6 +617,10 @@ export default function AddDietMenu({ route }) {
 
   {/*redondear numeros para evitar que aparezcan muchos decimales*/ }
   const roundNums = (num) => {
+    // Validar que num no sea NaN
+    if (isNaN(num)) {
+      return "0.00";
+    }
     let roundedNum = Math.round(num * 100) / 100
     return roundedNum.toFixed(2);
   };
@@ -566,6 +629,9 @@ export default function AddDietMenu({ route }) {
     try {
       // Obtener userId del AsyncStorage
       const userDocId = await AsyncStorage.getItem("userDocId");
+      
+      console.log('🔐 ============ SAVING DIET ============');
+      console.log('🔐 UserDocId from AsyncStorage:', userDocId);
 
       if (!userDocId) {
         Alert.alert('Error', 'No se pudo obtener la información del usuario. Por favor inicia sesión nuevamente.');
@@ -587,32 +653,32 @@ export default function AddDietMenu({ route }) {
       diet.imgUrl = selectedUri;
 
       // Convertir weeklyDishes a formato compatible con Firestore (objeto con claves numéricas)
-      // Firestore NO permite arrays anidados, así que usamos un objeto
+      // Guardamos solo los platos que componen la dieta
       const serializedWeeklyDishes = {};
       diet.weeklyDishes.forEach((dayDishes, dayIndex) => {
         serializedWeeklyDishes[dayIndex.toString()] = (dayDishes || []).map(dish => ({
           id: dish.id,
           name: dish.name,
           imgUrl: dish.imgUrl,
-          calories: dish.calories,
-          macronutrients: dish.macronutrients,
-          ingredients: dish.ingredients || [],
+          calories: dish.calories || 0,
+          fiber: dish.fiber || 0,
+          carbs: dish.carbs || 0,
+          fat: dish.fat || 0,
+          protein: dish.protein || 0,
           vegetarian: dish.vegetarian || false,
           vegan: dish.vegan || false,
           gluten_free: dish.gluten_free || false
         }));
       });
 
-      // Preparar datos para enviar a la API
+      // Preparar datos SIMPLIFICADOS para enviar a la API
+      // Solo guardamos: userID, nombre, descripción, imagen y los platos
       const dietToSave = {
-        id: diet.id,
-        name: diet.name,
-        description: diet.description,
         userID: userDocId,
-        weeklyDishes: serializedWeeklyDishes,
-        imgUrl: 'https://via.placeholder.com/300x300?text=Dieta+Personalizada',
-        type_diet: 'personalizada',
-        number_meals: 5
+        name: dietName.trim(),
+        description: dietDescription?.trim() || '',
+        imgUrl: selectedUri,
+        weeklyDishes: serializedWeeklyDishes
       };
 
       // Usar 10.0.2.2 para emulador Android, localhost para otros
@@ -621,7 +687,8 @@ export default function AddDietMenu({ route }) {
       const url = `http://${host}:${port}/api/infopersonalizeddiet`;
 
       console.log('📤 Enviando dieta a:', url);
-      console.log('📦 Datos:', JSON.stringify(dietToSave));
+      console.log('🔐 UserID siendo enviado:', userDocId);
+      console.log('📦 Datos:', JSON.stringify(dietToSave, null, 2));
 
       // Enviar POST a la API
       const response = await fetch(url, {
