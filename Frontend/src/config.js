@@ -14,7 +14,7 @@ import { Platform } from 'react-native';
  *      MODE = 'tunnel'     →  pega la URL del túnel en TUNNEL_URL
  */
 
-const MODE = 'lan'; // ← CAMBIA AQUÍ: 'emulator' | 'lan' | 'tunnel'
+const MODE = 'emulator'; // ← CAMBIA AQUÍ: 'emulator' | 'lan' | 'tunnel'
 
 const LAN_IP = '172.20.10.5'; // ← Tu IP local (ipconfig en Windows)
 const TUNNEL_URL = 'https://tu-tunel.ngrok-free.app'; // ← URL del túnel

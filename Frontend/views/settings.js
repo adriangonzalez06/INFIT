@@ -91,7 +91,7 @@ export default function SettingsScreen({ navigation }) {
 
           <Pressable
             style={[styles.option, darkMode && styles.darkOption]}
-            onPress={() => navigation.navigate("ChangePassword")}
+            onPress={() => navigation.navigate("ChangingPassword")}
           >
             <View style={styles.optionLeft}>
               <Ionicons name="key-outline" size={20} color={iconColor} />
@@ -102,7 +102,7 @@ export default function SettingsScreen({ navigation }) {
 
           <Pressable
             style={[styles.option, darkMode && styles.darkOption]}
-            onPress={() => navigation.navigate("EditProfile")}
+            onPress={() => navigation.navigate("Perfil")}
           >
             <View style={styles.optionLeft}>
               <Ionicons name="person-circle-outline" size={20} color={iconColor} />
