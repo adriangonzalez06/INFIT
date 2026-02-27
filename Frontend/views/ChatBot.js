@@ -14,12 +14,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import colors from './colors';
+import axios from 'axios';
+import { BACKEND_URL } from '../src/config';
 
 const Chatbot = () => {
   const [messages, setMessages] = useState([
-    { id: '1', text: '¡Hola! Soy tu asistente de INFIT 😊 ¿En qué puedo ayudarte hoy?', from: 'bot' }
+    { id: '1', text: '¡Hola! Soy tu asistente de INFIT v2.1 😊 ¿En qué puedo ayudarte hoy?', from: 'bot' }
   ]);
   const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const flatListRef = useRef();
 
@@ -34,26 +37,47 @@ const Chatbot = () => {
     }, [])
   );
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     if (!input.trim()) return;
 
     const userMessage = { id: Date.now().toString(), text: input, from: 'user' };
     setMessages(prev => [...prev, userMessage]);
+    const currentInput = input;
     setInput('');
 
     // Scroll to bottom
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
 
-    // Simulated Bot AI Response
-    setTimeout(() => {
-      const botReply = {
-        id: (Date.now() + 1).toString(),
-        text: 'Estoy procesando tu consulta... 👾 (Funcionalidad de IA en desarrollo)',
+    setLoading(true);
+    // Get real AI response from Backend
+    try {
+      const userEmail = await AsyncStorage.getItem('userEmail') || 'anonymous';
+
+      const response = await axios.post(`${BACKEND_URL}/api/chatbot`, {
+        message: currentInput,
+        userEmail: userEmail
+      });
+
+      if (response.data && response.data.text) {
+        const botReply = {
+          id: Date.now().toString(),
+          text: response.data.text,
+          from: 'bot'
+        };
+        setMessages(prev => [...prev, botReply]);
+      }
+    } catch (error) {
+      console.error('[ChatBot] Error fetching response:', error);
+      const errorReply = {
+        id: Date.now().toString(),
+        text: 'Lo siento, tuve un problema al conectarme con mis circuitos. 🔌 Asegúrate de que el backend esté corriendo.',
         from: 'bot'
       };
-      setMessages(prev => [...prev, botReply]);
+      setMessages(prev => [...prev, errorReply]);
+    } finally {
+      setLoading(false);
       setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
-    }, 1000);
+    }
   };
 
   const renderItem = ({ item }) => (
@@ -92,6 +116,11 @@ const Chatbot = () => {
           renderItem={renderItem}
           contentContainerStyle={styles.chatListContent}
           style={styles.chatList}
+          ListFooterComponent={() => loading && (
+            <View style={[styles.messageBubble, styles.botBubble, darkMode && styles.darkBotBubble, { paddingVertical: 8 }]}>
+              <Text style={[styles.messageText, darkMode && styles.darkText, { fontStyle: 'italic' }]}>Escribiendo...</Text>
+            </View>
+          )}
         />
 
         <View style={[styles.inputContainer, darkMode && styles.darkHeader]}>
@@ -105,8 +134,8 @@ const Chatbot = () => {
           />
           <TouchableOpacity
             onPress={sendMessage}
-            style={[styles.sendButton, !input.trim() && styles.sendButtonDisabled]}
-            disabled={!input.trim()}
+            style={[styles.sendButton, (loading || !input.trim()) && styles.sendButtonDisabled]}
+            disabled={loading || !input.trim()}
           >
             <Ionicons name="send" size={20} color="#FFF" />
           </TouchableOpacity>

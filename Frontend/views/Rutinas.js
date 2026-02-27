@@ -406,7 +406,7 @@ export default function Rutinas() {
 
             {sugerencias.length > 0 && (
               <View style={styles.sugerenciasContainer}>
-                <Text style={styles.sugerenciasTitulo}>Ejercicios sugeridos:</Text>
+                <Text style={[styles.sugerenciasTitulo, darkMode && styles.darkText]}>Ejercicios sugeridos:</Text>
                 <View style={styles.chipsContainer}>
                   {sugerencias.map((ejercicio, index) => (
                     <View key={index} style={[styles.chip, darkMode && styles.darkChip]}>
@@ -417,7 +417,7 @@ export default function Rutinas() {
 
               </View>
             )}
-            <Text style={styles.sugerenciasTitulo}>Dificultad:</Text>
+            <Text style={[styles.sugerenciasTitulo, darkMode && styles.darkText]}>Dificultad:</Text>
             <View style={styles.chipsContainer}>
               {DIFICULTADES.map((nivel) => (
                 <TouchableOpacity
@@ -677,6 +677,7 @@ const styles = StyleSheet.create({
   sugerenciasTitulo: {
     fontWeight: '600',
     marginBottom: 5,
+    color: '#333',
   },
   chipsContainer: {
     flexDirection: 'row',

@@ -10,13 +10,43 @@ chatbotCtl.getAll = async (req, res) => {
     }
 }
 
+const chatbotService = require('../service/chatbotService');
+
 chatbotCtl.create = async (req, res) => {
     try {
-        const newItem = req.body;
-        const docId = await firestoreService.create('chatbot', newItem);
-        res.json({ message: 'Documento creado', id: docId });
+        const { message, userEmail } = req.body;
+
+        // 1. Get AI response
+        const botResponse = await chatbotService.getResponse(message);
+
+        // 2. Save conversation to Firestore (optional but recommended)
+        const chatData = {
+            userEmail: userEmail || 'anonymous',
+            userMessage: message,
+            botResponse: botResponse,
+            createdAt: new Date()
+        };
+        const docId = await firestoreService.create('chatbot_conversations', chatData);
+
+        // 3. Return response to frontend
+        res.json({
+            id: docId,
+            text: botResponse,
+            from: 'bot'
+        });
     } catch (error) {
-        res.status(500).json({ message: 'Error al crear documento', error: error.message });
+        console.error('[chatbotCtl.create] Error:', error);
+        res.status(500).json({ message: 'Error en el chatbot', error: error.message });
+    }
+}
+
+chatbotCtl.ask = async (req, res) => {
+    try {
+        const { message } = req.body;
+        const botResponse = await chatbotService.getResponse(message);
+        res.json({ text: botResponse });
+    } catch (error) {
+        res.status(500).json({ message: 'Error en el chatbot', error: error.message });
     }
 }
 
