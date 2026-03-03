@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput, Platform, SafeAreaView, useColorScheme
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Header from '../src/components/Header';
@@ -134,9 +134,8 @@ export default function Rutinas() {
       const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
         if (firebaseUser) {
           try {
-            const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
             const resp = await axios.get(
-              `http://${host}:8082/api/usuarios/buscar/email/${encodeURIComponent(firebaseUser.email)}`,
+              `${BACKEND_URL}/api/usuarios/buscar/email/${encodeURIComponent(firebaseUser.email)}`,
               { timeout: 5000 }
             );
             if (resp.data && resp.data.nombre) {
@@ -162,6 +161,26 @@ export default function Rutinas() {
     };
   }, []);
 
+  // Recargar rutinas al volver de PantallaRutina
+  useFocusEffect(
+    useCallback(() => {
+      const recargar = async () => {
+        try {
+          const data = await AsyncStorage.getItem('rutinas');
+          if (data) {
+            const parsed = JSON.parse(data);
+            setRutinas({
+              grupo1: parsed.grupo1 || [],
+              predefinidas: parsed.predefinidas || rutinasPredefinidas,
+            });
+          }
+        } catch (e) {
+          console.warn('Error recargando rutinas:', e.message);
+        }
+      };
+      recargar();
+    }, [])
+  );
 
   useEffect(() => {
     const palabraClave = Object.keys(SUGERENCIAS).find((clave) =>
@@ -182,10 +201,29 @@ export default function Rutinas() {
   const handleGuardarRutina = async () => {
     if (!nombreRutina.trim()) return;
 
+    // Obtener userId guardado
+    const userId = await AsyncStorage.getItem('userId');
+
+    let firestoreId = null;
+
+    // 1. Crear en Firestore si hay userId (para obtener un ID real)
+    if (userId) {
+      try {
+        const resp = await axios.post(
+          `${BACKEND_URL}/api/routines/${userId}`,
+          { name: nombreRutina.trim(), exercises: [] },
+          { timeout: 5000 }
+        );
+        firestoreId = resp.data?.id || null;
+      } catch (e) {
+        console.warn('No se pudo crear rutina en Firestore:', e.message);
+      }
+    }
+
     const nuevaRutina = {
-      id: Date.now().toString(),
+      id: firestoreId || Date.now().toString(),
       nombre: nombreRutina.trim(),
-      ejercicios: sugerencias,
+      ejercicios: [],
       dificultad: dificultad || 'Sin definir',
       color: '#264653',
     };
@@ -208,18 +246,8 @@ export default function Rutinas() {
     navigation.navigate('PantallaRutina', {
       rutina,
       grupoKey,
-      actualizarRutina: async (rutinaActualizada) => {
-        setRutinas(prev => {
-          const nuevasRutinas = {
-            ...prev,
-            [grupoKey]: (prev[grupoKey] || []).map((r) =>
-              r.id === rutinaActualizada.id ? rutinaActualizada : r
-            ),
-          };
-          guardarEnStorage(nuevasRutinas);
-          return nuevasRutinas;
-        });
-      },
+      // No pasamos funciones como params (non-serializable)
+      // PantallaRutina actualiza AsyncStorage directamente
     });
   };
 
@@ -259,20 +287,21 @@ export default function Rutinas() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={[styles.horizontalScrollContent, darkMode && { backgroundColor: colors.bg_dark }]}
           style={darkMode && { backgroundColor: colors.bg_dark }}
-        >          {(rutinasGrupo || []).map((rutina) => (
-          <TouchableOpacity
-            key={rutina.id}
-            style={[styles.rutinaCard, darkMode && styles.darkCard, { backgroundColor: rutina.color || (darkMode ? '#1a1a1a' : '#ccc') }]}
-            onPress={() => handleEntrarRutina(rutina, grupoKey)}
-            onLongPress={() => handleLongPress(rutina)}
-          >
-            <Ionicons name="barbell" size={24} color="#fff" />
-            <Text style={styles.rutinaTexto}>{rutina.nombre}</Text>
-            <Text style={styles.rutinaSubTexto}>
-              {rutina.ejercicios.length} ejercicios
-            </Text>
-          </TouchableOpacity>
-        ))}
+        >
+          {(rutinasGrupo || []).map((rutina) => (
+            <TouchableOpacity
+              key={rutina.id}
+              style={[styles.rutinaCard, darkMode && styles.darkCard, { backgroundColor: rutina.color || (darkMode ? '#1a1a1a' : '#ccc') }]}
+              onPress={() => handleEntrarRutina(rutina, grupoKey)}
+              onLongPress={() => handleLongPress(rutina)}
+            >
+              <Ionicons name="barbell" size={24} color="#fff" />
+              <Text style={styles.rutinaTexto}>{rutina.nombre}</Text>
+              <Text style={styles.rutinaSubTexto}>
+                {(rutina.ejercicios || []).length} ejercicios
+              </Text>
+            </TouchableOpacity>
+          ))}
 
           <TouchableOpacity
             style={[styles.addCard, darkMode && styles.darkAddCard]}
@@ -361,7 +390,7 @@ export default function Rutinas() {
 
   return (
     <SafeAreaView style={[styles.container, darkMode && styles.darkContainer]}>
-      <StatusBar style={darkMode ? "light" : "dark"} backgroundColor={darkMode ? colors.bg_dark : "#fff"} translucent={false} />
+      <StatusBar style={darkMode ? "light" : "dark"} />
 
       <View style={[styles.header, darkMode && styles.darkHeader]}>
 

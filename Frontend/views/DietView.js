@@ -126,7 +126,7 @@ export default function DietView({ route }) {
   return (
 
     <View style={[styles.container, darkMode && { backgroundColor: '#000', marginTop: 0, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }]}>
-      <ExpoStatusBar style={darkMode ? "light" : "auto"} backgroundColor={darkMode ? "#000" : "transparent"} translucent={true} />
+      <ExpoStatusBar style={darkMode ? "light" : "auto"} />
       {/* go back button */}
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
         <Ionicons name="arrow-back" size={24} color="#ef2b2d" />

@@ -104,9 +104,15 @@ export default function AddDietMenu({ route }) {
   const addingGroup = Array.isArray(route?.params?.recipes) ? route.params.recipes : [];
 
   /* Rehydrate route.params.diet into a Diet instance so instance methods work */
-  {/*Rehydrate route.params.diet into a Diet instance so instance methods work*/ }
-  const diet = useMemo(() => Diet.from(route?.params?.diet), [route?.params?.diet]);
-  console.log('diet:', diet.getName ? diet.getName() : diet);
+  const diet = useMemo(() => {
+    try {
+      const rawDiet = route?.params?.diet ?? null;
+      return Diet.from(rawDiet);
+    } catch (e) {
+      console.warn('Error rehydrating diet from params:', e.message);
+      return Diet.from(null);
+    }
+  }, [route?.params?.diet]);
 
   /* If getName is null it means that we are creating a recipe */
   let creatingRecipe = false;
@@ -582,7 +588,7 @@ export default function AddDietMenu({ route }) {
   return (
     <>
       <View style={[styles.container, darkMode && { backgroundColor: colors.bg_dark }]}>
-        <StatusBar style={darkMode ? 'light' : 'auto'} backgroundColor={darkMode ? '#000' : 'transparent'} translucent={true} />
+        <StatusBar style={darkMode ? 'light' : 'auto'} />
 
         <Header title={screenTitle} showBackButton={true} darkMode={darkMode} />
 

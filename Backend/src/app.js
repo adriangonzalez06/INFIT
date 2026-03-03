@@ -32,48 +32,30 @@ app.get("/", (req, res) => {
   res.json({ ok: true, message: "API backend" });
 });
 
-// importa rutas
-try {
-  const usersRouter = require('./routes/users.routes');
-  app.use('/api/usuarios', usersRouter);
-  const freeusersRouter = require('./routes/freeUsers');
-  app.use('/api/freeUsers', freeusersRouter);
+// importa rutas (cada una con su propio try/catch para aislar errores)
+const loadRoute = (path, mountAt) => {
+  try {
+    const router = require(path);
+    app.use(mountAt, router);
+    console.log(`✅ Ruta cargada: ${mountAt}`);
+  } catch (e) {
+    console.error(`❌ Error cargando ruta ${mountAt}:`, e.message);
+  }
+};
 
-  const infopersonalizeddietRouter = require('./routes/infopersonalizeddiet');
-  app.use('/api/infopersonalizeddiet', infopersonalizeddietRouter);
-
-  const infogenericdietRouter = require('./routes/infogenericdiet');
-  app.use('/api/infogenericdiet', infogenericdietRouter);
-
-  const infomealsRouter = require('./routes/infomeals');
-  app.use('/api/infomeals', infomealsRouter);
-
-  const answerbotRouter = require('./routes/answerbot');
-  app.use('/api/answerbot', answerbotRouter);
-
-  const chatbotRouter = require('./routes/chatbot');
-  app.use('/api/chatbot', chatbotRouter);
-
-  const documentspdfRouter = require('./routes/documentspdf');
-  app.use('/api/documentspdf', documentspdfRouter);
-
-  const exercisesRouter = require('./routes/exercises');
-  app.use('/api/exercises', exercisesRouter);
-  const routinesRouter = require('./routes/routines');
-  app.use('/api/routines', routinesRouter);
-  const cloudinaryRouter = require('./routes/cloudinary');
-  app.use('/cloudinary', cloudinaryRouter);
-
-  const progressRouter = require('./routes/progress');
-  app.use('/api/progress', progressRouter);
-
-  const userspremiumRouter = require('./routes/userspremium');
-  app.use('/api/userspremium', userspremiumRouter);
-
-  console.log('✅ Todas las rutas cargadas correctamente');
-} catch (e) {
-  console.error('Error cargando routes:', e);
-}
+loadRoute('./routes/users.routes', '/api/usuarios');
+loadRoute('./routes/freeUsers', '/api/freeUsers');
+loadRoute('./routes/infopersonalizeddiet', '/api/infopersonalizeddiet');
+loadRoute('./routes/infogenericdiet', '/api/infogenericdiet');
+loadRoute('./routes/infomeals', '/api/infomeals');
+loadRoute('./routes/answerbot', '/api/answerbot');
+loadRoute('./routes/chatbot', '/api/chatbot');
+loadRoute('./routes/documentspdf', '/api/documentspdf');
+loadRoute('./routes/exercises', '/api/exercises');
+loadRoute('./routes/routines', '/api/routines');
+loadRoute('./routes/cloudinary', '/cloudinary');
+loadRoute('./routes/progress', '/api/progress');
+loadRoute('./routes/userspremium', '/api/userspremium');
 
 // Cloudinary fuera del try/catch para que un fallo de otras rutas no lo tape
 try {

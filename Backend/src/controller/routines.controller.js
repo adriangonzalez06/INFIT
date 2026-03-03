@@ -97,7 +97,7 @@ routinesCtl.updateRoutine = async (req, res) => {
         if (exercises && Array.isArray(exercises)) updateData.exercises = exercises;
 
         const db = firestoreService.getDb();
-        await db.collection('users').doc(userId).collection('routines').doc(routineId).update(updateData);
+        await db.collection('users').doc(userId).collection('routines').doc(routineId).set(updateData, { merge: true });
 
         res.json({ message: 'Rutina actualizada correctamente' });
     } catch (error) {

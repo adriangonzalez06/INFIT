@@ -356,7 +356,7 @@ export default function Feed() {
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={[styles.container, darkMode && styles.darkContainer]}>
-      <StatusBar style={darkMode ? "light" : "dark"} backgroundColor={darkMode ? colors.bg_dark : "#fff"} translucent={false} />
+      <StatusBar style={darkMode ? "light" : "dark"} />
 
       <View style={[styles.header, darkMode && styles.darkHeader]}>
         <Text style={[styles.headerTitle, darkMode && styles.darkText]}>Publicaciones</Text>
