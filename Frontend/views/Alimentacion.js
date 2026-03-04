@@ -216,12 +216,12 @@ export default function Alimentacion() {
     const p5 = dishes[4] || new Dish(5, "Plato 5", require('../assets/images/images_dish/dish_05.jpg'), [], false, false, false);
     const p6 = dishes[5] || new Dish(6, "Plato 6", require('../assets/images/images_dish/dish_06.jpg'), [], false, false, false);
 
-    const r1 = new Diet(1, 'Dieta Balanceada', 'descripcion', require('../assets/images/images_diet/diet_02.jpg'), [[p2, p3, p6], [p6, p4, p5], [p5, p4, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
-    const r2 = new Diet(2, 'Dieta Vegana', 'descripcion', require('../assets/images/images_diet/diet_02.jpg'), [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
-    const r3 = new Diet(3, 'Dieta Cetogénica', 'descripcion', require('../assets/images/images_diet/diet_01.jpg'), [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
-    const r4 = new Diet(4, 'Dieta Mediterránea', 'descripcion', require('../assets/images/images_diet/diet_01.jpg'), [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
-    const r5 = new Diet(5, 'Dieta Alta en Proteínas', 'descripcion', require('../assets/images/images_diet/diet_01.jpg'), [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
-    const r6 = new Diet(6, 'Dieta Baja en Carbohidratos', 'descripcion', require('../assets/images/images_diet/diet_01.jpg'), [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
+    const r1 = new Diet(1, 'Dieta Balanceada', 'descripcion', 'https://res.cloudinary.com/do0tjcogk/image/upload/v1772623173/top-view-healthy-diet-salad-with-grilled-chicken-broccoli-cauliflower-tomato-lettuce-avocado-lettuce_plaiob.jpg', [[p2, p3, p6], [p6, p4, p5], [p5, p4, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
+    const r2 = new Diet(2, 'Dieta Vegana', 'descripcion', 'https://res.cloudinary.com/do0tjcogk/image/upload/v1772623960/VEGANA_gxtex5.jpg', [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
+    const r3 = new Diet(3, 'Dieta Cetogénica', 'descripcion', 'https://res.cloudinary.com/do0tjcogk/image/upload/v1772624464/cetogenica_csds2j.jpg', [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
+    const r4 = new Diet(4, 'Dieta Mediterránea', 'descripcion', 'https://res.cloudinary.com/do0tjcogk/image/upload/v1772624663/mediterrania_wwn3wb.jpg', [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
+    const r5 = new Diet(5, 'Dieta Alta en Proteínas', 'descripcion', 'https://res.cloudinary.com/do0tjcogk/image/upload/v1772624865/proteina_vodu73.webp', [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
+    const r6 = new Diet(6, 'Dieta Baja en Carbohidratos', 'descripcion', 'https://res.cloudinary.com/do0tjcogk/image/upload/v1772623173/top-view-healthy-diet-salad-with-grilled-chicken-broccoli-cauliflower-tomato-lettuce-avocado-lettuce_plaiob.jpg', [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
 
     return [r1, r2, r3, r4, r5, r6];
   };
