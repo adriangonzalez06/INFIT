@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
@@ -614,12 +615,7 @@ export default function ProfileScreen() {
           })
         )}
 
-        <TouchableOpacity
-          style={styles.boton}
-          onPress={() => navigation.navigate('AddDietMenu')}
-        >
-          <Text style={styles.botonTexto}>Añadir nuevo registro</Text>
-        </TouchableOpacity>
+
         <AppModal
           visible={modal.visible}
           type={modal.type}

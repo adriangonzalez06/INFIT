@@ -345,31 +345,31 @@ export default function AddDietMenu({ route }) {
     return (
 
       <View key={ingredient.id}>
-        <Text style={styles.title_2}>{grams}g de {ingredient.name}</Text>
+        <Text style={[styles.title_2, darkMode && styles.darkText]}>{grams}g de {ingredient.name}</Text>
 
         <View style={styles.totalsContainer}>
-          <Text style={styles.title_3}>Calorías</Text>
-          <Text style={styles.text}>{(ingredient.calories * grams) / 100} kcal</Text>
+          <Text style={[styles.title_3, darkMode && styles.darkText]}>Calorías</Text>
+          <Text style={[styles.text, darkMode && styles.darkText]}>{(ingredient.calories * grams) / 100} kcal</Text>
         </View>
 
         <View style={styles.totalsContainer}>
-          <Text style={styles.title_3}>Fibra</Text>
-          <Text style={styles.text}>{(ingredient.fiber * grams) / 100} g</Text>
+          <Text style={[styles.title_3, darkMode && styles.darkText]}>Fibra</Text>
+          <Text style={[styles.text, darkMode && styles.darkText]}>{(ingredient.fiber * grams) / 100} g</Text>
         </View>
 
         <View style={styles.totalsContainer}>
-          <Text style={styles.title_3}>Carbohidratos</Text>
-          <Text style={styles.text}>{(ingredient.carbohydrates * grams) / 100} g</Text>
+          <Text style={[styles.title_3, darkMode && styles.darkText]}>Carbohidratos</Text>
+          <Text style={[styles.text, darkMode && styles.darkText]}>{(ingredient.carbohydrates * grams) / 100} g</Text>
         </View>
 
         <View style={styles.totalsContainer}>
-          <Text style={styles.title_3}>Grasas</Text>
-          <Text style={styles.text}>{(ingredient.fat * grams) / 100} g</Text>
+          <Text style={[styles.title_3, darkMode && styles.darkText]}>Grasas</Text>
+          <Text style={[styles.text, darkMode && styles.darkText]}>{(ingredient.fat * grams) / 100} g</Text>
         </View>
 
         <View style={styles.totalsContainer}>
-          <Text style={styles.title_3}>Proteína</Text>
-          <Text style={styles.text}>{(ingredient.protein * grams) / 100} g</Text>
+          <Text style={[styles.title_3, darkMode && styles.darkText]}>Proteína</Text>
+          <Text style={[styles.text, darkMode && styles.darkText]}>{(ingredient.protein * grams) / 100} g</Text>
         </View>
 
       </View>
@@ -609,34 +609,34 @@ export default function AddDietMenu({ route }) {
             <Text style={[styles.grupoTitulo, darkMode && { color: '#fff' }]}>Totales</Text>
 
             {/*DIARIO*/}
-            <Text style={styles.title_2}>Diario</Text>
+            <Text style={[styles.title_2, darkMode && styles.darkText]}>Diario</Text>
             <View style={styles.totalsContainer}>
-              <Text style={styles.title_3}>Calorías</Text>
-              <Text style={styles.text}>{calculateDailyTotals(selectedDay).totalCalories} kcal</Text>
+              <Text style={[styles.title_3, darkMode && styles.darkText]}>Calorías</Text>
+              <Text style={[styles.text, darkMode && styles.darkText]}>{calculateDailyTotals(selectedDay).totalCalories} kcal</Text>
             </View>
 
             <View style={styles.totalsContainer}>
-              <Text style={styles.title_3}>Fibra</Text>
-              <Text style={styles.text}>{calculateDailyTotals(selectedDay).totalFiber} g</Text>
+              <Text style={[styles.title_3, darkMode && styles.darkText]}>Fibra</Text>
+              <Text style={[styles.text, darkMode && styles.darkText]}>{calculateDailyTotals(selectedDay).totalFiber} g</Text>
             </View>
 
             <View style={styles.totalsContainer}>
-              <Text style={styles.title_3}>Carbohidratos</Text>
-              <Text style={styles.text}>{calculateDailyTotals(selectedDay).totalCarbs} g</Text>
+              <Text style={[styles.title_3, darkMode && styles.darkText]}>Carbohidratos</Text>
+              <Text style={[styles.text, darkMode && styles.darkText]}>{calculateDailyTotals(selectedDay).totalCarbs} g</Text>
             </View>
 
             <View style={styles.totalsContainer}>
-              <Text style={styles.title_3}>Grasas</Text>
-              <Text style={styles.text}>{calculateDailyTotals(selectedDay).totalFat} g</Text>
+              <Text style={[styles.title_3, darkMode && styles.darkText]}>Grasas</Text>
+              <Text style={[styles.text, darkMode && styles.darkText]}>{calculateDailyTotals(selectedDay).totalFat} g</Text>
             </View>
 
             <View style={styles.totalsContainer}>
-              <Text style={styles.title_3}>Proteína</Text>
-              <Text style={styles.text}>{calculateDailyTotals(selectedDay).totalProtein} g</Text>
+              <Text style={[styles.title_3, darkMode && styles.darkText]}>Proteína</Text>
+              <Text style={[styles.text, darkMode && styles.darkText]}>{calculateDailyTotals(selectedDay).totalProtein} g</Text>
             </View>
 
             {/*SEMANAL*/}
-            <Text style={styles.title_2}>Semanal</Text>
+            <Text style={[styles.title_2, darkMode && styles.darkText]}>Semanal</Text>
 
             <View style={styles.totalsContainer}>
               <Text style={styles.title_3}>Calorías</Text>
@@ -644,23 +644,23 @@ export default function AddDietMenu({ route }) {
             </View>
 
             <View style={styles.totalsContainer}>
-              <Text style={styles.title_3}>Fibra</Text>
-              <Text style={styles.text}>{calculateWeeklyTotals().totalFiber} g</Text>
+              <Text style={[styles.title_3, darkMode && styles.darkText]}>Fibra</Text>
+              <Text style={[styles.text, darkMode && styles.darkText]}>{calculateWeeklyTotals().totalFiber} g</Text>
             </View>
 
             <View style={styles.totalsContainer}>
-              <Text style={styles.title_3}>Carbohidratos</Text>
-              <Text style={styles.text}>{calculateWeeklyTotals().totalCarbs} g</Text>
+              <Text style={[styles.title_3, darkMode && styles.darkText]}>Carbohidratos</Text>
+              <Text style={[styles.text, darkMode && styles.darkText]}>{calculateWeeklyTotals().totalCarbs} g</Text>
             </View>
 
             <View style={styles.totalsContainer}>
-              <Text style={styles.title_3}>Grasas</Text>
-              <Text style={styles.text}>{calculateWeeklyTotals().totalFat} g</Text>
+              <Text style={[styles.title_3, darkMode && styles.darkText]}>Grasas</Text>
+              <Text style={[styles.text, darkMode && styles.darkText]}>{calculateWeeklyTotals().totalFat} g</Text>
             </View>
 
             <View style={styles.totalsContainer}>
-              <Text style={styles.title_3}>Proteína</Text>
-              <Text style={styles.text}>{calculateWeeklyTotals().totalProtein} g</Text>
+              <Text style={[styles.title_3, darkMode && styles.darkText]}>Proteína</Text>
+              <Text style={[styles.text, darkMode && styles.darkText]}>{calculateWeeklyTotals().totalProtein} g</Text>
             </View>
 
             <Text style={[styles.grupoTitulo, darkMode && { color: '#fff' }]}>Elegir imagen</Text>

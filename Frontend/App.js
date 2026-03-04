@@ -191,28 +191,11 @@ function LoginScreen({ navigation }) {
             />
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.google2, darkMode && styles.darkGoogle]}>
-            <Image
-              source={require('./assets/logos/google2.png')}
-              style={{ width: 50, height: 25, justifyContent: 'center', alignSelf: 'center', marginLeft: -20 }}
-              resizeMode="contain"
-            />
-            <Text style={[styles.googletext, darkMode && { color: '#fff' }]}>Google</Text>
-          </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.google3, darkMode && styles.darkGoogle]}>
-            <Image
-              source={require('./assets/logos/google2.png')}
-              style={{ width: 24, height: 24 }}
-              resizeMode="contain"
-            />
-          </TouchableOpacity>
+
+
         </SafeAreaView>
 
-        {/* Boton para ir al menu sin iniciar sesion para no perder tanto tiempo */}
-        <TouchableOpacity style={styles.boton} onPress={() => navigation.navigate('MainTabs')}>
-          <Text style={styles.botonTexto}>Debug ir al menu</Text>
-        </TouchableOpacity>
 
       </ScrollView>
       <AppModal

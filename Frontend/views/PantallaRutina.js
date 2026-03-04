@@ -604,7 +604,7 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.medium_gray,
+    borderBottomColor: colors.gray,
     paddingHorizontal: 20,
   },
   darkItemBorder: {
