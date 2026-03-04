@@ -25,7 +25,7 @@ import { BACKEND_URL } from '../src/config';
 import colors from './colors';
 
 export default function PantallaRutina({ route, navigation }) {
-  const { rutina, grupoKey, actualizarRutina } = route.params;
+  const { rutina, grupoKey } = route.params;
   const colorScheme = useColorScheme();
   const [darkMode, setDarkMode] = useState(colorScheme === 'dark');
 
@@ -64,11 +64,8 @@ export default function PantallaRutina({ route, navigation }) {
   const [backendExercises, setBackendExercises] = useState({}); // { [grupo]: [ejercicios] }
   const [userId, setUserId] = useState(null);
 
-  // Helper para URL
-  const getBackendUrl = (path) => {
-    const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
-    return `http://${host}:8082/api${path}`;
-  };
+  // Helper para URL — usa BACKEND_URL del config.js
+  const getBackendUrl = (path) => `${BACKEND_URL}/api${path}`;
   // Modal de detalles
   const [detallesVisible, setDetallesVisible] = useState(false);
   const [ejercicioEnEdicion, setEjercicioEnEdicion] = useState(null);
@@ -130,19 +127,36 @@ export default function PantallaRutina({ route, navigation }) {
     fetchExercises();
   }, []);
 
-  // Autosave function
-  const saveRoutineChanges = async (newExercises) => {
-    if (!userId || !rutina.id) return;
+  // Guarda la rutina actualizada en AsyncStorage
+  const saveToStorage = async (newExercises) => {
+    try {
+      const data = await AsyncStorage.getItem('rutinas');
+      if (data) {
+        const parsed = JSON.parse(data);
+        const key = grupoKey || 'grupo1';
+        if (parsed[key]) {
+          parsed[key] = parsed[key].map((r) =>
+            r.id === rutina.id ? { ...r, ejercicios: newExercises } : r
+          );
+          await AsyncStorage.setItem('rutinas', JSON.stringify(parsed));
+        }
+      }
+    } catch (e) {
+      console.warn('Error saving to AsyncStorage:', e.message);
+    }
+  };
 
+  // Autosave a Firestore
+  const saveRoutineChanges = async (newExercises) => {
+    // Guardar localmente siempre
+    await saveToStorage(newExercises);
+
+    if (!userId || !rutina.id) return;
     try {
       const url = getBackendUrl(`/routines/${userId}/${rutina.id}`);
-      const payload = {
-        exercises: newExercises
-      };
-      await axios.put(url, payload);
+      await axios.put(url, { exercises: newExercises });
     } catch (error) {
-      console.error('Error autosaving routine:', error);
-      Alert.alert('Error', 'No se pudieron guardar los cambios en la nube');
+      console.warn('Error autosaving to Firestore:', error.message);
     }
   };
 
@@ -161,7 +175,6 @@ export default function PantallaRutina({ route, navigation }) {
     const nuevaLista = [...ejercicios, nuevoEjercicio];
     setEjercicios(nuevaLista);
     await saveRoutineChanges(nuevaLista);
-    actualizarRutina({ ...rutina, ejercicios: nuevaLista });
 
     setBuscadorVisible(false);
     setFiltro('');
@@ -177,7 +190,6 @@ export default function PantallaRutina({ route, navigation }) {
     const nuevaLista = ejercicios.filter((e) => e.id !== ejercicioSeleccionado.id);
     setEjercicios(nuevaLista);
     await saveRoutineChanges(nuevaLista);
-    actualizarRutina({ ...rutina, ejercicios: nuevaLista });
 
     setOpcionesVisible(false);
   };
@@ -193,7 +205,6 @@ export default function PantallaRutina({ route, navigation }) {
     const nuevaLista = [...ejercicios, copia];
     setEjercicios(nuevaLista);
     await saveRoutineChanges(nuevaLista);
-    actualizarRutina({ ...rutina, ejercicios: nuevaLista });
 
     setOpcionesVisible(false);
   };
@@ -316,9 +327,9 @@ export default function PantallaRutina({ route, navigation }) {
                 return (
                   <View>
                     <Text style={[styles.grupoTitulo, darkMode && { color: colors.primary }]}>{grupo.toUpperCase()}</Text>
-                    {filteredList.map((ejercicio) => (
+                    {filteredList.map((ejercicio, idx) => (
                       <TouchableOpacity
-                        key={ejercicio.id || ejercicio.name}
+                        key={ejercicio.id || ejercicio.name || `ej-${idx}`}
                         style={styles.ejercicioItemModal}
                         onPress={() => {
                           setModoEdicion(false);

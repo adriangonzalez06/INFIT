@@ -365,7 +365,7 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={[styles.mainContainer, darkMode && styles.darkContainer]}>
-      <StatusBar style={darkMode ? "light" : "dark"} backgroundColor={darkMode ? colors.bg_dark : "#fff"} translucent={false} />
+      <StatusBar style={darkMode ? "light" : "dark"} />
 
       {/* Cabecera normal (fuera del ScrollView para consistencia) */}
       <View style={[styles.headerContent, darkMode && styles.darkHeaderContent]}>

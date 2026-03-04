@@ -159,7 +159,7 @@ export default class Diet {
   }
 
   setUrl(url) {
-    url = this.imgUrl;
+    this.imgUrl = url;
   }
 
 }

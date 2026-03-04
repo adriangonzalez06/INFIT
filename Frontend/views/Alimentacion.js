@@ -329,11 +329,7 @@ export default function Alimentacion() {
     <SafeAreaView style={[styles.container, darkMode && { backgroundColor: colors.bg_dark }]}>
 
 
-      <StatusBar
-        style={darkMode ? 'light' : 'dark'}
-        backgroundColor={darkMode ? colors.bg_dark : '#fff'}
-        translucent={false}
-      />
+      <StatusBar style={darkMode ? 'light' : 'dark'} />
 
 
       <View style={[styles.header, darkMode && styles.darkHeader]}>

@@ -16,10 +16,15 @@ import axios from 'axios';
 import {
   getAuth,
   signInWithEmailAndPassword,
+  initializeAuth,
   getReactNativePersistence,
   updateProfile,
 } from 'firebase/auth';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // { changed code }
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Logos SVG como componentes React (react-native-svg-transformer los convierte en componentes)
+import LogoRedBg from './assets/logos/logo_red_bg.svg';
+import LogoWhiteBg from './assets/logos/logo_white_bg.svg';
 
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -52,9 +57,15 @@ const Stack = createNativeStackNavigator();
 
 // Inicialización segura de Firebase
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-const auth = getAuth(app, {
-  persistence: getReactNativePersistence(AsyncStorage),
-});
+let auth;
+try {
+  auth = initializeAuth(app, {
+    persistence: getReactNativePersistence(AsyncStorage),
+  });
+} catch (e) {
+  // Si ya fue inicializado, reutilizar
+  auth = getAuth(app);
+}
 
 function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -145,10 +156,11 @@ function LoginScreen({ navigation }) {
     >
       <StatusBar hidden={true} />
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <Image
-          style={styles.logo}
-          source={darkMode ? require('./assets/logos/logo_red_bg.svg') : require('./assets/logos/logo_white_bg.svg')}
-        />
+        {darkMode ? (
+          <LogoRedBg width={200} height={200} style={{ alignSelf: 'center', marginBottom: 10 }} />
+        ) : (
+          <LogoWhiteBg width={200} height={200} style={{ alignSelf: 'center', marginBottom: 10 }} />
+        )}
         <SafeAreaView>
           <TextInput
             style={[styles.input, darkMode && styles.darkInput]}
