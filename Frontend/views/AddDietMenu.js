@@ -404,7 +404,7 @@ export default function AddDietMenu({ route }) {
     console.log("tiene id?", dish);
 
     return (
-      <TouchableOpacity key={dish.id} onPress={() => showModal(dish.getIngredientsWithGrams())} onLongPress={() => handleDeleteDish(index)}>
+      <TouchableOpacity key={dish.id} onPress={() => showModal(dish.getIngredientsWithGrams())}>
         <View style={[styles.dishContainer, darkMode && styles.darkDishContainer]}>
           <Image
             style={styles.dishImage}
