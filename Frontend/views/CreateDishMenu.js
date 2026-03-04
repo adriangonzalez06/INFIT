@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput,
   SafeAreaView, Image, ImageBackground, Animated, Dimensions, FlatList
@@ -19,6 +19,8 @@ import colors from './colors';
 import { LabelTextInput } from '../src/components/LabelTextInput';
 import { SearchMenu } from '../src/components/SearchMenu';
 import Header from '../src/components/Header';
+import { getAllIngredients } from '../src/services/IngredientsService';
+import { saveMeal } from '../src/services/MealsService';
 
 
 export default function CreateDishMenu({ route }) {
@@ -29,19 +31,36 @@ export default function CreateDishMenu({ route }) {
   const imgMenuRef = useRef(null);
   const searchMenuRef = useRef(null);
 
-  //id, name, imgUrl, calories, fiber, carbohydrates, fat, protein)
-  let in1 = new Ingredient(1, "Manzana", 30, 2, 12, 2, 3);
-  let in2 = new Ingredient(2, "Carne", 40, 4, 14, 3, 1);
-  let in3 = new Ingredient(3, "Huevo", 50, 4, 14, 3, 1);
+  // Estado para almacenar todos los ingredientes cargados desde la BD
+  const [allAvailableIngredients, setAllAvailableIngredients] = useState([]);
 
-  let ingredients = [
-    { ingredient: in1, grams: 150 },
-    { ingredient: in2, grams: 110 },
-    { ingredient: in3, grams: 50 },
-  ];
+  {/*cargar ingredientes desde la base de datos al montar el componente*/ }
+  useEffect(() => {
+    const loadIngredients = async () => {
+      try {
+        console.log('🔄 Iniciando carga de ingredientes...');
+        const ingredients = await getAllIngredients();
+        console.log('📦 Respuesta de getAllIngredients:', ingredients);
+        console.log('📊 Tipo de respuesta:', typeof ingredients, 'Es array:', Array.isArray(ingredients));
 
-  {/*array de todos los ingredientes*/ }
-  const allAvailableIngredients = [in1, in2, in3];
+        if (ingredients && ingredients.length > 0) {
+          console.log('✅ Ingredientes cargados en CreateDishMenu:', ingredients.length);
+          console.log('🔍 Primer ingrediente:', ingredients[0]);
+          setAllAvailableIngredients(ingredients);
+        } else {
+          console.warn('⚠️ No se obtuvieron ingredientes de la base de datos');
+          console.warn('Valor de ingredients:', ingredients);
+          setAllAvailableIngredients([]);
+        }
+      } catch (error) {
+        console.error('❌ Error cargando ingredientes:', error);
+        console.error('Stack:', error.stack);
+        setAllAvailableIngredients([]);
+      }
+    };
+
+    loadIngredients();
+  }, []);
 
   //imagenes para la dieta
   const images = [
@@ -136,6 +155,11 @@ export default function CreateDishMenu({ route }) {
   const [dishName, setDishName] = useState('');
   const [dishDescription, setDishDescription] = useState('');
   const [allDishes, setAllDishes] = useState([]);
+
+  // Estados para el modal de añadir ingrediente con gramos
+  const [showAddIngredientGramsModal, setShowAddIngredientGramsModal] = useState(false);
+  const [selectedIngredientToAdd, setSelectedIngredientToAdd] = useState(null);
+  const [tempGrams, setTempGrams] = useState('100');
   const [darkMode, setDarkMode] = useState(false);
   const [appModal, setAppModal] = useState({ visible: false, type: 'info', title: '', message: '' });
   const showAppModal = (type, title, message) => setAppModal({ visible: true, type, title, message });
@@ -202,7 +226,7 @@ export default function CreateDishMenu({ route }) {
   {/*-------FUNCIONES DE MENU DESPLEGABLE--------*/ }
   {/*componente personalizado para renderizar items en el SearchMenu*/ }
   const renderIngredientItemMenu = ({ item }) => (
-    <TouchableOpacity onPress={() => { handleAddIngredient(item); searchMenuRef.current?.cerrarMenu?.(); }}>
+    <TouchableOpacity onPress={() => { handleAddIngredient(item); }}>
       {renderIngredientBody({ item })}
     </TouchableOpacity>
   );
@@ -303,8 +327,28 @@ export default function CreateDishMenu({ route }) {
   };
 
   const handleAddIngredient = (selectedIngredient) => {
-    dish.addIngredient({ ingredient: selectedIngredient, grams: 100 });
+    // Mostrar modal para pedir los gramos
+    setSelectedIngredientToAdd(selectedIngredient);
+    setTempGrams('100');
+    setShowAddIngredientGramsModal(true);
+  };
+
+  const handleConfirmAddIngredient = () => {
+    if (!selectedIngredientToAdd) return;
+
+    const parsedGrams = parseInt(tempGrams);
+    if (isNaN(parsedGrams) || parsedGrams <= 0) {
+      Alert.alert('Error', 'Por favor ingrese una cantidad válida de gramos');
+      return;
+    }
+
+    dish.addIngredient({ ingredient: selectedIngredientToAdd, grams: parsedGrams });
     setIngredientsWithGrams([...dish.getIngredientsWithGrams()]);
+
+    setShowAddIngredientGramsModal(false);
+    setSelectedIngredientToAdd(null);
+    setTempGrams('100');
+    searchMenuRef.current?.cerrarMenu?.();
   };
 
   {/*funcion para eliminar un ingrediente del plato*/ }
@@ -331,6 +375,37 @@ export default function CreateDishMenu({ route }) {
       ingredientWithGrams.grams = grams;
       setIngredientsWithGrams([...dish.getIngredientsWithGrams()]);
     }
+  };
+
+  const renderAddIngredientGramsModal = () => {
+    return (
+      <Modal visible={showAddIngredientGramsModal} transparent animationType="fade" onRequestClose={() => setShowAddIngredientGramsModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>¿Cuántos gramos de {selectedIngredientToAdd?.name}?</Text>
+            <Text style={styles.modalSubtitle}>Los valores nutricionales en la base de datos están por 100g</Text>
+            <LabelTextInput
+              label="Cantidad en gramos"
+              placeholder="100"
+              onChangeText={setTempGrams}
+              value={tempGrams}
+              keyboardType="numeric"
+              maxLength={6}
+            />
+            <View style={styles.modalButtons}>
+              <View style={{ flex: 1, justifyContent: 'flex-end', flexDirection: 'row', gap: 10, marginTop: 10 }}>
+                <TouchableOpacity onPress={() => setShowAddIngredientGramsModal(false)} style={[styles.modalButton, { backgroundColor: '#ccc' }]}>
+                  <Text style={styles.modalButtonText}>Cancelar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleConfirmAddIngredient} style={styles.modalButton}>
+                  <Text style={styles.modalButtonText}>Añadir</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    );
   };
 
   const renderSelectGramsModal = () => {
@@ -406,44 +481,92 @@ export default function CreateDishMenu({ route }) {
   // Guarda el plato
   const saveDish = async () => {
     try {
-      //id con la fecha para que sea unico
-      dish.id = Date.now();
-      //nombre con la fecha para que sea unico por si no tiene nombre
-      dish.name = name || `Dish ${new Date().toLocaleDateString()}`;
-      dish.imgUrl = selectedUri;
-      dish.calories = calculateTotals(dish).totalCalories;
-      dish.fiber = calculateTotals(dish).totalFiber;
-      dish.carbohydrates = calculateTotals(dish).totalCarbs;
-      dish.fat = calculateTotals(dish).totalFat;
-      dish.protein = calculateTotals(dish).totalProtein;
-      //lista de ingredientes con gramos
-      dish.ingredients = ingredientsWithGrams;
+      // Validar que tenga nombre
+      if (!name || name.trim() === '') {
+        Alert.alert('Error', 'Por favor ingresa un nombre para el plato');
+        return;
+      }
 
-      // Serializar dish (convertir a objeto plano)
-      const dishToSave = {
-        id: dish.id,
-        name: dish.name,
-        imgUrl: dish.imgUrl,
-        ingredients: dish.ingredients.map(({ ingredient, grams }) => ({
-          ingredient: {
-            id: ingredient.id,
-            name: ingredient.name,
-            calories: ingredient.calories,
-            fiber: ingredient.fiber,
-            carbohydrates: ingredient.carbohydrates,
-            fat: ingredient.fat,
-            protein: ingredient.protein,
-          },
+      // Validar que tenga al menos un ingrediente
+      if (!ingredientsWithGrams || ingredientsWithGrams.length === 0) {
+        Alert.alert('Error', 'Por favor añade al menos un ingrediente al plato');
+        return;
+      }
+
+      // Obtener userID del AsyncStorage
+      const userDocId = await AsyncStorage.getItem("userDocId");
+      if (!userDocId) {
+        Alert.alert('Error', 'No se pudo obtener la información del usuario. Por favor inicia sesión nuevamente.');
+        return;
+      }
+
+      // Calcular macronutrientes
+      const totals = calculateTotals(dish);
+
+      // Preparar datos del plato para el backend
+      const mealData = {
+        name: name.trim(),
+        imgUrl: selectedUri,
+        createdBy: userDocId,
+        ingredients: ingredientsWithGrams.map(({ ingredient, grams }) => ({
+          id: ingredient.id,
+          name: ingredient.name,
+          calories: ingredient.calories,
+          fiber: ingredient.fiber,
+          carbohydrates: ingredient.carbohydrates,
+          fat: ingredient.fat,
+          protein: ingredient.protein,
           grams: grams,
         })),
+        calories: totals.totalCalories,
+        kcal: totals.totalCalories,
+        fiber: totals.totalFiber,
+        carbs: totals.totalCarbs,
+        carbohydrates: totals.totalCarbs,
+        fat: totals.totalFat,
+        protein: totals.totalProtein,
+        vegetarian: dish.vegetarian || false,
+        vegan: dish.vegan || false,
+        gluten_free: dish.gluten_free || false,
+      };
+
+      // Guardar el plato en el backend
+      console.log('📨 Guardando plato en el backend:', mealData);
+      const response = await saveMeal(mealData);
+
+      // Obtener el ID del plato guardado
+      const savedDishId = response.id;
+      console.log('✅ Plato guardado con ID:', savedDishId);
+
+      // Actualizar el objeto del plato con el ID del backend
+      dish.id = savedDishId;
+      dish.name = name;
+      dish.imgUrl = selectedUri;
+      dish.calories = totals.totalCalories;
+      dish.fiber = totals.totalFiber;
+      dish.carbohydrates = totals.totalCarbs;
+      dish.fat = totals.totalFat;
+      dish.protein = totals.totalProtein;
+      dish.ingredients = ingredientsWithGrams;
+
+      // Serializar dish para añadirlo al grupo
+      const dishToAdd = {
+        id: savedDishId,
+        name: dish.name,
+        imgUrl: dish.imgUrl,
+        ingredients: ingredientsWithGrams,
         calories: dish.calories,
         fiber: dish.fiber,
         carbohydrates: dish.carbohydrates,
         fat: dish.fat,
-        protein: dish.protein
+        protein: dish.protein,
+        vegetarian: dish.vegetarian || false,
+        vegan: dish.vegan || false,
+        gluten_free: dish.gluten_free || false,
       };
 
-      addingGroup.push(dishToSave);
+      // Añadir el plato al grupo (array de platos de la dieta)
+      addingGroup.push(dishToAdd);
 
       setDishName('');
       setDishDescription('');
@@ -538,6 +661,9 @@ export default function CreateDishMenu({ route }) {
 
         {/* render modal para seleccionar gramos */}
         {renderSelectGramsModal()}
+
+        {/* render modal para añadir ingrediente con gramos */}
+        {renderAddIngredientGramsModal()}
 
         {/*menu buscar ingredientes*/}
         <SearchMenu

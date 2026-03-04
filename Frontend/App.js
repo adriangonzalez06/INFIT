@@ -114,11 +114,13 @@ function LoginScreen({ navigation }) {
           return;
         }
 
-        // Guardar userId y streak en AsyncStorage
-        await AsyncStorage.setItem('userId', userId);
+      // Guardar userDocId y streak en AsyncStorage (usando 'userDocId' para consistencia)
+        // Primero limpiar cualquier valor antiguo para evitar confusiones
+        await AsyncStorage.removeItem('userId');  // Limpiar el nombre antiguo si existe
+        await AsyncStorage.setItem('userDocId', userId);
         await AsyncStorage.setItem('streak', (streak || 0).toString());
-        console.log('userId guardado en AsyncStorage:', userId);
-        console.log('streak guardado en AsyncStorage:', streak || 0);
+        console.log('✅ userId guardado en AsyncStorage:', userId);
+        console.log('✅ streak guardado en AsyncStorage:', streak || 0);
 
       } catch (e) {
         console.error('Error obteniendo usuario del backend:', e?.message || e);

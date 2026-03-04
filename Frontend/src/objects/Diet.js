@@ -1,14 +1,15 @@
+
 import Ingredient from "./Ingredient";
 import Dish from "./Dish";
 
 const DAYS_OF_WEEK = [
-  'Monday',
-  'Tuesday',
-  'Wednseday',
-  'Thursday',
-  'Friday',
-  'Satunday',
-  'Sunday'
+  "Monday",
+  "Tuesday",
+  "Wednseday",
+  "Thursday",
+  "Friday",
+  "Satunday",
+  "Sunday"
 ];
 
 export default class Diet {
@@ -17,62 +18,53 @@ export default class Diet {
     this.name = name;
     this.description = description;
     this.imgUrl = imgUrl;
-    // Array de 7 días, cada día contiene un array de Dishes
-    //verifica si weeklyDishes tiene 7 elementos, si no, inicializa con arrays vacíos
-    this.weeklyDishes = weeklyDishes.length === 7
-      ? weeklyDishes
-      : Array(7).fill(null).map(() => []);
+
+    // Asegurar un array de 7 días
+    this.weeklyDishes =
+      Array.isArray(weeklyDishes) && weeklyDishes.length === 7
+        ? weeklyDishes
+        : Array(7).fill(null).map(() => []);
   }
 
-  // Obtener platos de un día específico
   getDishesForDay(dayIndex) {
     if (dayIndex < 0 || dayIndex > 6) {
-      throw new Error('El índice del día debe estar entre 0 y 6');
+      throw new Error("El índice del día debe estar entre 0 y 6");
     }
     return this.weeklyDishes[dayIndex];
   }
 
-  // Reconstruir Diet desde un objeto plano (p.ej. route params / JSON) al pasar objetos por route paramsse convierten a planos
+  // Reconstrucción desde un objeto plano
   static from(obj) {
-    if (!obj) {
-      return new Diet(null, null, null, null, []);
-    }
+    if (!obj) return new Diet(null, null, null, null, []);
 
-    // weeklyDishes puede llegar como array O como objeto {0:[...], 1:[...], ...}
-    // (Firestore serializa los arrays anidados como objetos con claves string)
     let rawWeekly = obj.weeklyDishes;
     let daysArray = [];
 
     if (Array.isArray(rawWeekly)) {
       daysArray = rawWeekly;
-    } else if (rawWeekly && typeof rawWeekly === 'object') {
-      // Convertir {0:[...], 1:[...], 6:[...]} a array de 7 elementos
-      daysArray = Array.from({ length: 7 }, (_, i) => rawWeekly[i.toString()] || rawWeekly[i] || []);
+    } else if (rawWeekly && typeof rawWeekly === "object") {
+      daysArray = Array.from({ length: 7 }, (_, i) =>
+        rawWeekly[i.toString()] || rawWeekly[i] || []
+      );
+    } else {
+      daysArray = Array(7).fill(null).map(() => []);
     }
 
-    const diet = new Diet(
-      obj.id,
-      obj.name,
-      obj.description,
-      obj.imgUrl,
-      daysArray.map(day =>
-        (Array.isArray(day) ? day : []).map(dishObj => {
-          // ingredients puede llegar como:
-          //   A) [{ingredient: {...}, grams: X}]  ← formato interno correcto
-          //   B) ["string1", "string2"]            ← strings de Firestore
-          //   C) un número (legacy bug)            ← ignorar
-          const rawIng = dishObj.ingredients;
-          const ingredients = Array.isArray(rawIng)
-            ? rawIng.map(item => {
-              if (typeof item === 'string') {
-                // Caso B: string → ingredient plano sin datos nutricionales
+    const weekly = daysArray.map(day =>
+      (Array.isArray(day) ? day : []).map(dishObj => {
+        const rawIng = dishObj?.ingredients;
+
+        const ingredients = Array.isArray(rawIng)
+          ? rawIng
+            .map(item => {
+              if (typeof item === "string") {
                 return {
                   ingredient: new Ingredient(null, item, 0, 0, 0, 0, 0, null),
                   grams: 0
                 };
               }
+
               if (item && item.ingredient) {
-                // Caso A: formato correcto {ingredient, grams}
                 const ing = new Ingredient(
                   item.ingredient?.id,
                   item.ingredient?.name,
@@ -85,55 +77,61 @@ export default class Diet {
                 );
                 return { ingredient: ing, grams: item.grams || 0 };
               }
-              // Caso C u otro formato desconocido → ignorar
-              return null;
-            }).filter(Boolean)
-            : [];
 
-          return new Dish(
-            dishObj.id,
-            dishObj.name,
-            dishObj.imgUrl,
-            ingredients,
-            dishObj.vegetarian,
-            dishObj.vegan,
-            dishObj.gluten_free,
-            dishObj.calories || 0
-          );
-        })
-      )
+              return null;
+            })
+            .filter(Boolean)
+          : [];
+
+        return new Dish(
+          dishObj.id,
+          dishObj.name,
+          dishObj.imgUrl,
+          ingredients,
+          dishObj.vegetarian,
+          dishObj.vegan,
+          dishObj.gluten_free,
+          dishObj.calories || dishObj.kcal || 0,
+          dishObj.fiber || 0,
+          dishObj.carbs || dishObj.carbohydrates || 0,
+          dishObj.fat || 0,
+          dishObj.protein || 0
+        );
+      })
     );
 
-    return diet;
+    return new Diet(
+      obj.id,
+      obj.name,
+      obj.description,
+      obj.imgUrl,
+      weekly
+    );
   }
-
-
-
 
   getAllDishes() {
     return this.weeklyDishes;
   }
 
-  // Agregar plato a un día específico
   addDishToDay(dayIndex, dish) {
     if (dayIndex < 0 || dayIndex > 6) {
-      throw new Error('El índice del día debe estar entre 0 y 6');
+      throw new Error("El índice del día debe estar entre 0 y 6");
     }
     this.weeklyDishes[dayIndex].push(dish);
   }
 
-  //eliminar plato
   deleteDishFromDay(dayIndex, deletingDish) {
     if (dayIndex < 0 || dayIndex > 6) {
-      throw new Error('El índice del día debe estar entre 0 y 6');
+      throw new Error("El índice del día debe estar entre 0 y 6");
     }
-    this.weeklyDishes[dayIndex] = this.weeklyDishes[dayIndex].filter((dish) => dish !== deletingDish);
+    this.weeklyDishes[dayIndex] = this.weeklyDishes[dayIndex].filter(
+      dish => dish !== deletingDish
+    );
   }
 
   getId() {
     return this.id;
   }
-
   setId(id) {
     this.id = id;
   }
@@ -141,7 +139,6 @@ export default class Diet {
   getName() {
     return this.name;
   }
-
   setName(name) {
     this.name = name;
   }
@@ -149,7 +146,6 @@ export default class Diet {
   getDesc() {
     return this.description;
   }
-
   setDesc(desc) {
     this.description = desc;
   }
@@ -157,9 +153,7 @@ export default class Diet {
   getUrl() {
     return this.imgUrl;
   }
-
   setUrl(url) {
     this.imgUrl = url;
   }
-
 }

@@ -108,10 +108,12 @@ function RegisterScreen({ navigation }) {
         const idUser = resp.data?.id;
         const streakVal = 0;
         if (idUser) {
-          //Y la guardamos en el local de la aplicacion
-          await AsyncStorage.setItem('userId', idUser);
+          //Y la guardamos en el local de la aplicacion (usando 'userDocId' para consistencia)
+          // Primero limpiar cualquier valor antiguo para evitar confusiones
+          await AsyncStorage.removeItem('userId');  // Limpiar el nombre antiguo si existe
+          await AsyncStorage.setItem('userDocId', idUser);
           await AsyncStorage.setItem('streak', streakVal.toString());
-          console.log('userId guardado en AsyncStorage:', idUser, streakVal);
+          console.log('✅ userId guardado en AsyncStorage:', idUser, streakVal);
         }
         navigation.navigate('MainTabs')
       } else {

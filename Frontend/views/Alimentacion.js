@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView,
-  SafeAreaView, ImageBackground,
+  SafeAreaView, ImageBackground, Modal,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -82,6 +82,38 @@ export default function Alimentacion() {
   /* ---------- dietas personalizadas del usuario ---------- */
   const [userPersonalizedDiets, setUserPersonalizedDiets] = useState([]);
 
+  /* ---------- CRUD bottom-sheet (solo "Mis dietas") ---------- */
+  const [dietaSeleccionada, setDietaSeleccionada] = useState(null);
+  const [opcionesVisible, setOpcionesVisible] = useState(false);
+
+  const handleLongPressDieta = (diet) => {
+    setDietaSeleccionada(diet);
+    setOpcionesVisible(true);
+  };
+
+  const handleEliminarDieta = async () => {
+    if (!dietaSeleccionada) return;
+    try {
+      const userDocId = await AsyncStorage.getItem('userDocId');
+      const url = `${BACKEND_URL}/api/infopersonalizeddiet/${dietaSeleccionada.id}?userId=${userDocId}`;
+      const response = await fetch(url, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Error al eliminar');
+      // Actualizar estado local sin recargar
+      setUserPersonalizedDiets(prev => prev.filter(d => d.id !== dietaSeleccionada.id));
+      console.log('✅ Dieta eliminada:', dietaSeleccionada.id);
+    } catch (error) {
+      console.error('❌ Error eliminando dieta:', error);
+    }
+    setOpcionesVisible(false);
+  };
+
+  const handleEditarDieta = () => {
+    setOpcionesVisible(false);
+    if (dietaSeleccionada) {
+      navigation.navigate('AddDietMenu', { diet: dietaSeleccionada, isPersonalized: true });
+    }
+  };
+
   useFocusEffect(
     React.useCallback(() => {
       let isMounted = true;
@@ -125,26 +157,64 @@ export default function Alimentacion() {
     }, [])
   );
 
-  /* ---------- dietas por defecto (fallback) ---------- */
+  {/*cargar platos desde Firestore al montar el componente*/ }
+  useEffect(() => {
+    const loadMeals = async () => {
+      try {
+        const meals = await getAllMeals();
+        if (meals && meals.length > 0) {
+          const dishesFromDB = meals.map((meal, index) =>
+            new Dish(
+              meal.id || index,
+              meal.name,
+              meal.imgUrl || require('../assets/images/images_dish/dish_01.jpg'),
+              [],  // Don't pass Firestore string ingredients - use dish macros instead
+              meal.vegetarian || false,
+              meal.vegan || false,
+              meal.gluten_free || false,
+              meal.calories || meal.kcal || 0,
+              meal.fiber || 0,
+              meal.carbs || 0,
+              meal.fat || 0,
+              meal.protein || 0
+            )
+          );
+          setAllDishes(dishesFromDB);
+          console.log('✅ Platos cargados en Alimentacion:', dishesFromDB.length);
+        } else {
+          // Si no hay platos, usar fallback
+          console.warn('⚠️  No se obtuvieron platos, usando fallback');
+          setAllDishes([]);
+        }
+      } catch (error) {
+        console.error('❌ Error cargando platos:', error);
+        setAllDishes([]);
+      }
+    };
+
+    loadMeals();
+  }, []);
+
+  {/* diets de prueba - usar platos dinámicos */ }
   const createDefaultDiets = () => {
     let dishes = allDishes;
     if (dishes.length === 0) {
       dishes = [
-        new Dish(1, 'Ensalada', require('../assets/images/images_dish/dish_01.jpg'), 400, ['ingrediente1', 'ingrediente2'], 500, true, true, false),
-        new Dish(2, 'Carne', require('../assets/images/images_dish/dish_02.jpg'), 400, ['ingrediente1', 'ingrediente2'], 500, false, false, false),
-        new Dish(3, 'Postre', require('../assets/images/images_dish/dish_03.jpg'), 400, ['ingrediente1', 'ingrediente2'], 500, false, false, false),
-        new Dish(4, 'Pescado', require('../assets/images/images_dish/dish_04.jpg'), 400, ['ingrediente1', 'ingrediente2'], 500, false, false, false),
-        new Dish(5, 'Sopa', require('../assets/images/images_dish/dish_05.jpg'), 400, ['ingrediente1', 'ingrediente2'], 500, true, true, false),
-        new Dish(6, 'Pasta', require('../assets/images/images_dish/dish_06.jpg'), 400, ['ingrediente1', 'ingrediente2'], 500, false, false, false),
+        new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), [], true, true, false),
+        new Dish(2, "Carne", require('../assets/images/images_dish/dish_02.jpg'), [], false, false, false),
+        new Dish(3, "Postre", require('../assets/images/images_dish/dish_03.jpg'), [], false, false, false),
+        new Dish(4, "Pescado", require('../assets/images/images_dish/dish_04.jpg'), [], false, false, false),
+        new Dish(5, "Sopa", require('../assets/images/images_dish/dish_05.jpg'), [], true, true, false),
+        new Dish(6, "Pasta", require('../assets/images/images_dish/dish_06.jpg'), [], false, false, false),
       ];
     }
 
-    const p1 = dishes[0] || new Dish(1, 'Plato 1', require('../assets/images/images_dish/dish_01.jpg'), 400, [], 500, false, false, false);
-    const p2 = dishes[1] || new Dish(2, 'Plato 2', require('../assets/images/images_dish/dish_02.jpg'), 400, [], 500, false, false, false);
-    const p3 = dishes[2] || new Dish(3, 'Plato 3', require('../assets/images/images_dish/dish_03.jpg'), 400, [], 500, false, false, false);
-    const p4 = dishes[3] || new Dish(4, 'Plato 4', require('../assets/images/images_dish/dish_04.jpg'), 400, [], 500, false, false, false);
-    const p5 = dishes[4] || new Dish(5, 'Plato 5', require('../assets/images/images_dish/dish_05.jpg'), 400, [], 500, false, false, false);
-    const p6 = dishes[5] || new Dish(6, 'Plato 6', require('../assets/images/images_dish/dish_06.jpg'), 400, [], 500, false, false, false);
+    const p1 = dishes[0] || new Dish(1, "Plato 1", require('../assets/images/images_dish/dish_01.jpg'), [], false, false, false);
+    const p2 = dishes[1] || new Dish(2, "Plato 2", require('../assets/images/images_dish/dish_02.jpg'), [], false, false, false);
+    const p3 = dishes[2] || new Dish(3, "Plato 3", require('../assets/images/images_dish/dish_03.jpg'), [], false, false, false);
+    const p4 = dishes[3] || new Dish(4, "Plato 4", require('../assets/images/images_dish/dish_04.jpg'), [], false, false, false);
+    const p5 = dishes[4] || new Dish(5, "Plato 5", require('../assets/images/images_dish/dish_05.jpg'), [], false, false, false);
+    const p6 = dishes[5] || new Dish(6, "Plato 6", require('../assets/images/images_dish/dish_06.jpg'), [], false, false, false);
 
     const r1 = new Diet(1, 'Dieta Balanceada', 'descripcion', require('../assets/images/images_diet/diet_02.jpg'), [[p2, p3, p6], [p6, p4, p5], [p5, p4, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
     const r2 = new Diet(2, 'Dieta Vegana', 'descripcion', require('../assets/images/images_diet/diet_02.jpg'), [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
@@ -197,7 +267,7 @@ export default function Alimentacion() {
           dietData.id,
           dietData.name,
           dietData.description || '',
-          dietImages[imageIndex],
+          dietData.imgUrl || dietImages[imageIndex],
           weeklyDishesArray
         );
       });
@@ -231,7 +301,7 @@ export default function Alimentacion() {
   };
 
   /* ---------- render helpers ---------- */
-  const renderRecetaCard = (diet) => {
+  const renderRecetaCard = (diet, canEdit = false) => {
     let imageSource;
     if (typeof diet.imgUrl === 'number') {
       imageSource = diet.imgUrl;
@@ -245,14 +315,20 @@ export default function Alimentacion() {
       <TouchableOpacity
         key={diet.id}
         style={[styles.recetaCard, styles.recipeCards, darkMode && styles.darkRecipeCard]}
-        onPress={() => handleEnterDiet(diet)}>
+        onPress={() => handleEnterDiet(diet)}
+        onLongPress={canEdit ? () => handleLongPressDieta(diet) : undefined}
+        delayLongPress={400}>
 
         <ImageBackground
           source={imageSource}
           resizeMode="cover"
           style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', borderRadius: 14, overflow: 'hidden' }}>
           <Text style={styles.recetaTextoTitulo}>{diet.name}</Text>
-          <Text style={styles.recetaTexto}>Subtítulo</Text>
+          {canEdit && (
+            <View style={{ position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 12, padding: 4 }}>
+              <Text style={{ color: '#fff', fontSize: 11, fontWeight: '600' }}>···</Text>
+            </View>
+          )}
         </ImageBackground>
       </TouchableOpacity>
     );
@@ -289,7 +365,7 @@ export default function Alimentacion() {
           contentContainerStyle={{ paddingHorizontal: 15 }}
         >
           {/* Primeras 3 recetas */}
-          {group.recipes.slice(0, 3).map((diet) => renderRecetaCard(diet))}
+          {group.recipes.slice(0, 3).map((diet) => renderRecetaCard(diet, group.canEdit))}
 
           {/* Botón de añadir (solo grupos editables) */}
           {showAddCard(group.canEdit, group)}
@@ -327,6 +403,64 @@ export default function Alimentacion() {
   /* ---------- render principal ---------- */
   return (
     <SafeAreaView style={[styles.container, darkMode && { backgroundColor: colors.bg_dark }]}>
+
+      {/* ── Bottom sheet opciones dieta ("Mis dietas" only) ── */}
+      <Modal visible={opcionesVisible} transparent animationType="slide">
+        <TouchableOpacity
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}
+          activeOpacity={1}
+          onPress={() => setOpcionesVisible(false)}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            style={{
+              backgroundColor: darkMode ? '#1a1a1a' : '#fff',
+              padding: 24,
+              borderTopLeftRadius: 30,
+              borderTopRightRadius: 30,
+              width: '100%',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: -4 },
+              shadowOpacity: 0.1,
+              shadowRadius: 10,
+              elevation: 20,
+            }}
+          >
+            {/* Indicador */}
+            <View style={{ width: 40, height: 5, backgroundColor: darkMode ? '#444' : '#ccc', borderRadius: 3, alignSelf: 'center', marginBottom: 15 }} />
+
+            <Text style={{ fontSize: 24, fontWeight: '800', marginBottom: 20, color: darkMode ? '#fff' : '#1a1a1a', letterSpacing: -0.5 }}>
+              {dietaSeleccionada?.name || 'Opciones'}
+            </Text>
+
+            {/* Editar */}
+            <TouchableOpacity
+              onPress={handleEditarDieta}
+              style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: darkMode ? '#333' : '#eee', gap: 15 }}
+            >
+              <Ionicons name="create-outline" size={22} color={darkMode ? '#ccc' : '#333'} />
+              <Text style={{ fontSize: 16, fontWeight: '600', color: darkMode ? '#ccc' : '#333' }}>Editar dieta</Text>
+            </TouchableOpacity>
+
+            {/* Eliminar */}
+            <TouchableOpacity
+              onPress={handleEliminarDieta}
+              style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: darkMode ? '#333' : '#eee', gap: 15 }}
+            >
+              <Ionicons name="trash-outline" size={22} color="#ef2b2d" />
+              <Text style={{ fontSize: 16, fontWeight: '600', color: '#ef2b2d' }}>Eliminar dieta</Text>
+            </TouchableOpacity>
+
+            {/* Cerrar */}
+            <TouchableOpacity
+              onPress={() => setOpcionesVisible(false)}
+              style={{ marginTop: 20, backgroundColor: darkMode ? '#333' : '#eee', paddingVertical: 14, borderRadius: 16, alignItems: 'center' }}
+            >
+              <Text style={{ fontWeight: '700', fontSize: 16, color: darkMode ? '#888' : '#666' }}>Cancelar</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
 
 
       <StatusBar style={darkMode ? 'light' : 'dark'} />

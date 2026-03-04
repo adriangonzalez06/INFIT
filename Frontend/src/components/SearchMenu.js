@@ -1,4 +1,4 @@
-import React, { useState, useRef, useImperativeHandle, forwardRef, useMemo, useCallback } from 'react';
+import React, { useState, useRef, useImperativeHandle, forwardRef, useMemo, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -56,6 +56,18 @@ export const SearchMenu = forwardRef(({
   );
 
   const slideAnim = useRef(new Animated.Value(windowHeight)).current;
+
+  // Sincronizar selectedData cuando data cambia
+  useEffect(() => {
+    setSelectedData(data);
+    console.log('📊 SearchMenu actualizado con', data.length, 'items');
+  }, [data]);
+
+  // Sincronizar selectedData cuando data cambia
+  useEffect(() => {
+    setSelectedData(data);
+    console.log('📊 SearchMenu actualizado con', data.length, 'items');
+  }, [data]);
 
   {/*}pan responder para arrastrar el sheet*/ }
   const panResponder = useRef(

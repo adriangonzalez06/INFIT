@@ -2,7 +2,7 @@ import Ingredient from './Ingredient';
 
 export default class Dish {
 
-  constructor(id, name, imgUrl, ingredientsWithGrams, vegetarian, vegan, gluten_free, calories = 0) {
+  constructor(id, name, imgUrl, ingredientsWithGrams, vegetarian, vegan, gluten_free, calories = 0, fiber = 0, carbs = 0, fat = 0, protein = 0) {
     this.id = id;
     this.name = name;
     this.imgUrl = imgUrl;
@@ -10,7 +10,11 @@ export default class Dish {
     this.vegetarian = vegetarian;
     this.vegan = vegan;
     this.gluten_free = gluten_free;
-    this.calories = calories; // calorías directas (fallback cuando no hay datos de ingredientes)
+    this.calories = calories; // Calorías totales del plato (fallback cuando no hay ingredientes)
+    this.fiber = fiber;
+    this.carbs = carbs;
+    this.fat = fat;
+    this.protein = protein;
   }
 
   getIngredientsWithGrams() {
@@ -18,7 +22,12 @@ export default class Dish {
   }
 
   getAllIngredients() {
-    return this.ingredients.map(i => i.ingredient);
+    if (!this.ingredients || !Array.isArray(this.ingredients)) {
+      return [];
+    }
+    return this.ingredients
+      .filter(i => i && i.ingredient)
+      .map(i => i.ingredient);
   }
 
   getName() {
@@ -74,7 +83,12 @@ export default class Dish {
       ingredientsWithGrams,
       obj.vegetarian,
       obj.vegan,
-      obj.gluten_free
+      obj.gluten_free,
+      obj.calories || obj.kcal || 0,
+      obj.fiber || 0,
+      obj.carbs || obj.carbohydrates || 0,
+      obj.fat || 0,
+      obj.protein || 0
     );
   }
 
@@ -91,17 +105,20 @@ export default class Dish {
   }
 
   getTotalCalories() {
-    if (!Array.isArray(this.ingredients) || this.ingredients.length === 0) {
-      return this.calories || 0;
+    // Si hay ingredientes con datos, calcular desde ellos
+    if (this.ingredients && Array.isArray(this.ingredients) && this.ingredients.length > 0) {
+      const calculatedCalories = this.ingredients.reduce((total, item) => {
+        if (!item || !item.ingredient) return total;
+        const { calories = 0 } = item.ingredient;
+        const { grams = 0 } = item;
+        return total + ((calories * grams) / 100);
+      }, 0);
+      // Si el cálculo da un resultado > 0, usarlo
+      if (calculatedCalories > 0) return calculatedCalories;
     }
-    const fromIngredients = this.ingredients.reduce((total, item) => {
-      if (!item || !item.ingredient) return total;
-      const cal = item.ingredient.calories || 0;
-      const g = item.grams || 0;
-      return total + (cal * g) / 100;
-    }, 0);
-    // Si los ingredientes no aportan datos (grams todos 0), usar calorías directas
-    return fromIngredients > 0 ? fromIngredients : (this.calories || 0);
+
+    // Si no hay ingredientes o el cálculo da 0, usar las calorías del constructor
+    return this.calories || 0;
   }
 }
 

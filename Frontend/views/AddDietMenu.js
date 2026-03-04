@@ -11,6 +11,9 @@ import Diet from '../src/objects/Diet';
 import Dish from '../src/objects/Dish';
 import { SearchMenu } from '../src/components/SearchMenu';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Alimentacion from './Alimentacion';
+import { getAllMeals, getUserMeals } from '../src/services/MealsService';
+
 import Header from '../src/components/Header';
 import colors from './colors';
 import Ingredient from '../src/objects/Ingredient';
@@ -118,41 +121,146 @@ export default function AddDietMenu({ route }) {
   let creatingRecipe = false;
   if (diet.getName() == null) creatingRecipe = true;
 
+  /* isPersonalized: viene de Alimentacion cuando se pulsa "Editar dieta" */
+  const isPersonalized = route?.params?.isPersonalized ?? false;
+  /* canEdit: mostrar controles de edición tanto al crear como al editar dieta propia */
+  const canEdit = creatingRecipe || isPersonalized;
+
   /* array de todos los platos desde Firestore */
   const [allAvailableDishes, setAllAvailableDishes] = useState([]);
+  {/*array de mis platos creados por el usuario*/ }
+  const [myDishes, setMyDishes] = useState([]);
 
-  /* cargar platos desde Firestore al montar el componente */
-  useEffect(() => {
-    const loadMeals = async () => {
-      try {
+  {/*función para cargar platos desde Firestore*/ }
+  const loadMeals = async () => {
+    try {
+      // Obtener userID del AsyncStorage
+      const userDocId = await AsyncStorage.getItem("userDocId");
+
+      const meals = await getAllMeals();
+      if (meals && meals.length > 0) {
+        console.log('📊 Primera comida de Firestore:', JSON.stringify(meals[0], null, 2));
+        const dishesFromDB = meals.map((meal, index) =>
+          new Dish(
+            meal.id || index,
+            meal.name,
+            meal.imgUrl || require('../assets/images/images_dish/dish_01.jpg'),
+            [],  // Don't pass Firestore string ingredients - use dish macros instead
+            meal.vegetarian || false,
+            meal.vegan || false,
+            meal.gluten_free || false,
+            meal.calories || meal.kcal || 0,
+            meal.fiber || 0,
+            meal.carbs || 0,
+            meal.fat || 0,
+            meal.protein || 0
+          )
+        );
+        console.log('✅ Platos cargados en AddDietMenu:', dishesFromDB.length);
+        console.log('📋 Primer plato objeto:', dishesFromDB[0]);
+        setAllAvailableDishes(dishesFromDB);
+
+        // Cargar solo los platos del usuario actual para "Mis platos"
+        if (userDocId) {
+          const userMealsData = await getUserMeals(userDocId);
+          if (userMealsData && userMealsData.length > 0) {
+            const userDishesFromDB = userMealsData.map((meal, index) =>
+              new Dish(
+                meal.id || index,
+                meal.name,
+                meal.imgUrl || require('../assets/images/images_dish/dish_01.jpg'),
+                [],
+                meal.vegetarian || false,
+                meal.vegan || false,
+                meal.gluten_free || false,
+                meal.calories || meal.kcal || 0,
+                meal.fiber || 0,
+                meal.carbs || 0,
+                meal.fat || 0,
+                meal.protein || 0
+              )
+            );
+            console.log(`✅ Platos del usuario cargados: ${userDishesFromDB.length}`);
+            setMyDishes(userDishesFromDB);
+          } else {
+            console.log('ℹ️ El usuario no tiene platos creados aún');
+            setMyDishes([]);
+          }
+        }
+
+        // Enriquecer dieta existente con macros de Firestore
+        if (!creatingRecipe && diet && diet.weeklyDishes) {
+          const enrichedWeeklyDishes = diet.weeklyDishes.map(dayDishes =>
+            (dayDishes || []).map(dishFromDiet => {
+              // Buscar este dish en los meals de Firestore
+              const firebaseDish = dishesFromDB.find(d => d.id === dishFromDiet.id || d.name === dishFromDiet.name);
+              if (firebaseDish && (!dishFromDiet.fiber && !dishFromDiet.carbs && !dishFromDiet.fat && !dishFromDiet.protein)) {
+                // Si el dish no tiene macros pero lo encontramos en Firestore, copiarlos
+                console.log(`🔄 Enriqueciendo ${dishFromDiet.name} con macros de Firestore`);
+                return new Dish(
+                  dishFromDiet.id,
+                  dishFromDiet.name,
+                  dishFromDiet.imgUrl || firebaseDish.imgUrl,
+                  [],
+                  dishFromDiet.vegetarian,
+                  dishFromDiet.vegan,
+                  dishFromDiet.gluten_free,
+                  firebaseDish.calories,
+                  firebaseDish.fiber,
+                  firebaseDish.carbs,
+                  firebaseDish.fat,
+                  firebaseDish.protein
+                );
+              }
+              return dishFromDiet;
+            })
+          );
+          diet.weeklyDishes = enrichedWeeklyDishes;
+          // Actualizar estado de dishes con los datos enriquecidos
+          setDishes(diet.getDishesForDay(0));
+          setAllDishes(diet.getAllDishes());
+        }
+
+      } else {
+        // Si no hay platos de Firestore, usar fallback
         const fallbackDishes = [
-          new Dish(1, 'Ensalada', require('../assets/images/images_dish/dish_01.jpg'), [], true, true, false),
-          new Dish(2, 'Carne', require('../assets/images/images_dish/dish_02.jpg'), [], false, false, false),
-          new Dish(3, 'Postre', require('../assets/images/images_dish/dish_03.jpg'), [], false, false, false),
-          new Dish(4, 'Pescado', require('../assets/images/images_dish/dish_04.jpg'), [], false, false, false),
-          new Dish(5, 'Sopa', require('../assets/images/images_dish/dish_05.jpg'), [], true, true, false),
-          new Dish(6, 'Pasta', require('../assets/images/images_dish/dish_06.jpg'), [], false, false, false),
+          new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), [], true, true, false),
+          new Dish(2, "Carne", require('../assets/images/images_dish/dish_02.jpg'), [], false, false, false),
+          new Dish(3, "Postre", require('../assets/images/images_dish/dish_03.jpg'), [], false, false, false),
+          new Dish(4, "Pescado", require('../assets/images/images_dish/dish_04.jpg'), [], false, false, false),
+          new Dish(5, "Sopa", require('../assets/images/images_dish/dish_05.jpg'), [], true, true, false),
+          new Dish(6, "Pasta", require('../assets/images/images_dish/dish_06.jpg'), [], false, false, false),
         ];
         setAllAvailableDishes(fallbackDishes);
-      } catch (error) {
-        console.error('❌ Error cargando platos:', error);
+        setMyDishes([]);
+        console.log('⚠️  Usando platos de fallback');
       }
-    };
-    loadMeals();
-  }, []);
+    } catch (error) {
+      console.error('❌ Error cargando platos:', error);
+      // Fallback en caso de error
+      const fallbackDishes = [
+        new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), [], true, true, false),
+        new Dish(2, "Carne", require('../assets/images/images_dish/dish_02.jpg'), [], false, false, false),
+        new Dish(3, "Postre", require('../assets/images/images_dish/dish_03.jpg'), [], false, false, false),
+      ];
+      setAllAvailableDishes(fallbackDishes);
+      setMyDishes([]);
+    }
+  };
 
-  /* mis platos favoritos */
-  const myDishes = [
-    new Dish(1, 'Ensalada', require('../assets/images/images_dish/dish_01.jpg'), [], true, true, false),
-    new Dish(3, 'Postre', require('../assets/images/images_dish/dish_03.jpg'), [], false, false, false),
-  ];
+  {/*cargar platos cuando la pantalla se enfoca (cada vez que vuelves a esta pantalla)*/ }
+  useFocusEffect(
+    React.useCallback(() => {
+      loadMeals();
+    }, [creatingRecipe, diet])
+  );
 
   {/*datos de la dieta*/ }
   {/*selectedDay: 0 = Lunes, 1 = Martes, ... 6 = Domingo*/ }
   const [selectedDay, setSelectedDay] = useState(0);
   const [dishes, setDishes] = useState(diet.getDishesForDay(0));
-  const [dietName, setDietName] = useState('');
-  const [dietDescription, setDietDescription] = useState('');
+  const [dietName, setDietName] = useState(route?.params?.diet?.name || '');
+  const [dietDescription, setDietDescription] = useState(route?.params?.diet?.description || '');
   const [selectedUri, setSelectedUri] = useState(route?.params?.diet?.imgUrl || images[0].url || null);
   const [darkMode, setDarkMode] = useState(false);
   const [appModal, setAppModal] = useState({ visible: false, type: 'info', title: '', message: '' });
@@ -176,7 +284,7 @@ export default function AddDietMenu({ route }) {
   {/*Totales de la diet*/ }
   const totalCalories = (dishes.reduce((sum, p) => sum + (p?.calories || 0), 0));
   const totalFiber = (dishes.reduce((sum, p) => sum + (p?.fiber || 0), 0));
-  const totalCarbs = (dishes.reduce((sum, p) => sum + (p?.carbohydrates || 0), 0));
+  const totalCarbs = (dishes.reduce((sum, p) => sum + (p?.carbs || 0), 0));
   const totalFat = (dishes.reduce((sum, p) => sum + (p?.fat || 0), 0));
   const totalProtein = (dishes.reduce((sum, p) => sum + (p?.protein || 0), 0));
 
@@ -241,7 +349,7 @@ export default function AddDietMenu({ route }) {
   const handleSetImage = (url) => {
     setSelectedUri(url);
     diet.setUrl(url);
-  }
+  };
 
   {/*-------FUNCIONES DE LOS PLATOS--------*/ }
   {/*funcion para agregar un plato a la dieta*/ }
@@ -254,8 +362,24 @@ export default function AddDietMenu({ route }) {
       return;
     };
 
+    {/*Asegurar que el plato tenga todas las propiedades de macros*/ }
+    const dishToAdd = selectedDish instanceof Dish ? selectedDish : new Dish(
+      selectedDish.id,
+      selectedDish.name,
+      selectedDish.imgUrl || require('../assets/images/images_dish/dish_01.jpg'),
+      selectedDish.ingredients || [],
+      selectedDish.vegetarian || false,
+      selectedDish.vegan || false,
+      selectedDish.gluten_free || false,
+      selectedDish.calories || selectedDish.kcal || 0,
+      selectedDish.fiber || 0,
+      selectedDish.carbs || 0,
+      selectedDish.fat || 0,
+      selectedDish.protein || 0
+    );
+
     {/*Añade el plato al día seleccionado dentro de newDiet*/ }
-    diet.addDishToDay(selectedDay, selectedDish);
+    diet.addDishToDay(selectedDay, dishToAdd);
     {/*Actualiza el estado local para re-renderizar la lista del día*/ }
     setDishes([...diet.getDishesForDay(selectedDay)]);
     setAllDishes([...diet.getAllDishes()]);
@@ -391,17 +515,43 @@ export default function AddDietMenu({ route }) {
     let totalFat = 0;
     let totalProtein = 0;
 
-    dish.getIngredientsWithGrams().forEach(({ ingredient, grams }) => {
-      if (!ingredient) return;
-      totalCalories += ((ingredient.calories || 0) * (grams || 0)) / 100;
-      totalFiber += ((ingredient.fiber || 0) * (grams || 0)) / 100;
-      totalCarbs += ((ingredient.carbohydrates || 0) * (grams || 0)) / 100;
-      totalFat += ((ingredient.fat || 0) * (grams || 0)) / 100;
-      totalProtein += ((ingredient.protein || 0) * (grams || 0)) / 100;
-    });
+    const ingredientsWithGrams = dish?.getIngredientsWithGrams?.() || [];
+    console.log('💣 calculateDishTotals:', { dishName: dish?.name, ingredientsCount: ingredientsWithGrams.length, dishCalories: dish?.calories, dishFiber: dish?.fiber, dishCarbs: dish?.carbs });
 
+    if (Array.isArray(ingredientsWithGrams) && ingredientsWithGrams.length > 0) {
+      console.log('🥗 Usando ingredientes...');
+      // Si hay ingredientes, calcular desde ellos
+      ingredientsWithGrams.forEach((item) => {
+        if (!item) return;
+        const { ingredient, grams } = item;
+        if (!ingredient) return;
+        totalCalories += ((ingredient.calories || 0) * (grams || 0)) / 100;
+        totalFiber += ((ingredient.fiber || 0) * (grams || 0)) / 100;
+        totalCarbs += ((ingredient.carbohydrates || 0) * (grams || 0)) / 100;
+        totalFat += ((ingredient.fat || 0) * (grams || 0)) / 100;
+        totalProtein += ((ingredient.protein || 0) * (grams || 0)) / 100;
+      });
+    } else if (dish && (dish.calories !== undefined || dish.fiber !== undefined || dish.carbs !== undefined || dish.fat !== undefined || dish.protein !== undefined)) {
+      console.log('♻️ Usando macros del dish:', { cal: dish.calories, fiber: dish.fiber, carbs: dish.carbs, fat: dish.fat, protein: dish.protein });
+      // Si no hay ingredientes pero hay macros en el plato, usarlos
+      totalCalories = Number(dish.calories) || 0;
+      totalFiber = Number(dish.fiber) || 0;
+      totalCarbs = Number(dish.carbs) || 0;
+      totalFat = Number(dish.fat) || 0;
+      totalProtein = Number(dish.protein) || 0;
+    } else {
+      console.log('⚠️ No hay ingredientes ni macros en el dish:', dish);
+    }
+
+    // Validar que no haya NaN
+    totalCalories = isNaN(totalCalories) ? 0 : totalCalories;
+    totalFiber = isNaN(totalFiber) ? 0 : totalFiber;
+    totalCarbs = isNaN(totalCarbs) ? 0 : totalCarbs;
+    totalFat = isNaN(totalFat) ? 0 : totalFat;
+    totalProtein = isNaN(totalProtein) ? 0 : totalProtein;
+
+    console.log('📊 Totales calculados:', { totalCalories, totalFiber, totalCarbs, totalFat, totalProtein });
     return { totalCalories, totalFiber, totalCarbs, totalFat, totalProtein, }
-
   };
 
   {/*-------FUNCIONES DE LOS TOTALES--------*/ }
@@ -414,16 +564,31 @@ export default function AddDietMenu({ route }) {
     let totalFat = 0;
     let totalProtein = 0;
 
-    diet.getDishesForDay(selectedDay).forEach((dish) => {
-      dish.getIngredientsWithGrams().forEach(({ ingredient, grams }) => {
-        if (!ingredient) return;
+    const dayDishes = diet.getDishesForDay(selectedDay) || [];
+    dayDishes.forEach((dish) => {
+      const ingredientsWithGrams = dish?.getIngredientsWithGrams?.() || [];
 
-        totalCalories += (ingredient.calories * grams) / 100;
-        totalFiber += (ingredient.fiber * grams) / 100;
-        totalCarbs += (ingredient.carbohydrates * grams) / 100;
-        totalFat += (ingredient.fat * grams) / 100;
-        totalProtein += (ingredient.protein * grams) / 100;
-      });
+      if (Array.isArray(ingredientsWithGrams) && ingredientsWithGrams.length > 0) {
+        // Si hay ingredientes, calcular desde ellos
+        ingredientsWithGrams.forEach((item) => {
+          if (!item) return;
+          const { ingredient, grams } = item;
+          if (!ingredient) return;
+
+          totalCalories += ((ingredient.calories || 0) * (grams || 0)) / 100;
+          totalFiber += ((ingredient.fiber || 0) * (grams || 0)) / 100;
+          totalCarbs += ((ingredient.carbohydrates || 0) * (grams || 0)) / 100;
+          totalFat += ((ingredient.fat || 0) * (grams || 0)) / 100;
+          totalProtein += ((ingredient.protein || 0) * (grams || 0)) / 100;
+        });
+      } else if (dish && (dish.calories !== undefined || dish.fiber !== undefined || dish.carbs !== undefined || dish.fat !== undefined || dish.protein !== undefined)) {
+        // Si no hay ingredientes pero hay macros en el plato, usarlos
+        totalCalories += Number(dish.calories) || 0;
+        totalFiber += Number(dish.fiber) || 0;
+        totalCarbs += Number(dish.carbs) || 0;
+        totalFat += Number(dish.fat) || 0;
+        totalProtein += Number(dish.protein) || 0;
+      }
     });
 
     totalCalories = roundNums(totalCalories);
@@ -444,17 +609,32 @@ export default function AddDietMenu({ route }) {
     let totalFat = 0;
     let totalProtein = 0;
 
-    diet.getAllDishes().forEach((dayDishes) => {
+    const allWeeklyDishes = diet.getAllDishes() || [];
+    allWeeklyDishes.forEach((dayDishes) => {
       (dayDishes || []).forEach((dish) => {
-        dish.getIngredientsWithGrams().forEach(({ ingredient, grams }) => {
-          if (!ingredient) return;
+        const ingredientsWithGrams = dish?.getIngredientsWithGrams?.() || [];
 
-          totalCalories += (ingredient.calories * grams) / 100;
-          totalFiber += (ingredient.fiber * grams) / 100;
-          totalCarbs += (ingredient.carbohydrates * grams) / 100;
-          totalFat += (ingredient.fat * grams) / 100;
-          totalProtein += (ingredient.protein * grams) / 100;
-        });
+        if (Array.isArray(ingredientsWithGrams) && ingredientsWithGrams.length > 0) {
+          // Si hay ingredientes, calcular desde ellos
+          ingredientsWithGrams.forEach((item) => {
+            if (!item) return;
+            const { ingredient, grams } = item;
+            if (!ingredient) return;
+
+            totalCalories += ((ingredient.calories || 0) * (grams || 0)) / 100;
+            totalFiber += ((ingredient.fiber || 0) * (grams || 0)) / 100;
+            totalCarbs += ((ingredient.carbohydrates || 0) * (grams || 0)) / 100;
+            totalFat += ((ingredient.fat || 0) * (grams || 0)) / 100;
+            totalProtein += ((ingredient.protein || 0) * (grams || 0)) / 100;
+          });
+        } else if (dish && (dish.calories !== undefined || dish.fiber !== undefined || dish.carbs !== undefined || dish.fat !== undefined || dish.protein !== undefined)) {
+          // Si no hay ingredientes pero hay macros en el plato, usarlos
+          totalCalories += Number(dish.calories) || 0;
+          totalFiber += Number(dish.fiber) || 0;
+          totalCarbs += Number(dish.carbs) || 0;
+          totalFat += Number(dish.fat) || 0;
+          totalProtein += Number(dish.protein) || 0;
+        }
       });
     });
 
@@ -469,13 +649,22 @@ export default function AddDietMenu({ route }) {
 
   {/*redondear numeros para evitar que aparezcan muchos decimales*/ }
   const roundNums = (num) => {
+    // Validar que num no sea NaN
+    if (isNaN(num)) {
+      return "0.00";
+    }
     let roundedNum = Math.round(num * 100) / 100
     return roundedNum.toFixed(2);
-  }
+  };
 
   const saveDiet = async () => {
     try {
-      const userDocId = await AsyncStorage.getItem('userDocId');
+      // Obtener userId del AsyncStorage
+      const userDocId = await AsyncStorage.getItem("userDocId");
+
+      console.log('🔐 ============ SAVING DIET ============');
+      console.log('🔐 UserDocId from AsyncStorage:', userDocId);
+
       if (!userDocId) {
         showAppModal('error', 'Sesión no encontrada', 'No se pudo obtener la información del usuario. Por favor inicia sesión nuevamente.');
         return;
@@ -490,7 +679,8 @@ export default function AddDietMenu({ route }) {
       diet.description = dietDescription?.trim() || '';
       diet.imgUrl = selectedUri;
 
-      // Serializar weeklyDishes (Firestore no admite arrays anidados)
+      // Convertir weeklyDishes a formato compatible con Firestore (objeto con claves numéricas)
+      // Guardamos solo los platos que componen la dieta
       const serializedWeeklyDishes = {};
       diet.weeklyDishes.forEach((dayDishes, dayIndex) => {
         serializedWeeklyDishes[dayIndex.toString()] = (dayDishes || []).map(dish => ({
@@ -498,39 +688,62 @@ export default function AddDietMenu({ route }) {
           name: dish.name,
           imgUrl: dish.imgUrl,
           calories: dish.calories || 0,
-          ingredients: dish.ingredients || [],
+          fiber: dish.fiber || 0,
+          carbs: dish.carbs || 0,
+          fat: dish.fat || 0,
+          protein: dish.protein || 0,
           vegetarian: dish.vegetarian || false,
           vegan: dish.vegan || false,
           gluten_free: dish.gluten_free || false,
         }));
       });
 
+      // Preparar datos SIMPLIFICADOS para enviar a la API
+      // Solo guardamos: userID, nombre, descripción, imagen y los platos
       const dietToSave = {
-        id: diet.id,
-        name: diet.name,
-        description: diet.description,
         userID: userDocId,
-        weeklyDishes: serializedWeeklyDishes,
-        imgUrl: selectedUri || 'https://via.placeholder.com/300x300?text=Dieta',
-        type_diet: 'personalizada',
-        number_meals: 5,
+        name: dietName.trim(),
+        description: dietDescription?.trim() || '',
+        imgUrl: selectedUri,
+        weeklyDishes: serializedWeeklyDishes
       };
 
       const url = `${BACKEND_URL}/api/infopersonalizeddiet`;
       console.log('📤 Enviando dieta a:', url);
+      console.log('🔐 UserID siendo enviado:', userDocId);
+      console.log('📦 Datos:', JSON.stringify(dietToSave, null, 2));
 
       const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(dietToSave),
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Error HTTP ${response.status}`);
+        let errorMessage = 'Error al guardar la dieta';
+        let errorDetails = '';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+          errorDetails = errorData.details || errorData.error || '';
+        } catch (e) {
+          errorMessage = `Error HTTP ${response.status}`;
+        }
+        console.error('❌ Error response:', errorMessage, errorDetails);
+        throw new Error(`${errorMessage}${errorDetails ? ': ' + errorDetails : ''}`);
       }
 
-      console.log('✅ Dieta guardada');
+      const result = await response.json();
+      console.log('✅ Dieta guardada:', result);
+
+      // Actualizar el array local también
+      addingGroup.push({
+        id: result.id,
+        ...dietToSave
+      });
+
       setDietName('');
       setDietDescription('');
       setAllDishes([...diet.getAllDishes()]);
@@ -542,9 +755,73 @@ export default function AddDietMenu({ route }) {
     }
   };
 
+  /* Actualizar dieta personalizada existente (PUT) */
+  const updateDiet = async () => {
+    try {
+      const userDocId = await AsyncStorage.getItem('userDocId');
+      if (!userDocId) {
+        showAppModal('error', 'Sesión no encontrada', 'No se pudo obtener la información del usuario.');
+        return;
+      }
+
+      const dietId = route?.params?.diet?.id;
+      if (!dietId) {
+        showAppModal('error', 'Error', 'No se encontró el ID de la dieta a actualizar.');
+        return;
+      }
+
+      const serializedWeeklyDishes = {};
+      diet.weeklyDishes.forEach((dayDishes, dayIndex) => {
+        serializedWeeklyDishes[dayIndex.toString()] = (dayDishes || []).map(dish => ({
+          id: dish.id,
+          name: dish.name,
+          imgUrl: dish.imgUrl,
+          calories: dish.calories || 0,
+          fiber: dish.fiber || 0,
+          carbs: dish.carbs || 0,
+          fat: dish.fat || 0,
+          protein: dish.protein || 0,
+          vegetarian: dish.vegetarian || false,
+          vegan: dish.vegan || false,
+          gluten_free: dish.gluten_free || false,
+        }));
+      });
+
+      const updateData = {
+        userId: userDocId,
+        name: dietName.trim() || diet.getName(),
+        description: dietDescription?.trim() || diet.getDesc() || '',
+        imgUrl: selectedUri,
+        weeklyDishes: serializedWeeklyDishes,
+        updatedAt: new Date().toISOString(),
+      };
+
+      const url = `${BACKEND_URL}/api/infopersonalizeddiet/${dietId}`;
+      console.log('📤 Actualizando dieta:', url);
+
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updateData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Error HTTP ${response.status}`);
+      }
+
+      console.log('✅ Dieta actualizada correctamente');
+      showAppModal('success', '¡Cambios guardados!', 'La dieta personalizada se ha actualizado correctamente.');
+      navigation.goBack();
+    } catch (err) {
+      console.error('❌ Error actualizando dieta:', err);
+      showAppModal('error', 'Error al guardar', err.message || 'No se pudo actualizar la dieta.');
+    }
+  };
+
   {/*botones y otros elementos*/ }
-  const renderNameInput = (creatingRecipe) => {
-    if (creatingRecipe) {
+  const renderNameInput = (canEdit) => {
+    if (canEdit) {
       return (
         <View style={{ marginVertical: 15 }}>
           <LabelTextInput
@@ -555,34 +832,40 @@ export default function AddDietMenu({ route }) {
             onChangeText={setDietName}
           />
         </View>
-      )
+      );
     }
     return null;
   };
 
-
-  const renderAddDishButton = (creatingRecipe) => {
-    if (creatingRecipe) {
+  const renderAddDishButton = (canEdit) => {
+    if (canEdit) {
       return (
         <TouchableOpacity
           style={styles.addDishButton}
           onPress={() => searchMenuRef.current?.abrirMenu()}
         >
-          <Text>+ Añadir plato</Text>
+          <Text style={{ color: darkMode ? '#fff' : '#111' }}>+ Añadir plato</Text>
         </TouchableOpacity>
-      )
+      );
     }
     return null;
   };
 
-  const renderSaveChangesButton = (creatingRecipe) => {
-    if (creatingRecipe) {
+  const renderSaveChangesButton = (canEdit) => {
+    if (canEdit) {
       return (
-        <TouchableOpacity style={styles.button} onPress={saveDiet}><Text style={styles.buttonText}>{creatingRecipe ? "Guardar Dieta" : "Guardar Cambios"}</Text></TouchableOpacity>
-
-      )
+        <TouchableOpacity
+          style={styles.button}
+          onPress={isPersonalized ? updateDiet : saveDiet}
+        >
+          <Text style={styles.buttonText}>
+            {isPersonalized ? 'Guardar Cambios' : 'Guardar Dieta'}
+          </Text>
+        </TouchableOpacity>
+      );
     }
-  }
+    return null;
+  };
 
 
   return (
@@ -593,9 +876,9 @@ export default function AddDietMenu({ route }) {
         <Header title={screenTitle} showBackButton={true} darkMode={darkMode} />
 
         <ScrollView contentContainerStyle={[styles.scrollContent, darkMode && { backgroundColor: '#111' }]} showsVerticalScrollIndicator={false}>
-          <View style={styles.grupoContainer}>
+          <View style={[styles.grupoContainer, { paddingHorizontal: 16, paddingTop: 16 }]}>
 
-            {renderNameInput(creatingRecipe)}
+            {renderNameInput(canEdit)}
 
             <View style={styles.daysContainer}>
               <TouchableOpacity style={[styles.dayButton, { backgroundColor: 0 === bttId ? colors.light_gray : (darkMode ? '#333' : colors.white) }]} onPress={() => { setSelectedDay(0); setDishes(diet.getDishesForDay(0)); setBttId(0); }}><Text style={darkMode && { color: '#fff' }}>L</Text></TouchableOpacity>
@@ -607,67 +890,138 @@ export default function AddDietMenu({ route }) {
               <TouchableOpacity style={[styles.dayButton, { backgroundColor: 6 === bttId ? colors.light_gray : (darkMode ? '#333' : colors.white) }]} onPress={() => { setSelectedDay(6); setDishes(diet.getDishesForDay(6)); setBttId(6); }}><Text style={darkMode && { color: '#fff' }}>D</Text></TouchableOpacity>
             </View>
 
-            {renderAddDishButton(creatingRecipe)}
+            {renderAddDishButton(canEdit)}
 
             {/*renderizar todos los dishes que haya en el día seleccionado*/}
             {renderDishList()}
 
-            <Text style={[styles.grupoTitulo, darkMode && { color: '#fff' }]}>Totales</Text>
+            {/* ── PANEL DE TOTALES ── */}
+            <Text style={[styles.grupoTitulo, { marginTop: 10, marginBottom: 4 }, darkMode && { color: '#fff' }]}>
+              Totales
+            </Text>
 
-            {/*DIARIO*/}
-            <Text style={[styles.title_2, darkMode && styles.darkText]}>Diario</Text>
-            <View style={styles.totalsContainer}>
-              <Text style={[styles.title_3, darkMode && styles.darkText]}>Calorías</Text>
-              <Text style={[styles.text, darkMode && styles.darkText]}>{calculateDailyTotals(selectedDay).totalCalories} kcal</Text>
-            </View>
+            {/* Selector Diario / Semanal */}
+            {(() => {
+              const [totalsTab, setTotalsTab] = React.useState('daily');
+              const daily = calculateDailyTotals(selectedDay);
+              const weekly = calculateWeeklyTotals();
+              const data = totalsTab === 'daily' ? daily : weekly;
 
-            <View style={styles.totalsContainer}>
-              <Text style={[styles.title_3, darkMode && styles.darkText]}>Fibra</Text>
-              <Text style={[styles.text, darkMode && styles.darkText]}>{calculateDailyTotals(selectedDay).totalFiber} g</Text>
-            </View>
+              const macros = [
+                { label: 'Fibra', value: data.totalFiber, unit: 'g', color: '#4ade80', icon: '🌿' },
+                { label: 'Carbohidratos', value: data.totalCarbs, unit: 'g', color: '#facc15', icon: '🌾' },
+                { label: 'Grasas', value: data.totalFat, unit: 'g', color: '#f97316', icon: '🧈' },
+                { label: 'Proteína', value: data.totalProtein, unit: 'g', color: '#a78bfa', icon: '💪' },
+              ];
 
-            <View style={styles.totalsContainer}>
-              <Text style={[styles.title_3, darkMode && styles.darkText]}>Carbohidratos</Text>
-              <Text style={[styles.text, darkMode && styles.darkText]}>{calculateDailyTotals(selectedDay).totalCarbs} g</Text>
-            </View>
+              return (
+                <View style={{ marginBottom: 12 }}>
+                  {/* Toggle tabs */}
+                  <View style={{
+                    flexDirection: 'row',
+                    backgroundColor: darkMode ? '#1e1e1e' : '#f0f0f0',
+                    borderRadius: 12,
+                    padding: 4,
+                    marginBottom: 16,
+                  }}>
+                    {['daily', 'weekly'].map(tab => (
+                      <TouchableOpacity
+                        key={tab}
+                        onPress={() => setTotalsTab(tab)}
+                        style={{
+                          flex: 1,
+                          paddingVertical: 8,
+                          borderRadius: 10,
+                          alignItems: 'center',
+                          backgroundColor: totalsTab === tab
+                            ? (darkMode ? '#2a2a2a' : '#fff')
+                            : 'transparent',
+                          shadowColor: totalsTab === tab ? '#000' : 'transparent',
+                          shadowOpacity: 0.1,
+                          shadowRadius: 4,
+                          elevation: totalsTab === tab ? 2 : 0,
+                        }}
+                      >
+                        <Text style={{
+                          fontWeight: totalsTab === tab ? '700' : '400',
+                          color: totalsTab === tab
+                            ? (darkMode ? '#fff' : '#111')
+                            : (darkMode ? '#888' : '#777'),
+                          fontSize: 14,
+                        }}>
+                          {tab === 'daily' ? 'Diario' : 'Semanal'}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
 
-            <View style={styles.totalsContainer}>
-              <Text style={[styles.title_3, darkMode && styles.darkText]}>Grasas</Text>
-              <Text style={[styles.text, darkMode && styles.darkText]}>{calculateDailyTotals(selectedDay).totalFat} g</Text>
-            </View>
+                  {/* Tarjeta destacada de Calorías */}
+                  <View style={{
+                    borderRadius: 18,
+                    padding: 20,
+                    marginBottom: 14,
+                    alignItems: 'center',
+                    backgroundColor: darkMode ? '#494949ff' : '#fff0f0',
+                    borderWidth: 1.5,
+                    borderColor: '#ef2b2d44',
+                  }}>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#ef2b2d', marginBottom: 4, letterSpacing: 0.5 }}>
+                      CALORÍAS TOTALES
+                    </Text>
+                    <Text style={{
+                      fontSize: 44,
+                      fontWeight: '800',
+                      color: '#ef2b2d',
+                      letterSpacing: -1,
+                    }}>
+                      {data.totalCalories}
+                    </Text>
+                    <Text style={{ fontSize: 14, color: darkMode ? '#aaa' : '#888', fontWeight: '500' }}>kcal</Text>
+                  </View>
 
-            <View style={styles.totalsContainer}>
-              <Text style={[styles.title_3, darkMode && styles.darkText]}>Proteína</Text>
-              <Text style={[styles.text, darkMode && styles.darkText]}>{calculateDailyTotals(selectedDay).totalProtein} g</Text>
-            </View>
-
-            {/*SEMANAL*/}
-            <Text style={[styles.title_2, darkMode && styles.darkText]}>Semanal</Text>
-
-            <View style={styles.totalsContainer}>
-              <Text style={styles.title_3}>Calorías</Text>
-              <Text style={styles.text}>{calculateWeeklyTotals().totalCalories} kcal</Text>
-            </View>
-
-            <View style={styles.totalsContainer}>
-              <Text style={[styles.title_3, darkMode && styles.darkText]}>Fibra</Text>
-              <Text style={[styles.text, darkMode && styles.darkText]}>{calculateWeeklyTotals().totalFiber} g</Text>
-            </View>
-
-            <View style={styles.totalsContainer}>
-              <Text style={[styles.title_3, darkMode && styles.darkText]}>Carbohidratos</Text>
-              <Text style={[styles.text, darkMode && styles.darkText]}>{calculateWeeklyTotals().totalCarbs} g</Text>
-            </View>
-
-            <View style={styles.totalsContainer}>
-              <Text style={[styles.title_3, darkMode && styles.darkText]}>Grasas</Text>
-              <Text style={[styles.text, darkMode && styles.darkText]}>{calculateWeeklyTotals().totalFat} g</Text>
-            </View>
-
-            <View style={styles.totalsContainer}>
-              <Text style={[styles.title_3, darkMode && styles.darkText]}>Proteína</Text>
-              <Text style={[styles.text, darkMode && styles.darkText]}>{calculateWeeklyTotals().totalProtein} g</Text>
-            </View>
+                  {/* Grid 2×2 de macros */}
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+                    {macros.map((macro) => (
+                      <View key={macro.label} style={{
+                        flex: 1,
+                        minWidth: '45%',
+                        backgroundColor: darkMode ? '#1e1e1e' : '#fff',
+                        borderRadius: 14,
+                        padding: 14,
+                        borderWidth: 1,
+                        borderColor: darkMode ? '#2a2a2a' : '#f0f0f0',
+                        alignItems: 'flex-start',
+                      }}>
+                        <View style={{
+                          backgroundColor: macro.color + '22',
+                          borderRadius: 8,
+                          padding: 6,
+                          marginBottom: 8,
+                        }}>
+                          <Text style={{ fontSize: 18 }}>{macro.icon}</Text>
+                        </View>
+                        <Text style={{
+                          fontSize: 22,
+                          fontWeight: '800',
+                          color: macro.color,
+                        }}>
+                          {macro.value}
+                          <Text style={{ fontSize: 13, fontWeight: '500', color: darkMode ? '#aaa' : '#888' }}> {macro.unit}</Text>
+                        </Text>
+                        <Text style={{
+                          fontSize: 12,
+                          color: darkMode ? '#888' : '#999',
+                          marginTop: 2,
+                          fontWeight: '500',
+                        }}>
+                          {macro.label}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              );
+            })()}
 
             <Text style={[styles.grupoTitulo, darkMode && { color: '#fff' }]}>Elegir imagen</Text>
 
@@ -688,7 +1042,7 @@ export default function AddDietMenu({ route }) {
               </TouchableOpacity>
             </View>
 
-            {renderSaveChangesButton(creatingRecipe)}
+            {renderSaveChangesButton(canEdit)}
 
           </View>
         </ScrollView >

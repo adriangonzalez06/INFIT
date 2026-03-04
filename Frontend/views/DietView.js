@@ -69,9 +69,13 @@ export default function DietView({ route }) {
               meal.vegetarian || false,
               meal.vegan || false,
               meal.gluten_free || false,
-              meal.calories || 0
-            );
-          });
+              meal.calories || meal.kcal || 0,
+              meal.fiber || 0,
+              meal.carbs || 0,
+              meal.fat || 0,
+              meal.protein || 0
+            )
+          );
           setAllAvailableDishes(dishesFromDB);
 
           // Obtener platos de la dieta
@@ -92,7 +96,11 @@ export default function DietView({ route }) {
                   dishFromDiet.vegetarian !== undefined ? dishFromDiet.vegetarian : completeDish.vegetarian,
                   dishFromDiet.vegan !== undefined ? dishFromDiet.vegan : completeDish.vegan,
                   dishFromDiet.gluten_free !== undefined ? dishFromDiet.gluten_free : completeDish.gluten_free,
-                  dishFromDiet.calories || completeDish.calories || 0
+                  dishFromDiet.calories !== undefined ? dishFromDiet.calories : completeDish.calories || dishFromDiet.kcal || completeDish.kcal || 0,
+                  dishFromDiet.fiber !== undefined ? dishFromDiet.fiber : completeDish.fiber || 0,
+                  dishFromDiet.carbs !== undefined ? dishFromDiet.carbs : completeDish.carbs || 0,
+                  dishFromDiet.fat !== undefined ? dishFromDiet.fat : completeDish.fat || 0,
+                  dishFromDiet.protein !== undefined ? dishFromDiet.protein : completeDish.protein || 0
                 );
               }
               return dishFromDiet;
@@ -104,9 +112,9 @@ export default function DietView({ route }) {
         } else {
           // Fallback con platos de ejemplo
           const fallbackDishes = [
-            new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, true, true, false),
-            new Dish(2, "Carne", require('../assets/images/images_dish/dish_02.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, false, false, false),
-            new Dish(3, "Postre", require('../assets/images/images_dish/dish_03.jpg'), 400, ["ingrediente1", "ingrediente2"], 500, false, false, false),
+            new Dish(1, "Ensalada", require('../assets/images/images_dish/dish_01.jpg'), [], true, true, false),
+            new Dish(2, "Carne", require('../assets/images/images_dish/dish_02.jpg'), [], false, false, false),
+            new Dish(3, "Postre", require('../assets/images/images_dish/dish_03.jpg'), [], false, false, false),
           ];
           setAllAvailableDishes(fallbackDishes);
           setDishes(fallbackDishes);

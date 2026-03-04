@@ -125,6 +125,7 @@ export default function WelcomeScreen() {
         let streakVal = 0;
 
         // Cargar desde AsyncStorage primero (rápido)
+        // Cargar desde AsyncStorage primero (rápido)
         try {
           const savedStreak = await AsyncStorage.getItem('streak');
           const savedName = await AsyncStorage.getItem('userName');
