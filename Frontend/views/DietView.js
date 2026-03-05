@@ -52,7 +52,8 @@ export default function DietView({ route }) {
       try {
         const meals = await getAllMeals();
         if (meals && meals.length > 0) {
-          const dishesFromDB = meals.map((meal, index) => {
+          const validMeals = meals.filter(meal => (meal.calories || meal.kcal || 0) > 0);
+          const dishesFromDB = validMeals.map((meal, index) => {
             const rawIng = meal.ingredients || [];
             const ingredientsWithGrams = Array.isArray(rawIng)
               ? rawIng.map(i =>
@@ -74,8 +75,8 @@ export default function DietView({ route }) {
               meal.carbs || 0,
               meal.fat || 0,
               meal.protein || 0
-            )
-          );
+            );
+          });
           setAllAvailableDishes(dishesFromDB);
 
           // Obtener platos de la dieta

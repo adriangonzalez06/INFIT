@@ -117,14 +117,14 @@ export default function AddDietMenu({ route }) {
     }
   }, [route?.params?.diet]);
 
-  /* If getName is null it means that we are creating a recipe */
-  let creatingRecipe = false;
-  if (diet.getName() == null) creatingRecipe = true;
+  /* isCreating: si no se pasó diet, estamos creando */
+  const isCreating = !route?.params?.diet;
 
   /* isPersonalized: viene de Alimentacion cuando se pulsa "Editar dieta" */
   const isPersonalized = route?.params?.isPersonalized ?? false;
-  /* canEdit: mostrar controles de edición tanto al crear como al editar dieta propia */
-  const canEdit = creatingRecipe || isPersonalized;
+
+  /* canEdit: habilitar edición si estamos creando o editando explícitamente */
+  const canEdit = isCreating || isPersonalized;
 
   /* array de todos los platos desde Firestore */
   const [allAvailableDishes, setAllAvailableDishes] = useState([]);
@@ -140,7 +140,8 @@ export default function AddDietMenu({ route }) {
       const meals = await getAllMeals();
       if (meals && meals.length > 0) {
         console.log('📊 Primera comida de Firestore:', JSON.stringify(meals[0], null, 2));
-        const dishesFromDB = meals.map((meal, index) =>
+        const validMeals = meals.filter(m => (m.calories || m.kcal || 0) > 0);
+        const dishesFromDB = validMeals.map((meal, index) =>
           new Dish(
             meal.id || index,
             meal.name,
@@ -164,7 +165,8 @@ export default function AddDietMenu({ route }) {
         if (userDocId) {
           const userMealsData = await getUserMeals(userDocId);
           if (userMealsData && userMealsData.length > 0) {
-            const userDishesFromDB = userMealsData.map((meal, index) =>
+            const validUserMeals = userMealsData.filter(m => (m.calories || m.kcal || 0) > 0);
+            const userDishesFromDB = validUserMeals.map((meal, index) =>
               new Dish(
                 meal.id || index,
                 meal.name,
@@ -189,7 +191,7 @@ export default function AddDietMenu({ route }) {
         }
 
         // Enriquecer dieta existente con macros de Firestore
-        if (!creatingRecipe && diet && diet.weeklyDishes) {
+        if (!isCreating && diet && diet.weeklyDishes) {
           const enrichedWeeklyDishes = diet.weeklyDishes.map(dayDishes =>
             (dayDishes || []).map(dishFromDiet => {
               // Buscar este dish en los meals de Firestore
@@ -252,7 +254,7 @@ export default function AddDietMenu({ route }) {
   useFocusEffect(
     React.useCallback(() => {
       loadMeals();
-    }, [creatingRecipe, diet])
+    }, [isCreating, diet])
   );
 
   {/*datos de la dieta*/ }
@@ -1023,24 +1025,28 @@ export default function AddDietMenu({ route }) {
               );
             })()}
 
-            <Text style={[styles.grupoTitulo, darkMode && { color: '#fff' }]}>Elegir imagen</Text>
+            {canEdit && (
+              <>
+                <Text style={[styles.grupoTitulo, darkMode && { color: '#fff' }]}>Elegir imagen</Text>
 
-            <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 10 }}>
-              <TouchableOpacity onPress={() => imgMenuRef.current?.abrirMenu()} style={{ width: '100%', alignItems: 'center', marginBottom: 20 }}>
+                <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 10 }}>
+                  <TouchableOpacity onPress={() => imgMenuRef.current?.abrirMenu()} style={{ width: '100%', alignItems: 'center', marginBottom: 20 }}>
 
-                {selectedUri && (
-                  <Image
-                    source={getImageSource(selectedUri)}
-                    style={{
-                      width: '70%',
-                      height: 130,
-                      borderRadius: 12,
-                    }}
-                  />
-                )}
+                    {selectedUri && (
+                      <Image
+                        source={getImageSource(selectedUri)}
+                        style={{
+                          width: '70%',
+                          height: 130,
+                          borderRadius: 12,
+                        }}
+                      />
+                    )}
 
-              </TouchableOpacity>
-            </View>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
 
             {renderSaveChangesButton(canEdit)}
 

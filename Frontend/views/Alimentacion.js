@@ -274,7 +274,8 @@ export default function Alimentacion() {
     }
 
     const g1 = new DietGroup(1, 'Trending', [...defaults]);
-    const g2 = new DietGroup(2, 'Mis dietas', personalizedDiets.length > 0 ? [...personalizedDiets] : [...defaults.slice(2, 5)], true);
+    // Allow empty user diets array for "Mis dietas" if personalized diets was loaded but is empty.
+    const g2 = new DietGroup(2, 'Mis dietas', userPersonalizedDiets ? [...personalizedDiets] : [...defaults.slice(2, 5)], true);
     const g3 = new DietGroup(3, 'Para ganar músculo', [...defaults.slice(0, 5)]);
 
     setRecipesGroups({ g1, g2, g3 });
@@ -370,8 +371,8 @@ export default function Alimentacion() {
           {/* Botón de añadir (solo grupos editables) */}
           {showAddCard(group.canEdit, group)}
 
-          {/* Botón VER MÁS (solo grupos NO editables) */}
-          {!group.canEdit && (
+          {/* Botón VER MÁS */}
+          {(group.recipes.length > 3 || !group.canEdit) && (
             <TouchableOpacity
               style={[styles.seeMoreCard, darkMode && styles.darkSeeMoreCard]}
               onPress={() => handleEnterGrupoCompleto(group)}

@@ -28,20 +28,22 @@ export default function ListaGrupoRecetas({ route }) {
 
 
   {/* render a card */ }
-  <TouchableOpacity
-    key={diet.id}
-    style={[styles.recetaCardGroup, styles.recipeCards, darkMode && styles.darkRecipeCard]}
-    onPress={() => handleEnterDiet(diet)}
-  >
-    <ImageBackground
-      source={typeof diet.imgUrl === 'number' ? diet.imgUrl : { uri: diet.imgUrl }}
-      resizeMode="cover"
-      style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', borderRadius: 14, overflow: 'hidden' }}
+  const renderDietCard = (diet) => (
+    <TouchableOpacity
+      key={diet.id}
+      style={[styles.recetaCardGroup, styles.recipeCards, darkMode && styles.darkRecipeCard]}
+      onPress={() => handleEnterDiet(diet)}
     >
-      <Text style={styles.recetaTextoTitulo}>{diet.name}</Text>
-      <Text style={styles.recetaTexto}>Subtítulo</Text>
-    </ImageBackground>
-  </TouchableOpacity>
+      <ImageBackground
+        source={typeof diet.imgUrl === 'number' ? diet.imgUrl : { uri: diet.imgUrl }}
+        resizeMode="cover"
+        style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', borderRadius: 14, overflow: 'hidden' }}
+      >
+        <Text style={styles.recetaTextoTitulo}>{diet.name}</Text>
+        <Text style={styles.recetaTexto}>Subtítulo</Text>
+      </ImageBackground>
+    </TouchableOpacity>
+  );
 
 
 
