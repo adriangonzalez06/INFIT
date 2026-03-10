@@ -209,9 +209,109 @@ export const saveMeal = async (mealData) => {
   }
 };
 
+/**
+ * Obtener todos los ingredientes disponibles de Firestore
+ * @returns {Promise<Array>} Array de ingredientes con sus macros
+ */
+export const getAllIngredients = async () => {
+  try {
+    console.log('📥 Obteniendo ingredientes de Firestore...');
+    const ingredientsCollection = collection(db, 'ingredients');
+    const querySnapshot = await getDocs(ingredientsCollection);
+
+    const ingredients = [];
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      ingredients.push({
+        id: doc.id,
+        name: data.name || data.nombre || '',
+        calories: data.calories || data.kcal || 0,
+        fiber: data.fiber || data.fibra || 0,
+        carbohydrates: data.carbohydrates || data.carbohidratos || 0,
+        fat: data.fat || data.grasas || 0,
+        protein: data.protein || data.proteina || 0,
+        imgUrl: data.imgUrl || data.image || '',
+        ...data
+      });
+    });
+
+    console.log('✅ Ingredientes obtenidos:', ingredients.length);
+    return ingredients;
+  } catch (error) {
+    console.error('❌ Error obteniendo ingredientes:', error);
+    return [];
+  }
+};
+
+/**
+ * Obtener ingredientes de un plato específico
+ * @param {string} mealId - ID del plato
+ * @returns {Promise<Array>} Array de ingredientes del plato con macros
+ */
+export const getMealIngredients = async (mealId) => {
+  try {
+    console.log(`📥 Obteniendo ingredientes del plato ${mealId}...`);
+    
+    // Obtener el plato específico
+    const meal = await getMealById(mealId);
+    if (!meal) {
+      console.warn(`⚠️  Plato ${mealId} no encontrado`);
+      return [];
+    }
+
+    // Obtener todos los ingredientes disponibles
+    const allIngredients = await getAllIngredients();
+    
+    // Si el plato tiene ingredientes como strings, buscar en la colección
+    if (meal.ingredients && Array.isArray(meal.ingredients)) {
+      const ingredientsWithDetails = meal.ingredients
+        .map(ing => {
+          // Si es un string, buscar en allIngredients
+          if (typeof ing === 'string') {
+            const foundIng = allIngredients.find(
+              a => a.name.toLowerCase() === ing.toLowerCase()
+            );
+            return {
+              ingredient: foundIng || {
+                id: ing,
+                name: ing,
+                calories: 0,
+                fiber: 0,
+                carbohydrates: 0,
+                fat: 0,
+                protein: 0
+              },
+              grams: 100 // default grams
+            };
+          }
+          // Si es un objeto con estructura {ingredient, grams}
+          if (ing.ingredient) {
+            return ing;
+          }
+          // Si es un objeto con props directas
+          return {
+            ingredient: ing,
+            grams: ing.grams || 100
+          };
+        })
+        .filter(item => item && item.ingredient);
+
+      console.log(`✅ Ingredientes del plato cargados: ${ingredientsWithDetails.length}`);
+      return ingredientsWithDetails;
+    }
+
+    return [];
+  } catch (error) {
+    console.error('❌ Error obteniendo ingredientes del plato:', error);
+    return [];
+  }
+};
+
 export default {
   getAllMeals,
   getMealById,
   saveMeal,
-  getUserMeals
+  getUserMeals,
+  getAllIngredients,
+  getMealIngredients
 };

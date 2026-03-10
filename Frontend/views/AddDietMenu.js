@@ -12,7 +12,7 @@ import Dish from '../src/objects/Dish';
 import { SearchMenu } from '../src/components/SearchMenu';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Alimentacion from './Alimentacion';
-import { getAllMeals, getUserMeals } from '../src/services/MealsService';
+import { getAllMeals, getUserMeals, getMealIngredients } from '../src/services/MealsService';
 
 import Header from '../src/components/Header';
 import colors from './colors';
@@ -291,6 +291,8 @@ export default function AddDietMenu({ route }) {
   {/*modal ingredients*/ }
   const [visible, setModalVisible] = useState(false);
   const [selectedIngredients, setSelectedIngredients] = useState([]);
+  const [selectedDishForModal, setSelectedDishForModal] = useState(null);
+  const [loadingIngredients, setLoadingIngredients] = useState(false);
 
   {/*button color*/ }
   const [bttId, setBttId] = useState(0);
@@ -404,7 +406,7 @@ export default function AddDietMenu({ route }) {
     console.log("tiene id?", dish);
 
     return (
-      <TouchableOpacity key={dish.id} onPress={() => showModal(dish.getIngredientsWithGrams())}>
+      <TouchableOpacity key={dish.id} onPress={() => showModal(dish)}>
         <View style={[styles.dishContainer, darkMode && styles.darkDishContainer]}>
           <Image
             style={styles.dishImage}
@@ -429,14 +431,37 @@ export default function AddDietMenu({ route }) {
   {/*-------FUNCIONES DE LOS INGREDIENTES--------*/ }
 
   {/*funciones para mostrar/ocultar modal ingredients*/ }
-  const showModal = (ingredients) => {
-    setSelectedIngredients(ingredients);
-    setModalVisible(true);
+  const showModal = async (dish) => {
+    try {
+      setSelectedDishForModal(dish);
+      setLoadingIngredients(true);
+      setModalVisible(true);
+
+      // Cargar ingredientes desde Firestore
+      const ingredients = await getMealIngredients(dish.id);
+      
+      if (ingredients && ingredients.length > 0) {
+        console.log(`✅ ${ingredients.length} ingredientes cargados para ${dish.name}`);
+        setSelectedIngredients(ingredients);
+      } else {
+        // Si no hay ingredientes en Firestore, usar los que tiene el dish
+        const dishIngredients = dish.getIngredientsWithGrams?.() || [];
+        console.log(`⚠️ Usando ingredientes del dish (${dishIngredients.length})`);
+        setSelectedIngredients(dishIngredients);
+      }
+    } catch (error) {
+      console.error('❌ Error cargando ingredientes:', error);
+      // Fallback a los ingredientes del dish
+      setSelectedIngredients(dish.getIngredientsWithGrams?.() || []);
+    } finally {
+      setLoadingIngredients(false);
+    }
   };
 
   const hideModal = () => {
     setModalVisible(false);
     setSelectedIngredients([]);
+    setSelectedDishForModal(null);
   };
 
   {/*renderizar lista de ingredientes dentro del modal*/ }
@@ -445,12 +470,27 @@ export default function AddDietMenu({ route }) {
       <View style={[styles.modalOverlay, darkMode && { backgroundColor: 'rgba(0,0,0,0.8)' }]}>
         <View style={[styles.modalContent, darkMode && { backgroundColor: colors.bg_dark, borderColor: '#333', borderWidth: 1 }]}>
           <ScrollView>
-            <Text style={[styles.grupoTitulo, darkMode && styles.darkText]}>Ingredientes</Text>
+            <Text style={[styles.grupoTitulo, darkMode && styles.darkText]}>
+              Ingredientes de {selectedDishForModal?.name || 'Plato'}
+            </Text>
 
-
-            {Array.isArray(selectedIngredients) &&
-              selectedIngredients.map((item) => renderIngredientObject(item))
-            }
+            {loadingIngredients ? (
+              <View style={{ padding: 20, alignItems: 'center' }}>
+                <Text style={[styles.text, darkMode && styles.darkText]}>Cargando ingredientes...</Text>
+              </View>
+            ) : (
+              <>
+                {Array.isArray(selectedIngredients) && selectedIngredients.length > 0 ? (
+                  selectedIngredients.map((item, index) => renderIngredientObject(item, index))
+                ) : (
+                  <View style={{ padding: 20, alignItems: 'center' }}>
+                    <Text style={[styles.text, darkMode && styles.darkText]}>
+                      No hay ingredientes disponibles
+                    </Text>
+                  </View>
+                )}
+              </>
+            )}
 
             <View style={styles.modalButtons}>
               <View style={{ flex: 1, alignItems: 'flex-end' }}>
@@ -467,34 +507,49 @@ export default function AddDietMenu({ route }) {
   );
 
   {/*renderizar objeto ingrediente para poner en la lista*/ }
-  const renderIngredientObject = (item) => {
+  const renderIngredientObject = (item, index = 0) => {
 
-    if (!item || !item.ingredient) return null;
-    const { ingredient, grams } = item;
+    if (!item) return null;
+    
+    // Manejar tanto el formato { ingredient: {...}, grams: ... } como el formato directo de ingrediente
+    let ingredient, grams;
+    
+    if (item.ingredient) {
+      ingredient = item.ingredient;
+      grams = item.grams || 100;
+    } else {
+      ingredient = item;
+      grams = 100;
+    }
+
+    if (!ingredient || !ingredient.name) {
+      console.warn('⚠️ Ingrediente inválido:', item);
+      return null;
+    }
 
     return (
 
-      <View key={ingredient.id}>
+      <View key={`${ingredient.id}-${index}`}>
         <Text style={[styles.title_2, darkMode && styles.darkText]}>{grams}g de {ingredient.name}</Text>
 
         <View style={styles.totalsContainer}>
           <Text style={[styles.title_3, darkMode && styles.darkText]}>Calorías</Text>
-          <Text style={[styles.text, darkMode && styles.darkText]}>{(ingredient.calories * grams) / 100} kcal</Text>
+          <Text style={[styles.text, darkMode && styles.darkText]}>{((ingredient.calories || 0) * grams) / 100} kcal</Text>
         </View>
 
         <View style={styles.totalsContainer}>
           <Text style={[styles.title_3, darkMode && styles.darkText]}>Fibra</Text>
-          <Text style={[styles.text, darkMode && styles.darkText]}>{(ingredient.fiber * grams) / 100} g</Text>
+          <Text style={[styles.text, darkMode && styles.darkText]}>{((ingredient.fiber || 0) * grams) / 100} g</Text>
         </View>
 
         <View style={styles.totalsContainer}>
           <Text style={[styles.title_3, darkMode && styles.darkText]}>Carbohidratos</Text>
-          <Text style={[styles.text, darkMode && styles.darkText]}>{(ingredient.carbohydrates * grams) / 100} g</Text>
+          <Text style={[styles.text, darkMode && styles.darkText]}>{((ingredient.carbohydrates || 0) * grams) / 100} g</Text>
         </View>
 
         <View style={styles.totalsContainer}>
           <Text style={[styles.title_3, darkMode && styles.darkText]}>Grasas</Text>
-          <Text style={[styles.text, darkMode && styles.darkText]}>{(ingredient.fat * grams) / 100} g</Text>
+          <Text style={[styles.text, darkMode && styles.darkText]}>{((ingredient.fat || 0) * grams) / 100} g</Text>
         </View>
 
         <View style={styles.totalsContainer}>
