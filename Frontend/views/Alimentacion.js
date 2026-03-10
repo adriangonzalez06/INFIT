@@ -223,7 +223,14 @@ export default function Alimentacion() {
     const r5 = new Diet(5, 'Dieta Alta en Proteínas', 'descripcion', 'https://res.cloudinary.com/do0tjcogk/image/upload/v1772624865/proteina_vodu73.webp', [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
     const r6 = new Diet(6, 'Dieta Baja en Carbohidratos', 'descripcion', 'https://res.cloudinary.com/do0tjcogk/image/upload/v1772623173/top-view-healthy-diet-salad-with-grilled-chicken-broccoli-cauliflower-tomato-lettuce-avocado-lettuce_plaiob.jpg', [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
 
-    return [r1, r2, r3, r4, r5, r6];
+    const r7 = new Diet(1, 'Dieta Balanceada', 'descripcion', 'https://res.cloudinary.com/do0tjcogk/image/upload/v1772623173/top-view-healthy-diet-salad-with-grilled-chicken-broccoli-cauliflower-tomato-lettuce-avocado-lettuce_plaiob.jpg', [[p2, p3, p6], [p6, p4, p5], [p5, p4, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
+    const r8 = new Diet(2, 'Dieta Vegana', 'descripcion', 'https://res.cloudinary.com/do0tjcogk/image/upload/v1772623960/VEGANA_gxtex5.jpg', [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
+    const r9 = new Diet(3, 'Dieta Cetogénica', 'descripcion', 'https://res.cloudinary.com/do0tjcogk/image/upload/v1772624464/cetogenica_csds2j.jpg', [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
+    const r10 = new Diet(4, 'Dieta Mediterránea', 'descripcion', 'https://res.cloudinary.com/do0tjcogk/image/upload/v1772624663/mediterrania_wwn3wb.jpg', [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
+    const r11 = new Diet(5, 'Dieta Alta en Proteínas', 'descripcion', 'https://res.cloudinary.com/do0tjcogk/image/upload/v1772624865/proteina_vodu73.webp', [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
+    const r12 = new Diet(6, 'Dieta Baja en Carbohidratos', 'descripcion', 'https://res.cloudinary.com/do0tjcogk/image/upload/v1772623173/top-view-healthy-diet-salad-with-grilled-chicken-broccoli-cauliflower-tomato-lettuce-avocado-lettuce_plaiob.jpg', [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
+
+    return [r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12];
   };
 
   // Inicializar grupos con dietas por defecto
@@ -231,7 +238,7 @@ export default function Alimentacion() {
   const [recipesGroups, setRecipesGroups] = useState({
     g1: new DietGroup(1, 'Trending', defaultDiets),
     g2: new DietGroup(2, 'Mis dietas', defaultDiets.slice(2, 5), true),
-    g3: new DietGroup(3, 'Para ganar músculo', defaultDiets.slice(0, 5)),
+    g3: new DietGroup(3, 'Para ganar músculo', defaultDiets.slice(6, 12)),
   });
 
   // Actualizar recipesGroups cuando userPersonalizedDiets cambia
@@ -275,7 +282,7 @@ export default function Alimentacion() {
 
     const g1 = new DietGroup(1, 'Trending', [...defaults]);
     const g2 = new DietGroup(2, 'Mis dietas', personalizedDiets.length > 0 ? [...personalizedDiets] : [...defaults.slice(2, 5)], true);
-    const g3 = new DietGroup(3, 'Para ganar músculo', [...defaults.slice(0, 5)]);
+    const g3 = new DietGroup(3, 'Para ganar músculo', [...defaults.slice(4, 11)]);
 
     setRecipesGroups({ g1, g2, g3 });
   }, [userPersonalizedDiets]);

@@ -242,7 +242,33 @@ export default function Rutinas() {
     setModalVisible(false);
   };
 
-  const handleEntrarRutina = (rutina, grupoKey) => {
+  const handleEntrarRutina = async (rutina, grupoKey) => {
+    try {
+      // 1. Obtener rutinas recientes
+      const recentData = await AsyncStorage.getItem('recentRoutines');
+      let recentRoutines = recentData ? JSON.parse(recentData) : [];
+
+      // 2. Filtrar si ya existe para evitar duplicados en la lista y ponerla de primera
+      recentRoutines = recentRoutines.filter(r => r.id !== rutina.id);
+
+      // 3. Añadir la rutina actual al principio con la fecha de apertura
+      const rutinaToSave = {
+        ...rutina,
+        openedAt: new Date().toISOString()
+      };
+      recentRoutines.unshift(rutinaToSave);
+
+      // 4. Mantener un máximo de 10 rutinas recientes
+      if (recentRoutines.length > 10) {
+        recentRoutines = recentRoutines.slice(0, 10);
+      }
+
+      // 5. Guardar en AsyncStorage
+      await AsyncStorage.setItem('recentRoutines', JSON.stringify(recentRoutines));
+    } catch (e) {
+      console.warn('Error guardando en recentRoutines:', e);
+    }
+
     navigation.navigate('PantallaRutina', {
       rutina,
       grupoKey,
