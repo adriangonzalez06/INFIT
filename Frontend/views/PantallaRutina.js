@@ -209,6 +209,14 @@ export default function PantallaRutina({ route, navigation }) {
     setOpcionesVisible(false);
   };
 
+  const handleToggleComplete = async (id) => {
+    const nuevaLista = ejercicios.map((e) =>
+      e.id === id ? { ...e, completed: !e.completed } : e
+    );
+    setEjercicios(nuevaLista);
+    await saveRoutineChanges(nuevaLista);
+  };
+
   return (
     <SafeAreaView style={[styles.rutinaContainer, darkMode && styles.darkContainer]}>
       <ExpoStatusBar style={darkMode ? "light" : "auto"} />
@@ -236,12 +244,22 @@ export default function PantallaRutina({ route, navigation }) {
               setEjercicioSeleccionado(item);
               setOpcionesVisible(true);
             }}
+            onPress={() => handleToggleComplete(item.id)}
           >
-            <View style={styles.ejercicioItem}>
+            <View style={[styles.ejercicioItem, item.completed && { opacity: 0.6 }]}>
+              {/* CHECKBOX */}
+              <View style={{ marginRight: 15 }}>
+                <Ionicons
+                  name={item.completed ? "checkbox" : "square-outline"}
+                  size={26}
+                  color={item.completed ? "#ef2b2d" : (darkMode ? "#444" : "#ccc")}
+                />
+              </View>
+
               {item.animacion ? (
                 <LottieView
                   source={item.animacion}
-                  autoPlay
+                  autoPlay={!item.completed}
                   loop
                   style={styles.iconoGif}
                 />
@@ -259,7 +277,11 @@ export default function PantallaRutina({ route, navigation }) {
                 )}
 
               <View style={styles.ejercicioInfo}>
-                <Text style={[styles.ejercicioTexto, darkMode && styles.darkText]} numberOfLines={1}>{item.nombre}</Text>
+                <Text style={[
+                  styles.ejercicioTexto,
+                  darkMode && styles.darkText,
+                  item.completed && { textDecorationLine: 'line-through', color: darkMode ? '#666' : '#999' }
+                ]} numberOfLines={1}>{item.nombre}</Text>
 
                 <View style={styles.datosBadgeStack}>
                   {item.series ? (
@@ -532,7 +554,6 @@ export default function PantallaRutina({ route, navigation }) {
                     );
                     setEjercicios(nuevaLista);
                     await saveRoutineChanges(nuevaLista);
-                    actualizarRutina({ ...rutina, ejercicios: nuevaLista });
                     setModoEdicion(false);
                   } else {
                     const nuevo = {
@@ -549,7 +570,6 @@ export default function PantallaRutina({ route, navigation }) {
                     const nuevaLista = [...ejercicios, nuevo];
                     setEjercicios(nuevaLista);
                     await saveRoutineChanges(nuevaLista);
-                    actualizarRutina({ ...rutina, ejercicios: nuevaLista });
                   }
                   setDetallesVisible(false);
                   setBuscadorVisible(false);

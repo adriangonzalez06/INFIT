@@ -21,6 +21,8 @@ const SUGERENCIAS = {
 
 const DIFICULTADES = ['Principiante', 'Intermedio', 'Avanzado'];
 
+const PALETTE = ['#ef2b2d', '#2a9d8f', '#f4a261', '#5856D6', '#fb5607', '#ff006e', '#8338ec', '#3a86ff'];
+
 const rutinasPredefinidas = [
   {
     id: 'piernas',
@@ -303,6 +305,18 @@ export default function Rutinas() {
     setOpcionesVisible(false);
   };
 
+  const handleChangeColor = async (color) => {
+    const nuevasRutinas = {
+      ...rutinas,
+      grupo1: (rutinas.grupo1 || []).map(r =>
+        r.id === rutinaSeleccionada.id ? { ...r, color } : r
+      ),
+    };
+    setRutinas(nuevasRutinas);
+    await guardarEnStorage(nuevasRutinas);
+    setRutinaSeleccionada({ ...rutinaSeleccionada, color });
+  };
+
   const renderGrupo = (titulo, rutinasGrupo, grupoKey) => {
     return (
       <View style={styles.grupoContainer}>
@@ -546,6 +560,32 @@ export default function Rutinas() {
               <Ionicons name="trash-outline" size={22} color="#ef2b2d" />
               <Text style={[styles.modalButtonText, { color: '#ef2b2d' }]}>Eliminar</Text>
             </TouchableOpacity>
+
+            <View style={{ marginTop: 20 }}>
+              <Text style={[styles.sugerenciasTitulo, darkMode && styles.darkText, { marginBottom: 12 }]}>Personalizar color</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingBottom: 5 }}>
+                {PALETTE.map((color) => (
+                  <TouchableOpacity
+                    key={color}
+                    onPress={() => handleChangeColor(color)}
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 22,
+                      backgroundColor: color,
+                      borderWidth: rutinaSeleccionada?.color === color ? 3 : 0,
+                      borderColor: darkMode ? '#fff' : '#333',
+                      justifyContent: 'center',
+                      alignItems: 'center'
+                    }}
+                  >
+                    {rutinaSeleccionada?.color === color && (
+                      <Ionicons name="checkmark" size={24} color="#fff" />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
 
 
             <TouchableOpacity
