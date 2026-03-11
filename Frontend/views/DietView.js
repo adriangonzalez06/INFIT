@@ -1,38 +1,26 @@
-import React, { useState, useRef, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput,
-  SafeAreaView, Image, ImageBackground, Dimensions, Platform, StatusBar
+  SafeAreaView, Image, ImageBackground, Dimensions
 } from 'react-native';
-import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
+import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import styles from './stylesheet';
-import { useRoute, useFocusEffect } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRoute } from '@react-navigation/native';
 import Diet from '../src/objects/Diet';
 import Dish from '../src/objects/Dish';
 import Alimentacion from './Alimentacion';
 import { SearchMenu } from '../src/components/SearchMenu';
-
+import { WeeklyItemsMenu } from '../src/components/WeeklyItemsMenu';
 import { getAllMeals } from '../src/services/MealsService';
 
 const { height } = Dimensions.get('window');
 
 
 export default function DietView({ route }) {
-  const navigation = useNavigation();
-  const [darkMode, setDarkMode] = useState(false);
 
-  // Cargar preferencia cada vez que entramos
-  useFocusEffect(
-    useCallback(() => {
-      const loadTheme = async () => {
-        const savedTheme = await AsyncStorage.getItem("darkMode");
-        setDarkMode(savedTheme === "true");
-      };
-      loadTheme();
-    }, [])
-  );
+  const navigation = useNavigation();
 
   {/*-------CONSTANTES MENU DESPLEGABLE--------*/ }
   {/*SearchMenu ref para abrirlo desde el boton*/ }
@@ -52,21 +40,34 @@ export default function DietView({ route }) {
       try {
         const meals = await getAllMeals();
         if (meals && meals.length > 0) {
-          const validMeals = meals.filter(meal => (meal.calories || meal.kcal || 0) > 0);
-          const dishesFromDB = validMeals.map((meal, index) => {
-            const rawIng = meal.ingredients || [];
-            const ingredientsWithGrams = Array.isArray(rawIng)
-              ? rawIng.map(i =>
-                typeof i === 'object' && i.ingredient
-                  ? i
-                  : { ingredient: { name: String(i), calories: 0, fiber: 0, carbohydrates: 0, fat: 0, protein: 0 }, grams: 0 }
-              )
-              : [];
+          const dishesFromDB = meals.map((meal, index) => {
+            // Convertir los ingredientes de strings a objetos Ingredient
+            let enrichedIngredients = [];
+            console.log(`🍽️ Plato "${meal.name}" - ingredientes raw:`, meal.ingredients);
+
+            if (Array.isArray(meal.ingredients) && meal.ingredients.length > 0) {
+              enrichedIngredients = meal.ingredients.map((ingredientName) => {
+                console.log(`  ➕ Creando ingrediente: ${ingredientName}`);
+                return {
+                  ingredient: new Ingredient(
+                    ingredientName,
+                    ingredientName,
+                    100, 2, 10, 1, 2  // Valores por defecto visibles
+                  ),
+                  grams: 100
+                };
+              });
+            } else {
+              console.log(`  ⚠️ Sin ingredientes o array vacío`);
+            }
+
+            console.log(`  ✅ Ingredientes enriquecidos: ${enrichedIngredients.length}`);
+
             return new Dish(
               meal.id || index,
               meal.name,
               meal.imgUrl || require('../assets/images/images_dish/dish_01.jpg'),
-              ingredientsWithGrams,
+              enrichedIngredients,  // Pasar ingredientes como objetos
               meal.vegetarian || false,
               meal.vegan || false,
               meal.gluten_free || false,
@@ -75,7 +76,7 @@ export default function DietView({ route }) {
               meal.carbs || 0,
               meal.fat || 0,
               meal.protein || 0
-            );
+            )
           });
           setAllAvailableDishes(dishesFromDB);
 
@@ -87,13 +88,14 @@ export default function DietView({ route }) {
             dietDishes = dietDishes.map(dishFromDiet => {
               // Buscar el plato completo en dishesFromDB por ID o por nombre
               const completeDish = dishesFromDB.find(d => d.id === dishFromDiet.id || d.name === dishFromDiet.name);
-              if (completeDish && !dishFromDiet.imgUrl) {
-                // Crear un nuevo Dish con todos los detalles
+              if (completeDish) {
+                console.log(`🔄 Enriqueciendo "${dishFromDiet.name}" con datos de Firestore (ingredientes: ${completeDish.getIngredientsWithGrams().length})`);
+                // Crear un nuevo Dish con todos los detalles INCLUYENDO ingredientes enriquecidos
                 return new Dish(
                   dishFromDiet.id,
                   dishFromDiet.name,
-                  completeDish.imgUrl,
-                  dishFromDiet.ingredients || completeDish.ingredients || [],
+                  dishFromDiet.imgUrl || completeDish.imgUrl,
+                  completeDish.getIngredientsWithGrams(),  // Usar ingredientes completamente enriquecidos
                   dishFromDiet.vegetarian !== undefined ? dishFromDiet.vegetarian : completeDish.vegetarian,
                   dishFromDiet.vegan !== undefined ? dishFromDiet.vegan : completeDish.vegan,
                   dishFromDiet.gluten_free !== undefined ? dishFromDiet.gluten_free : completeDish.gluten_free,
@@ -134,23 +136,23 @@ export default function DietView({ route }) {
 
   return (
 
-    <View style={[styles.container, darkMode && { backgroundColor: '#000', marginTop: 0, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }]}>
-      <ExpoStatusBar style={darkMode ? "light" : "auto"} />
+    <View style={styles.container}>
+      <StatusBar style="auto" />
       {/* go back button */}
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
         <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
       </TouchableOpacity>
 
       {/* title */}
-      <Text style={[styles.title, darkMode && { color: '#fff' }]}>{diet?.name ?? 'Dieta'}</Text>
+      <Text style={styles.title}>{diet?.name ?? 'Dieta'}</Text>
 
-      <ScrollView contentContainerStyle={[styles.scrollContent, darkMode && { backgroundColor: '#000' }]} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <SafeAreaView>
           <View style={styles.grupoContainer}>
 
-            <Text style={[styles.text, darkMode && { color: '#fff' }]}>{diet?.description ?? ''}</Text>
+            <Text style={styles.text}>{diet?.description ?? ''}</Text>
 
-            <Text style={[styles.grupoTitulo, darkMode && { color: '#ef2b2d' }]}>Platos</Text>
+            <Text style={styles.grupoTitulo}>Platos</Text>
 
           </View>
         </SafeAreaView>

@@ -8,6 +8,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import styles from './stylesheet';
+import colors from './colors';
 
 export default function ListaGrupoRecetas({ route }) {
   const navigation = useNavigation();
@@ -26,27 +27,6 @@ export default function ListaGrupoRecetas({ route }) {
     }, [])
   );
 
-
-  {/* render a card */ }
-  const renderDietCard = (diet) => (
-    <TouchableOpacity
-      key={diet.id}
-      style={[styles.recetaCardGroup, styles.recipeCards, darkMode && styles.darkRecipeCard]}
-      onPress={() => handleEnterDiet(diet)}
-    >
-      <ImageBackground
-        source={typeof diet.imgUrl === 'number' ? diet.imgUrl : { uri: diet.imgUrl }}
-        resizeMode="cover"
-        style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', borderRadius: 14, overflow: 'hidden' }}
-      >
-        <Text style={styles.recetaTextoTitulo}>{diet.name}</Text>
-        <Text style={styles.recetaTexto}>Subtítulo</Text>
-      </ImageBackground>
-    </TouchableOpacity>
-  );
-
-
-
   {/*Enter a diet card handler*/ }
   const handleEnterDiet = (diet) => {
     if (!diet) {
@@ -55,6 +35,26 @@ export default function ListaGrupoRecetas({ route }) {
     }
     // Pass diet inside the params object so AddDietMenu receives it as route.params.diet
     navigation.navigate('AddDietMenu', { diet });
+  };
+
+  {/* render a card */ }
+  const renderDietCard = (diet) => {
+    return (
+      <TouchableOpacity
+        key={diet.id}
+        style={[styles.recetaCardGroup, styles.recipeCards, darkMode && styles.darkRecipeCard]}
+        onPress={() => handleEnterDiet(diet)}
+      >
+        <ImageBackground
+          source={typeof diet.imgUrl === 'number' ? diet.imgUrl : { uri: diet.imgUrl }}
+          resizeMode="cover"
+          style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', borderRadius: 14, overflow: 'hidden' }}
+        >
+          <Text style={styles.recetaTextoTitulo}>{diet.name}</Text>
+          <Text style={styles.recetaTexto}>Subtítulo</Text>
+        </ImageBackground>
+      </TouchableOpacity>
+    );
   };
 
   return (

@@ -12,15 +12,14 @@ import Dish from '../src/objects/Dish';
 import { SearchMenu } from '../src/components/SearchMenu';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Alimentacion from './Alimentacion';
-import { getAllMeals, getUserMeals } from '../src/services/MealsService';
-
+import { getAllMeals, getUserMeals, getMealIngredients } from '../src/services/MealsService';
+import AppModal from './AppModal';
 import Header from '../src/components/Header';
 import colors from './colors';
 import Ingredient from '../src/objects/Ingredient';
 import RenderLabels from '../src/components/RenderLabels.js';
 import { LabelTextInput } from '../src/components/LabelTextInput';
 import { BACKEND_URL } from '../src/config';
-import AppModal from './AppModal';
 
 
 export default function AddDietMenu({ route }) {
@@ -269,6 +268,11 @@ export default function AddDietMenu({ route }) {
   const showAppModal = (type, title, message) => setAppModal({ visible: true, type, title, message });
   const hideAppModal = () => setAppModal(m => ({ ...m, visible: false }));
 
+  /* ---------- CRUD states para platos ---------- */
+  const [dishCRUDVisible, setDishCRUDVisible] = useState(false);
+  const [selectedDishIdx, setSelectedDishIdx] = useState(null);
+  const [selectedDishObject, setSelectedDishObject] = useState(null);
+
   // Cargar preferencia cada vez que entramos
   useFocusEffect(
     useCallback(() => {
@@ -293,6 +297,8 @@ export default function AddDietMenu({ route }) {
   {/*modal ingredients*/ }
   const [visible, setModalVisible] = useState(false);
   const [selectedIngredients, setSelectedIngredients] = useState([]);
+  const [selectedDishForModal, setSelectedDishForModal] = useState(null);
+  const [loadingIngredients, setLoadingIngredients] = useState(false);
 
   {/*button color*/ }
   const [bttId, setBttId] = useState(0);
@@ -403,10 +409,16 @@ export default function AddDietMenu({ route }) {
   {/*funcion para renderizar cada dish de la diet*/ }
   const renderPlato = (dish, index) => {
 
-    console.log("tiene id?", dish);
-
     return (
-      <TouchableOpacity key={dish.id} onPress={() => showModal(dish.getIngredientsWithGrams())} onLongPress={() => handleDeleteDish(index)}>
+      <TouchableOpacity
+        key={dish.id + "-" + index}
+        onPress={() => showModal(dish)}
+        onLongPress={() => {
+          setSelectedDishIdx(index);
+          setSelectedDishObject(dish);
+          setDishCRUDVisible(true);
+        }}
+      >
         <View style={[styles.dishContainer, darkMode && styles.darkDishContainer]}>
           <Image
             style={styles.dishImage}
@@ -431,14 +443,37 @@ export default function AddDietMenu({ route }) {
   {/*-------FUNCIONES DE LOS INGREDIENTES--------*/ }
 
   {/*funciones para mostrar/ocultar modal ingredients*/ }
-  const showModal = (ingredients) => {
-    setSelectedIngredients(ingredients);
-    setModalVisible(true);
+  const showModal = async (dish) => {
+    try {
+      setSelectedDishForModal(dish);
+      setLoadingIngredients(true);
+      setModalVisible(true);
+
+      // Cargar ingredientes desde Firestore
+      const ingredients = await getMealIngredients(dish.id);
+
+      if (ingredients && ingredients.length > 0) {
+        console.log(`✅ ${ingredients.length} ingredientes cargados para ${dish.name}`);
+        setSelectedIngredients(ingredients);
+      } else {
+        // Si no hay ingredientes en Firestore, usar los que tiene el dish
+        const dishIngredients = dish.getIngredientsWithGrams?.() || [];
+        console.log(`⚠️ Usando ingredientes del dish (${dishIngredients.length})`);
+        setSelectedIngredients(dishIngredients);
+      }
+    } catch (error) {
+      console.error('❌ Error cargando ingredientes:', error);
+      // Fallback a los ingredientes del dish
+      setSelectedIngredients(dish.getIngredientsWithGrams?.() || []);
+    } finally {
+      setLoadingIngredients(false);
+    }
   };
 
   const hideModal = () => {
     setModalVisible(false);
     setSelectedIngredients([]);
+    setSelectedDishForModal(null);
   };
 
   {/*renderizar lista de ingredientes dentro del modal*/ }
@@ -447,12 +482,27 @@ export default function AddDietMenu({ route }) {
       <View style={[styles.modalOverlay, darkMode && { backgroundColor: 'rgba(0,0,0,0.8)' }]}>
         <View style={[styles.modalContent, darkMode && { backgroundColor: colors.bg_dark, borderColor: '#333', borderWidth: 1 }]}>
           <ScrollView>
-            <Text style={[styles.grupoTitulo, darkMode && styles.darkText]}>Ingredientes</Text>
+            <Text style={[styles.grupoTitulo, darkMode && styles.darkText]}>
+              Ingredientes de {selectedDishForModal?.name || 'Plato'}
+            </Text>
 
-
-            {Array.isArray(selectedIngredients) &&
-              selectedIngredients.map((item) => renderIngredientObject(item))
-            }
+            {loadingIngredients ? (
+              <View style={{ padding: 20, alignItems: 'center' }}>
+                <Text style={[styles.text, darkMode && styles.darkText]}>Cargando ingredientes...</Text>
+              </View>
+            ) : (
+              <>
+                {Array.isArray(selectedIngredients) && selectedIngredients.length > 0 ? (
+                  selectedIngredients.map((item, index) => renderIngredientObject(item, index))
+                ) : (
+                  <View style={{ padding: 20, alignItems: 'center' }}>
+                    <Text style={[styles.text, darkMode && styles.darkText]}>
+                      No hay ingredientes disponibles
+                    </Text>
+                  </View>
+                )}
+              </>
+            )}
 
             <View style={styles.modalButtons}>
               <View style={{ flex: 1, alignItems: 'flex-end' }}>
@@ -469,34 +519,49 @@ export default function AddDietMenu({ route }) {
   );
 
   {/*renderizar objeto ingrediente para poner en la lista*/ }
-  const renderIngredientObject = (item) => {
+  const renderIngredientObject = (item, index = 0) => {
 
-    if (!item || !item.ingredient) return null;
-    const { ingredient, grams } = item;
+    if (!item) return null;
+
+    // Manejar tanto el formato { ingredient: {...}, grams: ... } como el formato directo de ingrediente
+    let ingredient, grams;
+
+    if (item.ingredient) {
+      ingredient = item.ingredient;
+      grams = item.grams || 100;
+    } else {
+      ingredient = item;
+      grams = 100;
+    }
+
+    if (!ingredient || !ingredient.name) {
+      console.warn('⚠️ Ingrediente inválido:', item);
+      return null;
+    }
 
     return (
 
-      <View key={ingredient.id}>
+      <View key={`${ingredient.id}-${index}`}>
         <Text style={[styles.title_2, darkMode && styles.darkText]}>{grams}g de {ingredient.name}</Text>
 
         <View style={styles.totalsContainer}>
           <Text style={[styles.title_3, darkMode && styles.darkText]}>Calorías</Text>
-          <Text style={[styles.text, darkMode && styles.darkText]}>{(ingredient.calories * grams) / 100} kcal</Text>
+          <Text style={[styles.text, darkMode && styles.darkText]}>{((ingredient.calories || 0) * grams) / 100} kcal</Text>
         </View>
 
         <View style={styles.totalsContainer}>
           <Text style={[styles.title_3, darkMode && styles.darkText]}>Fibra</Text>
-          <Text style={[styles.text, darkMode && styles.darkText]}>{(ingredient.fiber * grams) / 100} g</Text>
+          <Text style={[styles.text, darkMode && styles.darkText]}>{((ingredient.fiber || 0) * grams) / 100} g</Text>
         </View>
 
         <View style={styles.totalsContainer}>
           <Text style={[styles.title_3, darkMode && styles.darkText]}>Carbohidratos</Text>
-          <Text style={[styles.text, darkMode && styles.darkText]}>{(ingredient.carbohydrates * grams) / 100} g</Text>
+          <Text style={[styles.text, darkMode && styles.darkText]}>{((ingredient.carbohydrates || 0) * grams) / 100} g</Text>
         </View>
 
         <View style={styles.totalsContainer}>
           <Text style={[styles.title_3, darkMode && styles.darkText]}>Grasas</Text>
-          <Text style={[styles.text, darkMode && styles.darkText]}>{(ingredient.fat * grams) / 100} g</Text>
+          <Text style={[styles.text, darkMode && styles.darkText]}>{((ingredient.fat || 0) * grams) / 100} g</Text>
         </View>
 
         <View style={styles.totalsContainer}>
@@ -1098,10 +1163,77 @@ export default function AddDietMenu({ route }) {
         type={appModal.type}
         title={appModal.title}
         message={appModal.message}
-        confirmText="Entendido"
         onConfirm={hideAppModal}
-        darkMode={darkMode}
       />
+
+      {/* MODAL CRUD PLATO (Estilo Alimentacion) */}
+      <Modal visible={dishCRUDVisible} transparent animationType="slide">
+        <TouchableOpacity
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}
+          activeOpacity={1}
+          onPress={() => setDishCRUDVisible(false)}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            style={{
+              backgroundColor: darkMode ? '#1a1a1a' : '#fff',
+              padding: 24,
+              borderTopLeftRadius: 30,
+              borderTopRightRadius: 30,
+              width: '100%',
+              paddingBottom: 40,
+            }}
+          >
+            {/* Indicador */}
+            <View style={{ width: 40, height: 5, backgroundColor: darkMode ? '#444' : '#ccc', borderRadius: 3, alignSelf: 'center', marginBottom: 15 }} />
+
+            <Text style={{ fontSize: 22, fontWeight: '800', marginBottom: 20, color: darkMode ? '#fff' : '#1a1a1a' }}>
+              {selectedDishObject?.name || 'Opciones del plato'}
+            </Text>
+
+            {/* Eliminar */}
+            <TouchableOpacity
+              onPress={() => {
+                handleDeleteDish(selectedDishIdx);
+                setDishCRUDVisible(false);
+              }}
+              style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: darkMode ? '#333' : '#eee', gap: 15 }}
+            >
+              <Ionicons name="trash-outline" size={22} color="#ef2b2d" />
+              <Text style={{ fontSize: 16, fontWeight: '600', color: '#ef2b2d' }}>Quitar plato de la dieta</Text>
+            </TouchableOpacity>
+
+            {/* Duplicar (Opcional, pero util) */}
+            <TouchableOpacity
+              onPress={() => {
+                const dayDishes = diet.weeklyDishes[selectedDay];
+                dayDishes.push(selectedDishObject);
+                setDishes([...diet.getDishesForDay(selectedDay)]);
+                setAllDishes([...diet.getAllDishes()]);
+                setDishCRUDVisible(false);
+              }}
+              style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 15, gap: 15 }}
+            >
+              <Ionicons name="copy-outline" size={22} color={darkMode ? '#ccc' : '#333'} />
+              <Text style={{ fontSize: 16, fontWeight: '600', color: darkMode ? '#ccc' : '#333' }}>Duplicar plato</Text>
+            </TouchableOpacity>
+
+            {/* Botón cerrar */}
+            <TouchableOpacity
+              onPress={() => setDishCRUDVisible(false)}
+              style={{
+                marginTop: 20,
+                backgroundColor: darkMode ? '#333' : '#f5f5f5',
+                paddingVertical: 15,
+                borderRadius: 12,
+                alignItems: 'center'
+              }}
+            >
+              <Text style={{ fontWeight: '700', color: darkMode ? '#ccc' : '#666' }}>Cerrar</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </>
 
   );
