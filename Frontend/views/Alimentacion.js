@@ -12,7 +12,7 @@ import Dish from '../src/objects/Dish.js';
 import Diet from '../src/objects/Diet.js';
 import DietGroup from '../src/objects/DietGroup.js';
 import { getAllMeals } from '../src/services/MealsService';
-
+import AppModal from './AppModal';
 import colors from './colors';
 
 import { BACKEND_URL } from '../src/config';
@@ -392,8 +392,8 @@ export default function Alimentacion() {
           {/* Botón de añadir (solo grupos editables) */}
           {showAddCard(group.canEdit, group)}
 
-          {/* Botón VER MÁS (solo grupos NO editables) */}
-          {!group.canEdit && (
+          {/* Botón VER MÁS */}
+          {(group.recipes.length > 3 || !group.canEdit) && (
             <TouchableOpacity
               style={[styles.seeMoreCard, darkMode && styles.darkSeeMoreCard]}
               onPress={() => handleEnterGrupoCompleto(group)}

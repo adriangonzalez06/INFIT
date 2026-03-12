@@ -13,14 +13,13 @@ import { SearchMenu } from '../src/components/SearchMenu';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Alimentacion from './Alimentacion';
 import { getAllMeals, getUserMeals, getMealIngredients } from '../src/services/MealsService';
-
+import AppModal from './AppModal';
 import Header from '../src/components/Header';
 import colors from './colors';
 import Ingredient from '../src/objects/Ingredient';
 import RenderLabels from '../src/components/RenderLabels.js';
 import { LabelTextInput } from '../src/components/LabelTextInput';
 import { BACKEND_URL } from '../src/config';
-import AppModal from './AppModal';
 
 
 export default function AddDietMenu({ route }) {
@@ -117,14 +116,14 @@ export default function AddDietMenu({ route }) {
     }
   }, [route?.params?.diet]);
 
-  /* If getName is null it means that we are creating a recipe */
-  let creatingRecipe = false;
-  if (diet.getName() == null) creatingRecipe = true;
+  /* isCreating: si no se pasó diet, estamos creando */
+  const isCreating = !route?.params?.diet;
 
   /* isPersonalized: viene de Alimentacion cuando se pulsa "Editar dieta" */
   const isPersonalized = route?.params?.isPersonalized ?? false;
-  /* canEdit: mostrar controles de edición tanto al crear como al editar dieta propia */
-  const canEdit = creatingRecipe || isPersonalized;
+
+  /* canEdit: habilitar edición si estamos creando o editando explícitamente */
+  const canEdit = isCreating || isPersonalized;
 
   /* array de todos los platos desde Firestore */
   const [allAvailableDishes, setAllAvailableDishes] = useState([]);
@@ -140,7 +139,8 @@ export default function AddDietMenu({ route }) {
       const meals = await getAllMeals();
       if (meals && meals.length > 0) {
         console.log('📊 Primera comida de Firestore:', JSON.stringify(meals[0], null, 2));
-        const dishesFromDB = meals.map((meal, index) =>
+        const validMeals = meals.filter(m => (m.calories || m.kcal || 0) > 0);
+        const dishesFromDB = validMeals.map((meal, index) =>
           new Dish(
             meal.id || index,
             meal.name,
@@ -164,7 +164,8 @@ export default function AddDietMenu({ route }) {
         if (userDocId) {
           const userMealsData = await getUserMeals(userDocId);
           if (userMealsData && userMealsData.length > 0) {
-            const userDishesFromDB = userMealsData.map((meal, index) =>
+            const validUserMeals = userMealsData.filter(m => (m.calories || m.kcal || 0) > 0);
+            const userDishesFromDB = validUserMeals.map((meal, index) =>
               new Dish(
                 meal.id || index,
                 meal.name,
@@ -189,7 +190,7 @@ export default function AddDietMenu({ route }) {
         }
 
         // Enriquecer dieta existente con macros de Firestore
-        if (!creatingRecipe && diet && diet.weeklyDishes) {
+        if (!isCreating && diet && diet.weeklyDishes) {
           const enrichedWeeklyDishes = diet.weeklyDishes.map(dayDishes =>
             (dayDishes || []).map(dishFromDiet => {
               // Buscar este dish en los meals de Firestore
@@ -252,7 +253,7 @@ export default function AddDietMenu({ route }) {
   useFocusEffect(
     React.useCallback(() => {
       loadMeals();
-    }, [creatingRecipe, diet])
+    }, [isCreating, diet])
   );
 
   {/*datos de la dieta*/ }
@@ -266,6 +267,11 @@ export default function AddDietMenu({ route }) {
   const [appModal, setAppModal] = useState({ visible: false, type: 'info', title: '', message: '' });
   const showAppModal = (type, title, message) => setAppModal({ visible: true, type, title, message });
   const hideAppModal = () => setAppModal(m => ({ ...m, visible: false }));
+
+  /* ---------- CRUD states para platos ---------- */
+  const [dishCRUDVisible, setDishCRUDVisible] = useState(false);
+  const [selectedDishIdx, setSelectedDishIdx] = useState(null);
+  const [selectedDishObject, setSelectedDishObject] = useState(null);
 
   // Cargar preferencia cada vez que entramos
   useFocusEffect(
@@ -403,10 +409,16 @@ export default function AddDietMenu({ route }) {
   {/*funcion para renderizar cada dish de la diet*/ }
   const renderPlato = (dish, index) => {
 
-    console.log("tiene id?", dish);
-
     return (
-      <TouchableOpacity key={dish.id} onPress={() => showModal(dish)}>
+      <TouchableOpacity
+        key={dish.id + "-" + index}
+        onPress={() => showModal(dish)}
+        onLongPress={() => {
+          setSelectedDishIdx(index);
+          setSelectedDishObject(dish);
+          setDishCRUDVisible(true);
+        }}
+      >
         <View style={[styles.dishContainer, darkMode && styles.darkDishContainer]}>
           <Image
             style={styles.dishImage}
@@ -439,7 +451,7 @@ export default function AddDietMenu({ route }) {
 
       // Cargar ingredientes desde Firestore
       const ingredients = await getMealIngredients(dish.id);
-      
+
       if (ingredients && ingredients.length > 0) {
         console.log(`✅ ${ingredients.length} ingredientes cargados para ${dish.name}`);
         setSelectedIngredients(ingredients);
@@ -510,10 +522,10 @@ export default function AddDietMenu({ route }) {
   const renderIngredientObject = (item, index = 0) => {
 
     if (!item) return null;
-    
+
     // Manejar tanto el formato { ingredient: {...}, grams: ... } como el formato directo de ingrediente
     let ingredient, grams;
-    
+
     if (item.ingredient) {
       ingredient = item.ingredient;
       grams = item.grams || 100;
@@ -1078,24 +1090,28 @@ export default function AddDietMenu({ route }) {
               );
             })()}
 
-            <Text style={[styles.grupoTitulo, darkMode && { color: '#fff' }]}>Elegir imagen</Text>
+            {canEdit && (
+              <>
+                <Text style={[styles.grupoTitulo, darkMode && { color: '#fff' }]}>Elegir imagen</Text>
 
-            <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 10 }}>
-              <TouchableOpacity onPress={() => imgMenuRef.current?.abrirMenu()} style={{ width: '100%', alignItems: 'center', marginBottom: 20 }}>
+                <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 10 }}>
+                  <TouchableOpacity onPress={() => imgMenuRef.current?.abrirMenu()} style={{ width: '100%', alignItems: 'center', marginBottom: 20 }}>
 
-                {selectedUri && (
-                  <Image
-                    source={getImageSource(selectedUri)}
-                    style={{
-                      width: '70%',
-                      height: 130,
-                      borderRadius: 12,
-                    }}
-                  />
-                )}
+                    {selectedUri && (
+                      <Image
+                        source={getImageSource(selectedUri)}
+                        style={{
+                          width: '70%',
+                          height: 130,
+                          borderRadius: 12,
+                        }}
+                      />
+                    )}
 
-              </TouchableOpacity>
-            </View>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
 
             {renderSaveChangesButton(canEdit)}
 
@@ -1147,10 +1163,77 @@ export default function AddDietMenu({ route }) {
         type={appModal.type}
         title={appModal.title}
         message={appModal.message}
-        confirmText="Entendido"
         onConfirm={hideAppModal}
-        darkMode={darkMode}
       />
+
+      {/* MODAL CRUD PLATO (Estilo Alimentacion) */}
+      <Modal visible={dishCRUDVisible} transparent animationType="slide">
+        <TouchableOpacity
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}
+          activeOpacity={1}
+          onPress={() => setDishCRUDVisible(false)}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            style={{
+              backgroundColor: darkMode ? '#1a1a1a' : '#fff',
+              padding: 24,
+              borderTopLeftRadius: 30,
+              borderTopRightRadius: 30,
+              width: '100%',
+              paddingBottom: 40,
+            }}
+          >
+            {/* Indicador */}
+            <View style={{ width: 40, height: 5, backgroundColor: darkMode ? '#444' : '#ccc', borderRadius: 3, alignSelf: 'center', marginBottom: 15 }} />
+
+            <Text style={{ fontSize: 22, fontWeight: '800', marginBottom: 20, color: darkMode ? '#fff' : '#1a1a1a' }}>
+              {selectedDishObject?.name || 'Opciones del plato'}
+            </Text>
+
+            {/* Eliminar */}
+            <TouchableOpacity
+              onPress={() => {
+                handleDeleteDish(selectedDishIdx);
+                setDishCRUDVisible(false);
+              }}
+              style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: darkMode ? '#333' : '#eee', gap: 15 }}
+            >
+              <Ionicons name="trash-outline" size={22} color="#ef2b2d" />
+              <Text style={{ fontSize: 16, fontWeight: '600', color: '#ef2b2d' }}>Quitar plato de la dieta</Text>
+            </TouchableOpacity>
+
+            {/* Duplicar (Opcional, pero util) */}
+            <TouchableOpacity
+              onPress={() => {
+                const dayDishes = diet.weeklyDishes[selectedDay];
+                dayDishes.push(selectedDishObject);
+                setDishes([...diet.getDishesForDay(selectedDay)]);
+                setAllDishes([...diet.getAllDishes()]);
+                setDishCRUDVisible(false);
+              }}
+              style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 15, gap: 15 }}
+            >
+              <Ionicons name="copy-outline" size={22} color={darkMode ? '#ccc' : '#333'} />
+              <Text style={{ fontSize: 16, fontWeight: '600', color: darkMode ? '#ccc' : '#333' }}>Duplicar plato</Text>
+            </TouchableOpacity>
+
+            {/* Botón cerrar */}
+            <TouchableOpacity
+              onPress={() => setDishCRUDVisible(false)}
+              style={{
+                marginTop: 20,
+                backgroundColor: darkMode ? '#333' : '#f5f5f5',
+                paddingVertical: 15,
+                borderRadius: 12,
+                alignItems: 'center'
+              }}
+            >
+              <Text style={{ fontWeight: '700', color: darkMode ? '#ccc' : '#666' }}>Cerrar</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </>
 
   );

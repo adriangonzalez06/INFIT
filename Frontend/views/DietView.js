@@ -44,7 +44,7 @@ export default function DietView({ route }) {
             // Convertir los ingredientes de strings a objetos Ingredient
             let enrichedIngredients = [];
             console.log(`🍽️ Plato "${meal.name}" - ingredientes raw:`, meal.ingredients);
-            
+
             if (Array.isArray(meal.ingredients) && meal.ingredients.length > 0) {
               enrichedIngredients = meal.ingredients.map((ingredientName) => {
                 console.log(`  ➕ Creando ingrediente: ${ingredientName}`);
@@ -60,9 +60,9 @@ export default function DietView({ route }) {
             } else {
               console.log(`  ⚠️ Sin ingredientes o array vacío`);
             }
-            
+
             console.log(`  ✅ Ingredientes enriquecidos: ${enrichedIngredients.length}`);
-            
+
             return new Dish(
               meal.id || index,
               meal.name,

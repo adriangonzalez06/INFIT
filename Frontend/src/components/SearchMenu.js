@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingTop: 16,
-    paddingRight: 16,
+    paddingHorizontal: 16,
     paddingBottom: 0,
     elevation: 10
   },
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     marginBottom: 10
   },
-  sheetTitle: { fontSize: 22, fontWeight: "bold", marginBottom: 16 },
+  sheetTitle: { fontSize: 22, fontWeight: "bold", marginBottom: 16, textAlign: 'center' },
   searchInput: {
     borderWidth: 1,
     borderColor: "#ccc",

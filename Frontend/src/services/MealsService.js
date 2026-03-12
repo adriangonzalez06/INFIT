@@ -251,7 +251,7 @@ export const getAllIngredients = async () => {
 export const getMealIngredients = async (mealId) => {
   try {
     console.log(`📥 Obteniendo ingredientes del plato ${mealId}...`);
-    
+
     // Obtener el plato específico
     const meal = await getMealById(mealId);
     if (!meal) {
@@ -261,7 +261,7 @@ export const getMealIngredients = async (mealId) => {
 
     // Obtener todos los ingredientes disponibles
     const allIngredients = await getAllIngredients();
-    
+
     // Si el plato tiene ingredientes como strings, buscar en la colección
     if (meal.ingredients && Array.isArray(meal.ingredients)) {
       const ingredientsWithDetails = meal.ingredients
