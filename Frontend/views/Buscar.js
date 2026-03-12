@@ -40,6 +40,7 @@ import {
   arrayUnion,
   arrayRemove,
   increment,
+  runTransaction,
 } from 'firebase/firestore';
 
 import { BACKEND_URL } from '../src/config';
@@ -81,6 +82,7 @@ export default function Feed() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
+  const [likingPosts, setLikingPosts] = useState({}); // Tracking para evitar spam
 
   // Form
   const [title, setTitle] = useState("");
@@ -237,16 +239,42 @@ export default function Feed() {
   };
 
   // ── Toggle Like ───────────────────────────────────────────────────────────
-  const toggleLike = async (postId, currentLikes) => {
-    if (!userId) return;
-    const hasLiked = (currentLikes || []).includes(userId);
+  const toggleLike = async (postId) => {
+    if (!userId || likingPosts[postId]) return;
+
+    // Bloqueamos la interacción para este post
+    setLikingPosts(prev => ({ ...prev, [postId]: true }));
+
     try {
-      await updateDoc(doc(db, 'publicaciones', postId), {
-        likes: hasLiked ? arrayRemove(userId) : arrayUnion(userId),
-        likesCount: increment(hasLiked ? -1 : 1),
+      const postRef = doc(db, 'publicaciones', postId);
+
+      await runTransaction(db, async (transaction) => {
+        const postDoc = await transaction.get(postRef);
+        if (!postDoc.exists()) return;
+
+        const data = postDoc.data();
+        const likes = data.likes || [];
+        const hasLiked = likes.includes(userId);
+
+        if (hasLiked) {
+          // Si ya tiene like, lo quitamos y decrementamos
+          transaction.update(postRef, {
+            likes: arrayRemove(userId),
+            likesCount: Math.max(0, (data.likesCount || 0) - 1)
+          });
+        } else {
+          // Si no tiene like, lo ponemos e incrementamos
+          transaction.update(postRef, {
+            likes: arrayUnion(userId),
+            likesCount: (data.likesCount || 0) + 1
+          });
+        }
       });
     } catch (e) {
       console.error('Error al dar like:', e);
+    } finally {
+      // Desbloqueamos
+      setLikingPosts(prev => ({ ...prev, [postId]: false }));
     }
   };
 
@@ -279,6 +307,48 @@ export default function Feed() {
   };
 
   const removeImage = () => setImageUri(undefined);
+
+  const handleImportRoutine = async (routineData) => {
+    try {
+      const resp = await AsyncStorage.getItem('rutinas');
+      let currentRutinas = resp ? JSON.parse(resp) : { grupo1: [] };
+
+      // Evitar duplicados por nombre
+      if ((currentRutinas.grupo1 || []).some(r => r.nombre === routineData.nombre)) {
+        showAppModal('warning', 'Ya tienes esta rutina', 'Parece que ya has importado una rutina con el mismo nombre.');
+        return;
+      }
+
+      // Crear copia nueva con ID único
+      const newRoutine = {
+        ...routineData,
+        id: Date.now().toString(),
+        color: routineData.color || '#264653'
+      };
+
+      if (!currentRutinas.grupo1) currentRutinas.grupo1 = [];
+      currentRutinas.grupo1.push(newRoutine);
+      await AsyncStorage.setItem('rutinas', JSON.stringify(currentRutinas));
+
+      // Opcional: Guardar también en Firestore si el usuario está logueado
+      const userDocId = await AsyncStorage.getItem('userDocId');
+      if (userDocId) {
+        try {
+          await axios.post(`${BACKEND_URL}/api/routines/${userDocId}`, {
+            name: newRoutine.nombre,
+            exercises: newRoutine.ejercicios
+          });
+        } catch (e) {
+          console.warn('Error saving imported routine to Firestore:', e.message);
+        }
+      }
+
+      showAppModal('success', '¡Rutina importada!', 'Has añadido la rutina a tu lista de personalizadas.');
+    } catch (e) {
+      console.error('Error importing routine:', e);
+      showAppModal('error', 'Error', 'No se pudo importar la rutina.');
+    }
+  };
 
   // ── Render tarjeta ────────────────────────────────────────────────────────
   const renderItem = ({ item }) => {
@@ -321,11 +391,37 @@ export default function Feed() {
           <Image source={{ uri: item.imageUrl }} style={styles.cardImage} resizeMode="cover" />
         )}
 
+        {/* Renderizado especial para rutinas */}
+        {item.type === 'routine' && item.routineData && (
+          <View style={[styles.routineShareCard, darkMode && styles.darkRoutineShareCard]}>
+            <View style={styles.routineShareHeader}>
+              <View style={[styles.routineIconContainer, { backgroundColor: item.routineData.color || primary }]}>
+                <Ionicons name="barbell" size={24} color="#fff" />
+              </View>
+              <View style={{ marginLeft: 12, flex: 1 }}>
+                <Text style={[styles.routineShareName, darkMode && styles.darkText]} numberOfLines={1}>{item.routineData.nombre}</Text>
+                <Text style={styles.routineShareSub}>{item.routineData.ejercicios?.length || 0} ejercicios · {item.routineData.dificultad}</Text>
+              </View>
+            </View>
+            <TouchableOpacity
+              style={styles.importBtn}
+              onPress={() => handleImportRoutine(item.routineData)}
+            >
+              <Ionicons name="download-outline" size={18} color="#fff" />
+              <Text style={styles.importBtnText}>Importar Rutina</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Footer: likes y comentarios (sin compartir) */}
         <View style={[styles.cardFooter, darkMode && styles.darkCardFooter]}>
 
           {/* Like */}
-          <TouchableOpacity style={styles.interactionBtn} onPress={() => toggleLike(item.id, item.likes)}>
+          <TouchableOpacity
+            style={[styles.interactionBtn, likingPosts[item.id] && { opacity: 0.7 }]}
+            onPress={() => toggleLike(item.id)}
+            disabled={likingPosts[item.id]}
+          >
             <Ionicons
               name={hasLiked ? "heart" : "heart-outline"}
               size={22}
@@ -754,6 +850,56 @@ const styles = StyleSheet.create({
   interactionBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 16 },
   interactionText: { marginLeft: 6, fontSize: 14, fontWeight: '600', color: '#444' },
   likedText: { color: '#e53935' },
+
+  // ── Compartir Rutina ────────────────────────────────────────────────────
+  routineShareCard: {
+    backgroundColor: '#F8F9FA',
+    margin: 12,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+  },
+  darkRoutineShareCard: {
+    backgroundColor: '#252525',
+    borderColor: '#333',
+  },
+  routineShareHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  routineIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  routineShareName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1a1a1a',
+  },
+  routineShareSub: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 2,
+  },
+  importBtn: {
+    backgroundColor: '#ef2b2d',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 8,
+    gap: 8,
+  },
+  importBtnText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 14,
+  },
 
   // ── Textos dark ─────────────────────────────────────────────────────────
   darkText: { color: "#fff" },

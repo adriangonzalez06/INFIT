@@ -11,6 +11,9 @@ import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import axios from 'axios';
 import { BACKEND_URL } from '../src/config';
 import colors from './colors';
+import { db } from '../firebaseConfig';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import AppModal from './AppModal';
 
 
 const SUGERENCIAS = {
@@ -76,6 +79,9 @@ export default function Rutinas() {
   const [userName, setUserName] = useState('');
   const [opcionesVisible, setOpcionesVisible] = useState(false);
   const [rutinaSeleccionada, setRutinaSeleccionada] = useState(null);
+  const [appModal, setAppModal] = useState({ visible: false, type: 'info', title: '', message: '' });
+  const showAppModal = (type, title, message) => setAppModal({ visible: true, type, title, message });
+  const hideAppModal = () => setAppModal(m => ({ ...m, visible: false }));
 
   const colorScheme = useColorScheme();
   const [darkMode, setDarkMode] = useState(colorScheme === 'dark');
@@ -317,6 +323,45 @@ export default function Rutinas() {
     setRutinaSeleccionada({ ...rutinaSeleccionada, color });
   };
 
+  const handlePublicarRutina = async () => {
+    if (!rutinaSeleccionada) return;
+    setOpcionesVisible(false);
+
+    try {
+      const userDocId = await AsyncStorage.getItem('userDocId');
+      const email = await AsyncStorage.getItem('userEmail');
+      let avatar = null;
+
+      if (email) {
+        try {
+          const resp = await axios.get(`${BACKEND_URL}/api/usuarios/buscar/email/${encodeURIComponent(email)}`);
+          if (resp.data?.photo) avatar = resp.data.photo;
+        } catch (e) {
+          console.warn('Error fetching avatar for sharing routine:', e.message);
+        }
+      }
+
+      await addDoc(collection(db, 'publicaciones'), {
+        userId: userDocId || 'anon',
+        username: userName || 'Usuario',
+        avatarUrl: avatar || null,
+        titulo: `He compartido mi rutina: ${rutinaSeleccionada.nombre}`,
+        contenido: `¡Prueba esta rutina de nivel ${rutinaSeleccionada.dificultad}! Tiene ${rutinaSeleccionada.ejercicios.length} ejercicios.`,
+        type: 'routine',
+        routineData: rutinaSeleccionada,
+        createdAt: serverTimestamp(),
+        likes: [],
+        likesCount: 0,
+        comentariosCount: 0,
+      });
+
+      showAppModal('success', '¡Rutina publicada!', 'Tu rutina ya está en el feed para que otros puedan verla.');
+    } catch (e) {
+      console.error('Error al publicar rutina:', e);
+      showAppModal('error', 'Error', 'No se pudo publicar la rutina.');
+    }
+  };
+
   const renderGrupo = (titulo, rutinasGrupo, grupoKey) => {
     return (
       <View style={styles.grupoContainer}>
@@ -555,6 +600,11 @@ export default function Rutinas() {
               <Text style={[styles.modalButtonText, { color: darkMode ? '#ccc' : '#333' }]}>Duplicar</Text>
             </TouchableOpacity>
 
+            <TouchableOpacity style={[styles.optionItem, darkMode && styles.darkOptionItem]} onPress={handlePublicarRutina}>
+              <Ionicons name="share-social-outline" size={22} color={darkMode ? "#ccc" : "#333"} />
+              <Text style={[styles.modalButtonText, { color: darkMode ? '#ccc' : '#333' }]}>Publicar en Feed</Text>
+            </TouchableOpacity>
+
 
             <TouchableOpacity style={[styles.optionItem, darkMode && styles.darkOptionItem]} onPress={handleEliminarRutina}>
               <Ionicons name="trash-outline" size={22} color="#ef2b2d" />
@@ -598,6 +648,14 @@ export default function Rutinas() {
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
+      <AppModal
+        visible={appModal.visible}
+        type={appModal.type}
+        title={appModal.title}
+        message={appModal.message}
+        onConfirm={hideAppModal}
+        darkMode={darkMode}
+      />
     </SafeAreaView>
   );
 }

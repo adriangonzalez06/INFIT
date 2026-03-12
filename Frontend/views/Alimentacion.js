@@ -30,53 +30,50 @@ export default function Alimentacion() {
         const savedTheme = await AsyncStorage.getItem('darkMode');
         setDarkMode(savedTheme === 'true');
       };
+
+      const loadMeals = async () => {
+        try {
+          const meals = await getAllMeals();
+          if (meals && meals.length > 0) {
+            const dishesFromDB = meals.map((meal, index) => {
+              const rawIngredients = meal.ingredients || [];
+              const ingredientsWithGrams = Array.isArray(rawIngredients)
+                ? rawIngredients.map(i =>
+                  typeof i === 'object' && i.ingredient
+                    ? i
+                    : { ingredient: { name: i, calories: 0, fiber: 0, carbohydrates: 0, fat: 0, protein: 0 }, grams: 0 }
+                )
+                : [];
+
+              return new Dish(
+                meal.id || index,
+                meal.name,
+                meal.imgUrl || require('../assets/images/images_dish/dish_01.jpg'),
+                ingredientsWithGrams,
+                meal.vegetarian || false,
+                meal.vegan || false,
+                meal.gluten_free || false,
+                meal.calories || 0
+              );
+            });
+            setAllDishes(dishesFromDB);
+          }
+        } catch (error) {
+          console.error('❌ Error cargando platos:', error);
+        }
+      };
+
       loadTheme();
+      loadMeals();
     }, [])
   );
 
   /* ---------- platos desde Firestore ---------- */
   const [allDishes, setAllDishes] = useState([]);
 
+  // Cargamos los platos inicialmente (aunque useFocusEffect lo volverá a hacer)
   useEffect(() => {
-    const loadMeals = async () => {
-      try {
-        const meals = await getAllMeals();
-        if (meals && meals.length > 0) {
-          const dishesFromDB = meals.map((meal, index) => {
-            // Dish(id, name, imgUrl, ingredientsWithGrams, vegetarian, vegan, gluten_free)
-            // ingredients from Firestore are plain strings — wrap in {ingredient, grams} shape
-            const rawIngredients = meal.ingredients || [];
-            const ingredientsWithGrams = Array.isArray(rawIngredients)
-              ? rawIngredients.map(i =>
-                typeof i === 'object' && i.ingredient
-                  ? i                                   // already correct shape
-                  : { ingredient: { name: i, calories: 0, fiber: 0, carbohydrates: 0, fat: 0, protein: 0 }, grams: 0 }
-              )
-              : [];
-
-            return new Dish(
-              meal.id || index,
-              meal.name,
-              meal.imgUrl || require('../assets/images/images_dish/dish_01.jpg'),
-              ingredientsWithGrams,
-              meal.vegetarian || false,
-              meal.vegan || false,
-              meal.gluten_free || false,
-              meal.calories || 0
-            );
-          });
-          setAllDishes(dishesFromDB);
-          console.log('✅ Platos cargados en Alimentacion:', dishesFromDB.length);
-        } else {
-          console.warn('⚠️  No se obtuvieron platos, usando fallback');
-          setAllDishes([]);
-        }
-      } catch (error) {
-        console.error('❌ Error cargando platos:', error);
-        setAllDishes([]);
-      }
-    };
-    loadMeals();
+    // Ya lo hace el useFocusEffect arriba
   }, []);
 
   /* ---------- dietas personalizadas del usuario ---------- */
@@ -300,6 +297,7 @@ export default function Alimentacion() {
     navigation.navigate('ListaGrupoRecetas', {
       name: group.name,
       recipes: group.recipes,
+      canEdit: group.canEdit,
     });
   };
 

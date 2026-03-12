@@ -11,21 +11,19 @@ import Diet from '../src/objects/Diet';
 import Dish from '../src/objects/Dish';
 import { SearchMenu } from '../src/components/SearchMenu';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Alimentacion from './Alimentacion';
+
 import { getAllMeals, getUserMeals, getMealIngredients } from '../src/services/MealsService';
 import AppModal from './AppModal';
 import Header from '../src/components/Header';
 import colors from './colors';
 import Ingredient from '../src/objects/Ingredient';
 import RenderLabels from '../src/components/RenderLabels.js';
-import { LabelTextInput } from '../src/components/LabelTextInput';
 import { BACKEND_URL } from '../src/config';
-
 
 export default function AddDietMenu({ route }) {
 
   const navigation = useNavigation();
-  const { height } = Dimensions.get('window');
+  const { width, height } = Dimensions.get('window');
 
   /* id, name, imgUrl, calories, fiber, carbohydrates, fat, protein) */
   {/*id, name, imgUrl, calories, fiber, carbohydrates, fat, protein)*/ }
@@ -413,11 +411,11 @@ export default function AddDietMenu({ route }) {
       <TouchableOpacity
         key={dish.id + "-" + index}
         onPress={() => showModal(dish)}
-        onLongPress={() => {
+        onLongPress={canEdit ? () => {
           setSelectedDishIdx(index);
           setSelectedDishObject(dish);
           setDishCRUDVisible(true);
-        }}
+        } : undefined}
       >
         <View style={[styles.dishContainer, darkMode && styles.darkDishContainer]}>
           <Image
@@ -477,55 +475,133 @@ export default function AddDietMenu({ route }) {
   };
 
   {/*renderizar lista de ingredientes dentro del modal*/ }
-  const renderIngredientsModal = () => (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={hideModal}>
-      <View style={[styles.modalOverlay, darkMode && { backgroundColor: 'rgba(0,0,0,0.8)' }]}>
-        <View style={[styles.modalContent, darkMode && { backgroundColor: colors.bg_dark, borderColor: '#333', borderWidth: 1 }]}>
-          <ScrollView>
-            <Text style={[styles.grupoTitulo, darkMode && styles.darkText]}>
-              Ingredientes de {selectedDishForModal?.name || 'Plato'}
-            </Text>
+  const renderIngredientsModal = () => {
+    // Calcular totales de macros para el ticket
+    let ticketTotals = {
+      calories: 0,
+      protein: 0,
+      carbs: 0,
+      fat: 0,
+      fiber: 0
+    };
 
-            {loadingIngredients ? (
-              <View style={{ padding: 20, alignItems: 'center' }}>
-                <Text style={[styles.text, darkMode && styles.darkText]}>Cargando ingredientes...</Text>
+    if (Array.isArray(selectedIngredients)) {
+      selectedIngredients.forEach(item => {
+        let ingredient, grams;
+        if (item.ingredient) {
+          ingredient = item.ingredient;
+          grams = item.grams || 100;
+        } else {
+          ingredient = item;
+          grams = 100;
+        }
+
+        // Buscar valores con posibles nombres alternativos
+        const cal = (ingredient.calories || ingredient.kcal || 0);
+        const prot = (ingredient.protein || ingredient.proteins || ingredient.proteina || 0);
+        const carb = (ingredient.carbohydrates || ingredient.carbs || ingredient.carbohidratos || 0);
+        const fat = (ingredient.fat || ingredient.grasas || 0);
+        const fib = (ingredient.fiber || ingredient.fibra || 0);
+
+        ticketTotals.calories += (cal * grams) / 100;
+        ticketTotals.protein += (prot * grams) / 100;
+        ticketTotals.carbs += (carb * grams) / 100;
+        ticketTotals.fat += (fat * grams) / 100;
+        ticketTotals.fiber += (fib * grams) / 100;
+      });
+    }
+
+    // Si el cálculo dio 0 pero el plato tiene macros, usamos los del plato como fallback
+    if (ticketTotals.calories === 0 && selectedDishForModal) {
+      console.log('⚠️ Usando fallback de macros del plato');
+      ticketTotals.calories = Number(selectedDishForModal.calories) || 0;
+      ticketTotals.protein = Number(selectedDishForModal.protein) || 0;
+      ticketTotals.carbs = Number(selectedDishForModal.carbs || selectedDishForModal.carbohydrates) || 0;
+      ticketTotals.fat = Number(selectedDishForModal.fat) || 0;
+      ticketTotals.fiber = Number(selectedDishForModal.fiber) || 0;
+    }
+
+    return (
+      <Modal visible={visible} transparent animationType="fade" onRequestClose={hideModal}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.receiptContainer}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {/* Encabezado del Ticket */}
+              <View style={styles.receiptHeader}>
+                <Text style={styles.receiptTitle}>Ticket de Plato</Text>
+                <Text style={styles.receiptSubtitle}>#{Math.floor(Math.random() * 90000) + 10000}</Text>
+                <Text style={styles.receiptSubtitle}>{new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}</Text>
               </View>
-            ) : (
-              <>
-                {Array.isArray(selectedIngredients) && selectedIngredients.length > 0 ? (
-                  selectedIngredients.map((item, index) => renderIngredientObject(item, index))
-                ) : (
-                  <View style={{ padding: 20, alignItems: 'center' }}>
-                    <Text style={[styles.text, darkMode && styles.darkText]}>
-                      No hay ingredientes disponibles
-                    </Text>
-                  </View>
-                )}
-              </>
-            )}
 
-            <View style={styles.modalButtons}>
-              <View style={{ flex: 1, alignItems: 'flex-end' }}>
-                <TouchableOpacity onPress={hideModal} style={styles.modalButton}>
+              <Text style={[styles.receiptItemText, { fontWeight: 'bold', marginBottom: 10, textAlign: 'center' }]}>
+                {selectedDishForModal?.name || 'PLATO SIN NOMBRE'}
+              </Text>
+
+              <View style={styles.receiptSeparator} />
+
+              {loadingIngredients ? (
+                <View style={{ padding: 20, alignItems: 'center' }}>
+                  <Text style={styles.receiptItemText}>Cargando ingredientes...</Text>
+                </View>
+              ) : (
+                <>
+                  {Array.isArray(selectedIngredients) && selectedIngredients.length > 0 ? (
+                    selectedIngredients.map((item, index) => renderIngredientObject(item, index))
+                  ) : (
+                    <View style={{ padding: 20, alignItems: 'center' }}>
+                      <Text style={styles.receiptItemText}>No hay ingredientes</Text>
+                    </View>
+                  )}
+                </>
+              )}
+
+              <View style={styles.receiptSeparator} />
+
+              {/* Totales Nutricionales */}
+              <View style={styles.receiptTotalContainer}>
+                <Text style={styles.receiptTotalLabel}>TOTAL CALORÍAS</Text>
+                <Text style={styles.receiptTotalValue}>{ticketTotals.calories.toFixed(0)} kcal</Text>
+              </View>
+
+              <View style={[styles.receiptItem, { marginTop: 5 }]}>
+                <Text style={styles.receiptItemText}>PROTEÍNA TOTAL</Text>
+                <Text style={styles.receiptItemValue}>{ticketTotals.protein.toFixed(1)}g</Text>
+              </View>
+              <View style={styles.receiptItem}>
+                <Text style={styles.receiptItemText}>CARBOS TOTALES</Text>
+                <Text style={styles.receiptItemValue}>{ticketTotals.carbs.toFixed(1)}g</Text>
+              </View>
+              <View style={styles.receiptItem}>
+                <Text style={styles.receiptItemText}>GRASAS TOTALES</Text>
+                <Text style={styles.receiptItemValue}>{ticketTotals.fat.toFixed(1)}g</Text>
+              </View>
+              <View style={styles.receiptItem}>
+                <Text style={styles.receiptItemText}>FIBRA TOTAL</Text>
+                <Text style={styles.receiptItemValue}>{ticketTotals.fiber.toFixed(1)}g</Text>
+              </View>
+
+              <View style={styles.receiptFooter}>
+                <Text style={styles.receiptFooterText}>INFIT</Text>
+              </View>
+
+              <View style={{ marginTop: 20, alignItems: 'center' }}>
+                <TouchableOpacity onPress={hideModal} style={[styles.modalButton, { paddingHorizontal: 40 }]}>
                   <Text style={styles.modalButtonText}>Cerrar</Text>
                 </TouchableOpacity>
               </View>
-            </View>
 
-          </ScrollView>
+            </ScrollView>
+          </View>
         </View>
-      </View>
-    </Modal>
-  );
+      </Modal>
+    );
+  };
 
   {/*renderizar objeto ingrediente para poner en la lista*/ }
   const renderIngredientObject = (item, index = 0) => {
-
     if (!item) return null;
 
-    // Manejar tanto el formato { ingredient: {...}, grams: ... } como el formato directo de ingrediente
     let ingredient, grams;
-
     if (item.ingredient) {
       ingredient = item.ingredient;
       grams = item.grams || 100;
@@ -534,43 +610,40 @@ export default function AddDietMenu({ route }) {
       grams = 100;
     }
 
-    if (!ingredient || !ingredient.name) {
-      console.warn('⚠️ Ingrediente inválido:', item);
-      return null;
-    }
+    if (!ingredient || !ingredient.name) return null;
+
+    // Buscar valores con posibles nombres alternativos
+    const cal = (ingredient.calories || ingredient.kcal || 0);
+    const prot = (ingredient.protein || ingredient.proteins || ingredient.proteina || 0);
+    const carb = (ingredient.carbohydrates || ingredient.carbs || ingredient.carbohidratos || 0);
+    const fat = (ingredient.fat || ingredient.grasas || 0);
+    const fib = (ingredient.fiber || ingredient.fibra || 0);
+
+    const itemCalories = (cal * grams) / 100;
+    const itemMacros = {
+      p: (prot * grams) / 100,
+      c: (carb * grams) / 100,
+      f: (fat * grams) / 100,
+      fb: (fib * grams) / 100,
+    };
 
     return (
-
-      <View key={`${ingredient.id}-${index}`}>
-        <Text style={[styles.title_2, darkMode && styles.darkText]}>{grams}g de {ingredient.name}</Text>
-
-        <View style={styles.totalsContainer}>
-          <Text style={[styles.title_3, darkMode && styles.darkText]}>Calorías</Text>
-          <Text style={[styles.text, darkMode && styles.darkText]}>{((ingredient.calories || 0) * grams) / 100} kcal</Text>
+      <View key={`${ingredient.id}-${index}`} style={{ marginBottom: 12 }}>
+        <View style={styles.receiptItem}>
+          <Text style={[styles.receiptItemText, { fontWeight: 'bold' }]}>
+            {grams}g {ingredient.name.toUpperCase()}
+          </Text>
+          <Text style={[styles.receiptItemValue, { fontWeight: 'bold' }]}>
+            {itemCalories.toFixed(1)}
+          </Text>
         </View>
-
-        <View style={styles.totalsContainer}>
-          <Text style={[styles.title_3, darkMode && styles.darkText]}>Fibra</Text>
-          <Text style={[styles.text, darkMode && styles.darkText]}>{((ingredient.fiber || 0) * grams) / 100} g</Text>
+        <View style={styles.receiptItem}>
+          <Text style={[styles.receiptItemText, { fontSize: 11, color: '#666' }]}>
+            P: {itemMacros.p.toFixed(1)}g | C: {itemMacros.c.toFixed(1)}g | G: {itemMacros.f.toFixed(1)}g | F: {itemMacros.fb.toFixed(1)}g
+          </Text>
         </View>
-
-        <View style={styles.totalsContainer}>
-          <Text style={[styles.title_3, darkMode && styles.darkText]}>Carbohidratos</Text>
-          <Text style={[styles.text, darkMode && styles.darkText]}>{((ingredient.carbohydrates || 0) * grams) / 100} g</Text>
-        </View>
-
-        <View style={styles.totalsContainer}>
-          <Text style={[styles.title_3, darkMode && styles.darkText]}>Grasas</Text>
-          <Text style={[styles.text, darkMode && styles.darkText]}>{((ingredient.fat || 0) * grams) / 100} g</Text>
-        </View>
-
-        <View style={styles.totalsContainer}>
-          <Text style={[styles.title_3, darkMode && styles.darkText]}>Proteína</Text>
-          <Text style={[styles.text, darkMode && styles.darkText]}>{(ingredient.protein * grams) / 100} g</Text>
-        </View>
-
       </View>
-    )
+    );
   };
 
 
@@ -890,14 +963,45 @@ export default function AddDietMenu({ route }) {
   const renderNameInput = (canEdit) => {
     if (canEdit) {
       return (
-        <View style={{ marginVertical: 15 }}>
-          <LabelTextInput
-            style={styles.input}
-            label="Nombre de la dieta"
-            placeholder="Nombre..."
-            value={dietName}
-            onChangeText={setDietName}
-          />
+        <View style={{ marginBottom: 25 }}>
+          <Text style={{
+            fontSize: 13,
+            fontWeight: '700',
+            color: colors.primary,
+            textTransform: 'uppercase',
+            letterSpacing: 1,
+            marginBottom: 10,
+            marginLeft: 4
+          }}>Nombre de la Dieta</Text>
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: darkMode ? '#1e1e1e' : '#fff',
+            borderRadius: 18,
+            paddingHorizontal: 18,
+            borderWidth: 1.5,
+            borderColor: darkMode ? '#2a2a2a' : '#f0f0f0',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.05,
+            shadowRadius: 10,
+            elevation: 3,
+          }}>
+            <Ionicons name="bookmark-outline" size={20} color={colors.primary} style={{ marginRight: 12 }} />
+            <TextInput
+              style={{
+                flex: 1,
+                paddingVertical: 16,
+                fontSize: 16,
+                color: darkMode ? '#fff' : '#111',
+                fontWeight: '700',
+              }}
+              placeholder="Ej: Dieta de Definición 2024"
+              placeholderTextColor={darkMode ? '#555' : '#ccc'}
+              value={dietName}
+              onChangeText={setDietName}
+            />
+          </View>
         </View>
       );
     }
@@ -908,10 +1012,35 @@ export default function AddDietMenu({ route }) {
     if (canEdit) {
       return (
         <TouchableOpacity
-          style={styles.addDishButton}
+          activeOpacity={0.7}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: darkMode ? '#1a1a1f' : '#f8f9fa',
+            paddingVertical: 16,
+            borderRadius: 16,
+            borderWidth: 2,
+            borderColor: colors.primary + '33',
+            borderStyle: 'dashed',
+            marginBottom: 20,
+            gap: 10
+          }}
           onPress={() => searchMenuRef.current?.abrirMenu()}
         >
-          <Text style={{ color: darkMode ? '#fff' : '#111' }}>+ Añadir plato</Text>
+          <View style={{
+            backgroundColor: colors.primary + '22',
+            padding: 5,
+            borderRadius: 10
+          }}>
+            <Ionicons name="add" size={22} color={colors.primary} />
+          </View>
+          <Text style={{
+            color: darkMode ? '#ffffff' : '#111114',
+            fontWeight: '700',
+            fontSize: 15,
+            letterSpacing: 0.5
+          }}>Añadir plato al día</Text>
         </TouchableOpacity>
       );
     }
@@ -922,11 +1051,33 @@ export default function AddDietMenu({ route }) {
     if (canEdit) {
       return (
         <TouchableOpacity
-          style={styles.button}
+          activeOpacity={0.8}
+          style={{
+            backgroundColor: colors.primary,
+            paddingVertical: 18,
+            borderRadius: 20,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginTop: 20,
+            marginBottom: 40,
+            flexDirection: 'row',
+            gap: 10,
+            shadowColor: colors.primary,
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.3,
+            shadowRadius: 15,
+            elevation: 8,
+          }}
           onPress={isPersonalized ? updateDiet : saveDiet}
         >
-          <Text style={styles.buttonText}>
-            {isPersonalized ? 'Guardar Cambios' : 'Guardar Dieta'}
+          <Ionicons name="cloud-upload-outline" size={22} color="#fff" />
+          <Text style={{
+            color: '#fff',
+            fontWeight: '800',
+            fontSize: 17,
+            letterSpacing: 0.5
+          }}>
+            {isPersonalized ? 'Guardar Cambios' : 'Finalizar Dieta'}
           </Text>
         </TouchableOpacity>
       );
@@ -947,14 +1098,57 @@ export default function AddDietMenu({ route }) {
 
             {renderNameInput(canEdit)}
 
-            <View style={styles.daysContainer}>
-              <TouchableOpacity style={[styles.dayButton, { backgroundColor: 0 === bttId ? colors.light_gray : (darkMode ? '#333' : colors.white) }]} onPress={() => { setSelectedDay(0); setDishes(diet.getDishesForDay(0)); setBttId(0); }}><Text style={darkMode && { color: '#fff' }}>L</Text></TouchableOpacity>
-              <TouchableOpacity style={[styles.dayButton, { backgroundColor: 1 === bttId ? colors.light_gray : (darkMode ? '#333' : colors.white) }]} onPress={() => { setSelectedDay(1); setDishes(diet.getDishesForDay(1)); setBttId(1); }}><Text style={darkMode && { color: '#fff' }}>M</Text></TouchableOpacity>
-              <TouchableOpacity style={[styles.dayButton, { backgroundColor: 2 === bttId ? colors.light_gray : (darkMode ? '#333' : colors.white) }]} onPress={() => { setSelectedDay(2); setDishes(diet.getDishesForDay(2)); setBttId(2); }}><Text style={darkMode && { color: '#fff' }}>X</Text></TouchableOpacity>
-              <TouchableOpacity style={[styles.dayButton, { backgroundColor: 3 === bttId ? colors.light_gray : (darkMode ? '#333' : colors.white) }]} onPress={() => { setSelectedDay(3); setDishes(diet.getDishesForDay(3)); setBttId(3); }}><Text style={darkMode && { color: '#fff' }}>J</Text></TouchableOpacity>
-              <TouchableOpacity style={[styles.dayButton, { backgroundColor: 4 === bttId ? colors.light_gray : (darkMode ? '#333' : colors.white) }]} onPress={() => { setSelectedDay(4); setDishes(diet.getDishesForDay(4)); setBttId(4); }}><Text style={darkMode && { color: '#fff' }}>V</Text></TouchableOpacity>
-              <TouchableOpacity style={[styles.dayButton, { backgroundColor: 5 === bttId ? colors.light_gray : (darkMode ? '#333' : colors.white) }]} onPress={() => { setSelectedDay(5); setDishes(diet.getDishesForDay(5)); setBttId(5); }}><Text style={darkMode && { color: '#fff' }}>S</Text></TouchableOpacity>
-              <TouchableOpacity style={[styles.dayButton, { backgroundColor: 6 === bttId ? colors.light_gray : (darkMode ? '#333' : colors.white) }]} onPress={() => { setSelectedDay(6); setDishes(diet.getDishesForDay(6)); setBttId(6); }}><Text style={darkMode && { color: '#fff' }}>D</Text></TouchableOpacity>
+            <View style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              marginBottom: 25,
+              backgroundColor: darkMode ? '#1e1e1e' : '#fff',
+              padding: 8,
+              borderRadius: 20,
+              borderWidth: 1,
+              borderColor: darkMode ? '#2a2a2a' : '#f0f0f0',
+            }}>
+              {[
+                { label: 'L', idx: 0 },
+                { label: 'M', idx: 1 },
+                { label: 'X', idx: 2 },
+                { label: 'J', idx: 3 },
+                { label: 'V', idx: 4 },
+                { label: 'S', idx: 5 },
+                { label: 'D', idx: 6 }
+              ].map((day) => {
+                const isSelected = day.idx === bttId;
+                return (
+                  <TouchableOpacity
+                    key={day.idx}
+                    activeOpacity={0.7}
+                    style={{
+                      width: (width - 80) / 7,
+                      aspectRatio: 1,
+                      borderRadius: 12,
+                      backgroundColor: isSelected ? colors.primary : 'transparent',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      shadowColor: isSelected ? colors.primary : 'transparent',
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.3,
+                      shadowRadius: 8,
+                      elevation: isSelected ? 4 : 0,
+                    }}
+                    onPress={() => {
+                      setSelectedDay(day.idx);
+                      setDishes(diet.getDishesForDay(day.idx));
+                      setBttId(day.idx);
+                    }}
+                  >
+                    <Text style={{
+                      color: isSelected ? '#fff' : (darkMode ? '#888' : '#666'),
+                      fontWeight: isSelected ? '800' : '600',
+                      fontSize: 14
+                    }}>{day.label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
 
             {renderAddDishButton(canEdit)}
@@ -1023,28 +1217,49 @@ export default function AddDietMenu({ route }) {
                   </View>
 
                   {/* Tarjeta destacada de Calorías */}
-                  <View style={{
-                    borderRadius: 18,
-                    padding: 20,
-                    marginBottom: 14,
-                    alignItems: 'center',
-                    backgroundColor: darkMode ? '#494949ff' : '#fff0f0',
-                    borderWidth: 1.5,
-                    borderColor: '#ef2b2d44',
-                  }}>
-                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#ef2b2d', marginBottom: 4, letterSpacing: 0.5 }}>
-                      CALORÍAS TOTALES
-                    </Text>
-                    <Text style={{
-                      fontSize: 44,
-                      fontWeight: '800',
-                      color: '#ef2b2d',
-                      letterSpacing: -1,
-                    }}>
-                      {data.totalCalories}
-                    </Text>
-                    <Text style={{ fontSize: 14, color: darkMode ? '#aaa' : '#888', fontWeight: '500' }}>kcal</Text>
-                  </View>
+                  {(() => {
+                    const kcalNum = Number(data.totalCalories);
+                    const mult = totalsTab === 'daily' ? 1 : 7;
+
+                    let kcalColor = '#ef2b2d'; // Defecto Rojo
+                    let kcalBg = darkMode ? '#331a1a' : '#fff0f0'; // Fondo por defecto
+
+                    if (kcalNum < 1300 * mult) {
+                      kcalColor = '#facc15'; // Amarillo (bajo)
+                      kcalBg = darkMode ? '#2e2e1a' : '#fffdf0';
+                    } else if (kcalNum <= 2000 * mult) {
+                      kcalColor = '#4ade80'; // Verde
+                      kcalBg = darkMode ? '#1a2e1a' : '#f0fff4';
+                    } else if (kcalNum <= 3000 * mult) {
+                      kcalColor = '#facc15'; // Amarillo
+                      kcalBg = darkMode ? '#2e2e1a' : '#fffdf0';
+                    }
+
+                    return (
+                      <View style={{
+                        borderRadius: 18,
+                        padding: 20,
+                        marginBottom: 14,
+                        alignItems: 'center',
+                        backgroundColor: kcalBg,
+                        borderWidth: 1.5,
+                        borderColor: kcalColor + '44',
+                      }}>
+                        <Text style={{ fontSize: 13, fontWeight: '600', color: kcalColor, marginBottom: 4, letterSpacing: 0.5 }}>
+                          CALORÍAS TOTALES
+                        </Text>
+                        <Text style={{
+                          fontSize: 44,
+                          fontWeight: '800',
+                          color: kcalColor,
+                          letterSpacing: -1,
+                        }}>
+                          {data.totalCalories}
+                        </Text>
+                        <Text style={{ fontSize: 14, color: darkMode ? '#aaa' : '#888', fontWeight: '500' }}>kcal</Text>
+                      </View>
+                    );
+                  })()}
 
                   {/* Grid 2×2 de macros */}
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>

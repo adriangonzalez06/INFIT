@@ -94,7 +94,13 @@ export default function CreateDishMenu({ route }) {
   const [appModal, setAppModal] = useState({ visible: false, type: 'info', title: '', message: '' });
 
   const showAppModal = (type, title, message) => setAppModal({ visible: true, type, title, message });
-  const hideAppModal = () => setAppModal(m => ({ ...m, visible: false }));
+  const hideAppModal = () => {
+    const wasSuccess = appModal.type === 'success';
+    setAppModal(m => ({ ...m, visible: false }));
+    if (wasSuccess) {
+      navigation.goBack();
+    }
+  };
 
   const calculateTotals = (dishInstance) => {
     let totals = { calories: 0, fiber: 0, carbs: 0, fat: 0, protein: 0 };
