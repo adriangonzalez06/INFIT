@@ -83,6 +83,7 @@ export default function Feed() {
   const [loading, setLoading] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   const [likingPosts, setLikingPosts] = useState({}); // Tracking para evitar spam
+  const [fbUid, setFbUid] = useState(null); // Firebase UID como backup
 
   // Form
   const [title, setTitle] = useState("");
@@ -108,20 +109,17 @@ export default function Feed() {
 
   const loadUser = async () => {
     try {
-      let uid = await AsyncStorage.getItem('userId');
+      let uid = await AsyncStorage.getItem('userDocId'); // Intentamos primero el ID real del backend
+      if (!uid) uid = await AsyncStorage.getItem('userId');
       let name = await AsyncStorage.getItem('userName');
       let email = await AsyncStorage.getItem('userEmail');
       let avatar = null;
 
       // Fallback a Firebase Auth
-      if (!uid) {
-        const auth = getAuth();
-        const firebaseUser = auth.currentUser;
-        if (firebaseUser) {
-          uid = firebaseUser.uid;
-          name = name || firebaseUser.displayName || firebaseUser.email;
-          email = email || firebaseUser.email;
-        }
+      const auth = getAuth();
+      const fbUser = auth.currentUser;
+      if (fbUser && !uid) {
+        uid = fbUser.uid;
       }
 
       // Cargar foto de perfil desde el backend (igual que profile.js)
@@ -139,6 +137,7 @@ export default function Feed() {
       }
 
       if (uid) setUserId(uid);
+      if (fbUser) setFbUid(fbUser.uid);
       if (name) setUsername(name);
       if (avatar) setAvatarUri(avatar);
     } catch (error) {
@@ -296,7 +295,8 @@ export default function Feed() {
 
   // ── Menú de opciones del post (solo dueño) ────────────────────────────────
   const openPostOptions = (post) => {
-    if (post.userId !== userId) return;
+    const isOwner = post.userId === userId || (fbUid && post.userId === fbUid);
+    if (!isOwner) return;
     showAppModal('confirm', 'Opciones', '¿Qué quieres hacer con esta publicación?', () => deletePost(post.id));
   };
 
@@ -352,7 +352,8 @@ export default function Feed() {
 
   // ── Render tarjeta ────────────────────────────────────────────────────────
   const renderItem = ({ item }) => {
-    const hasLiked = (item.likes || []).includes(userId);
+    const isOwner = item.userId === userId || (fbUid && item.userId === fbUid);
+    const hasLiked = (item.likes || []).includes(userId) || (fbUid && (item.likes || []).includes(fbUid));
     const createdAt = item.createdAt?.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
 
     return (
@@ -371,7 +372,7 @@ export default function Feed() {
             </Text>
           </View>
           {/* Solo visible para el dueño del post */}
-          {item.userId === userId && (
+          {isOwner && (
             <TouchableOpacity style={styles.moreOptions} onPress={() => openPostOptions(item)}>
               <Ionicons name="ellipsis-horizontal" size={20} color={darkMode ? "#aaa" : "#666"} />
             </TouchableOpacity>

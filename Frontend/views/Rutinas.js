@@ -328,7 +328,14 @@ export default function Rutinas() {
     setOpcionesVisible(false);
 
     try {
-      const userDocId = await AsyncStorage.getItem('userDocId');
+      let userDocId = await AsyncStorage.getItem('userDocId');
+
+      // Fallback a Firebase UID si no tenemos el ID del backend aún
+      if (!userDocId) {
+        const auth = getAuth();
+        userDocId = auth.currentUser?.uid;
+      }
+
       const email = await AsyncStorage.getItem('userEmail');
       let avatar = null;
 
@@ -371,7 +378,7 @@ export default function Rutinas() {
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={[styles.horizontalScrollContent, darkMode && { backgroundColor: colors.bg_dark }]}
-          style={darkMode && { backgroundColor: colors.bg_dark }}
+          style={{ backgroundColor: darkMode ? colors.bg_dark : 'transparent' }}
         >
           {(rutinasGrupo || []).map((rutina) => (
             <TouchableOpacity
@@ -410,7 +417,7 @@ export default function Rutinas() {
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={[styles.horizontalScrollContent, darkMode && { backgroundColor: colors.bg_dark }]}
-        style={darkMode && { backgroundColor: colors.bg_dark }}
+        style={{ backgroundColor: darkMode ? colors.bg_dark : 'transparent' }}
       >
         {(predefinidas.length > 0 ? predefinidas : rutinasPredefinidas).map((rutina) => (
           <TouchableOpacity
@@ -663,7 +670,7 @@ export default function Rutinas() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.bg_gray,
   },
   darkContainer: {
     backgroundColor: colors.bg_dark,
@@ -694,7 +701,8 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   scrollContent: {
-    paddingBottom: 100,
+    flexGrow: 1,
+    paddingBottom: 0,
   },
   header: {
     paddingTop: Platform.OS === 'android' ? 40 : 15,
@@ -713,7 +721,8 @@ const styles = StyleSheet.create({
     color: colors.dark_gray || '#333',
   },
   grupoContainer: {
-    marginBottom: 30,
+    marginBottom: 10,
+    overflow: 'visible',
   },
   grupoTitulo: {
     fontSize: 20,
@@ -724,8 +733,7 @@ const styles = StyleSheet.create({
   },
   horizontalScrollContent: {
     paddingHorizontal: 15,
-    paddingBottom: 10,
-
+    paddingVertical: 8,
   },
   rutinaCard: {
     width: 170,

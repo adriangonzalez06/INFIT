@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput,
   SafeAreaView, ImageBackground
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -50,6 +51,10 @@ export default function ListaGrupoRecetas({ route }) {
           resizeMode="cover"
           style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', borderRadius: 14, overflow: 'hidden' }}
         >
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.85)']}
+            style={styles.gradientOverlay}
+          />
           <Text style={styles.recetaTextoTitulo}>{diet.name}</Text>
           <Text style={styles.recetaTexto}>Subtítulo</Text>
         </ImageBackground>

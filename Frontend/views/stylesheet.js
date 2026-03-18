@@ -144,19 +144,20 @@ export default StyleSheet.create({
   },
 
   recetaTexto: {
-    fontSize: 20,
+    fontSize: 14,
     color: colors.white,
     position: 'absolute',
-    left: 10,
+    left: 15,
     bottom: 10,
+    fontWeight: '400',
   },
   recetaTextoTitulo: {
     fontSize: 22,
-    fontWeight: '600',
+    fontWeight: '700',
     color: colors.white,
     position: 'absolute',
-    bottom: 40,
-    left: 10,
+    bottom: 25,
+    left: 15,
   },
   recetasRow: {
     flexDirection: 'row',
@@ -215,6 +216,13 @@ export default StyleSheet.create({
     shadowRadius: 3.84,
     // Android shadow
     elevation: 5,
+  },
+  gradientOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '55%',
   },
   addCard: {
     width: 100,

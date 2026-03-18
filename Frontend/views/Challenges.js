@@ -18,6 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import colors from './colors';
+import { addXP, XP_REWARDS } from '../src/services/XPService';
 const { width } = Dimensions.get('window');
 // Habilitar LayoutAnimation en Android
 if (UIManager.setLayoutAnimationEnabledExperimental) {
@@ -110,7 +111,7 @@ const weekKey = () => {
   const y = monday.getFullYear();
   const m = String(monday.getMonth() + 1).padStart(2, '0');
   const dd = String(monday.getDate()).padStart(2, '0');
-  return `${y}-${m}-${y}`; // clave única para esa semana
+  return `${y}-${m}-${dd}`; // clave única para esa semana
 };
 
 const ProgressBar = ({ progress = 0, color = '#ef2b2d', height = 8, isDark = false }) => {
@@ -163,6 +164,7 @@ export default function ChallengesScreen() {
   // Estado semanal: { id: number } progreso actual
   const [weeklyState, setWeeklyState] = useState({});
   const [weekKeyState, setWeekKeyState] = useState(weekKey());
+  const [levelUpToast, setLevelUpToast] = useState(null); // { emoji, name }
 
   // Cargar estado al montar
   useEffect(() => {
@@ -177,7 +179,8 @@ export default function ChallengesScreen() {
         AsyncStorage.getItem(STORAGE_KEYS.weekly(wKey)),
       ]);
 
-
+      if (dJson) setDailyState(JSON.parse(dJson));
+      if (wJson) setWeeklyState(JSON.parse(wJson));
     };
     load();
   }, []);
@@ -207,9 +210,22 @@ export default function ChallengesScreen() {
   //video youtube
   const toggleDaily = async (id) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    const next = { ...dailyState, [id]: !dailyState[id] };
+    const wasCompleted = !!dailyState[id];
+    const next = { ...dailyState, [id]: !wasCompleted };
     setDailyState(next);
     await AsyncStorage.setItem(STORAGE_KEYS.daily(dailyKey), JSON.stringify(next));
+
+    // Award XP only when completing (not un-completing)
+    if (!wasCompleted) {
+      const result = await addXP(XP_REWARDS.DAILY_CHALLENGE);
+      if (result?.leveledUp) {
+        setLevelUpToast(result.newLevel);
+        setTimeout(() => setLevelUpToast(null), 3500);
+      }
+    } else {
+      // Remover XP si el usuario deshace el progreso
+      await addXP(-XP_REWARDS.DAILY_CHALLENGE);
+    }
   };
 
   //video youtube
@@ -221,6 +237,15 @@ export default function ChallengesScreen() {
     const next = { ...weeklyState, [id]: nextVal };
     setWeeklyState(next);
     await AsyncStorage.setItem(STORAGE_KEYS.weekly(weekKeyState), JSON.stringify(next));
+
+    // Award XP when reaching the target
+    if (delta > 0 && nextVal === target && current < target) {
+      const result = await addXP(XP_REWARDS.WEEKLY_CHALLENGE);
+      if (result?.leveledUp) {
+        setLevelUpToast(result.newLevel);
+        setTimeout(() => setLevelUpToast(null), 3500);
+      }
+    }
   };
 
   //video youtube
@@ -457,9 +482,65 @@ export default function ChallengesScreen() {
           }
         />
       </View>
+      {levelUpToast && <LevelUpToast level={levelUpToast} />}
     </SafeAreaView>
   );
 }
+
+// ── Level Up Toast ────────────────────────────────────────────────────────────
+function LevelUpToast({ level }) {
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(30)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(opacity, { toValue: 1, duration: 350, useNativeDriver: true }),
+      Animated.spring(translateY, { toValue: 0, useNativeDriver: true }),
+    ]).start();
+  }, []);
+
+  return (
+    <Animated.View
+      style={[
+        levelUpStyles.toast,
+        { opacity, transform: [{ translateY }] },
+      ]}
+    >
+      <Text style={levelUpStyles.emoji}>{level.emoji}</Text>
+      <View>
+        <Text style={levelUpStyles.title}>¡Subiste de nivel!</Text>
+        <Text style={levelUpStyles.sub}>Ahora eres {level.name} · Nivel {level.level}</Text>
+      </View>
+    </Animated.View>
+  );
+}
+
+const levelUpStyles = StyleSheet.create({
+  toast: {
+    position: 'absolute',
+    bottom: 100,
+    left: 20,
+    right: 20,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    zIndex: 999,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 12,
+    borderWidth: 1,
+    borderColor: '#ef2b2d',
+  },
+  emoji: { fontSize: 36 },
+  title: { color: '#fff', fontWeight: '800', fontSize: 16 },
+  sub:   { color: '#aaa', fontWeight: '500', fontSize: 13, marginTop: 2 },
+});
 
 
 const styles = StyleSheet.create({

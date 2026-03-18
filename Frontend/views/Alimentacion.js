@@ -3,6 +3,7 @@ import {
   View, Text, TouchableOpacity, ScrollView,
   SafeAreaView, ImageBackground, Modal,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -223,16 +224,16 @@ export default function Alimentacion() {
     const r6 = new Diet(6, 'Dieta Baja en Carbohidratos 3', 'descripcion', 'https://res.cloudinary.com/do0tjcogk/image/upload/v1773220652/B_g7qfdq.png', [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
     //Dietas Default Balanceada
     const r7 = new Diet(7, 'Dieta Balanceada 1', 'descripcion', 'https://res.cloudinary.com/do0tjcogk/image/upload/v1772623173/top-view-healthy-diet-salad-with-grilled-chicken-broccoli-cauliflower-tomato-lettuce-avocado-lettuce_plaiob.jpg', [[p2, p3, p6], [p6, p4, p5], [p5, p4, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
-    const r8 = new Diet(8, 'Dieta Balanceada 2', 'descripcion', 'https://res.cloudinary.com/do0tjcogk/image/upload/v1773218578/plato-saludable-carne-molida-verduras-arroz-marron-ensalada-fresca_598644-1780_tni2xo.avif',[[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
+    const r8 = new Diet(8, 'Dieta Balanceada 2', 'descripcion', 'https://res.cloudinary.com/do0tjcogk/image/upload/v1773218578/plato-saludable-carne-molida-verduras-arroz-marron-ensalada-fresca_598644-1780_tni2xo.avif', [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
     const r9 = new Diet(9, 'Dieta Balanceada 3', 'descripcion', 'https://res.cloudinary.com/do0tjcogk/image/upload/v1773220919/11_lrhi3l.jpg', [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
     //Dietas Default Vegana
     const r10 = new Diet(10, 'Dieta Vegana 1', 'descripcion', 'https://res.cloudinary.com/do0tjcogk/image/upload/v1772623960/VEGANA_gxtex5.jpg', [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
     const r11 = new Diet(11, 'Dieta Vegana 2', 'descripcion', 'https://res.cloudinary.com/do0tjcogk/image/upload/v1773218698/A_oq48h9.jpg', [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
-    const r12 = new Diet(12, 'Dieta Vegana 3', 'descripcion', 'https://res.cloudinary.com/do0tjcogk/image/upload/v1773221075/2_ts1zhw.avif', [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2,p3], [p1,p2,p3],[p5,p1,p6],[p3]]);
+    const r12 = new Diet(12, 'Dieta Vegana 3', 'descripcion', 'https://res.cloudinary.com/do0tjcogk/image/upload/v1773221075/2_ts1zhw.avif', [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
     //Dietas Default Cetogénica
-    const r13 = new Diet(13, 'Dieta Cetogénica 1', 'descripcion', 'https://res.cloudinary.com/do0tjcogk/image/upload/v1772624464/cetogenica_csds2j.jpg', [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2,p3], [p1,p2,p3],[p5,p1,p6],[p3]]);
-    const r14 = new Diet(14, 'Dieta Cetogénica 2', 'descripcion', 'https://res.cloudinary.com/do0tjcogk/image/upload/v1773218788/AA_xa2cts.webp', [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2,p3], [p1,p2,p3],[p5,p1,p6],[p3]]);
-    const r15 = new Diet(15, 'Dieta Cetogénica 3', 'descripcion', 'https://res.cloudinary.com/do0tjcogk/image/upload/v1773221176/3_khfxrf.png', [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2,p3], [p1,p2,p3],[p5,p1,p6],[p3]]);
+    const r13 = new Diet(13, 'Dieta Cetogénica 1', 'descripcion', 'https://res.cloudinary.com/do0tjcogk/image/upload/v1772624464/cetogenica_csds2j.jpg', [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
+    const r14 = new Diet(14, 'Dieta Cetogénica 2', 'descripcion', 'https://res.cloudinary.com/do0tjcogk/image/upload/v1773218788/AA_xa2cts.webp', [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
+    const r15 = new Diet(15, 'Dieta Cetogénica 3', 'descripcion', 'https://res.cloudinary.com/do0tjcogk/image/upload/v1773221176/3_khfxrf.png', [[p2, p3, p6], [p1, p2, p3], [p5, p1, p6], [p2, p3], [p1, p2, p3], [p5, p1, p6], [p3]]);
 
     return [r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13, r14, r15];
   };
@@ -343,6 +344,10 @@ export default function Alimentacion() {
           source={imageSource}
           resizeMode="cover"
           style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', borderRadius: 14, overflow: 'hidden' }}>
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.85)']}
+            style={styles.gradientOverlay}
+          />
           <Text style={styles.recetaTextoTitulo}>{diet.name}</Text>
           {canEdit && (
             <View style={{ position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 12, padding: 4 }}>

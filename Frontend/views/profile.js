@@ -27,6 +27,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { BACKEND_URL } from '../src/config';
 import AppModal from './AppModal';
 import colors from './colors';
+import { getXP, getLevelInfo, syncXPFromBackend } from '../src/services/XPService';
 
 
 
@@ -101,6 +102,7 @@ export default function ProfileScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [recentRoutines, setRecentRoutines] = useState([]);
+  const [xpInfo, setXpInfo] = useState(null);
   const [modal, setModal] = useState({ visible: false, type: 'error', title: '', message: '' });
   const showModal = (type, title, message) => setModal({ visible: true, type, title, message });
   const hideModal = () => setModal(m => ({ ...m, visible: false }));
@@ -112,7 +114,12 @@ export default function ProfileScreen() {
         const savedTheme = await ReactNativeAsyncStorage.getItem("darkMode");
         setDarkMode(savedTheme === "true");
       };
+      const loadXP = async () => {
+        const xp = await getXP();
+        setXpInfo(getLevelInfo(xp));
+      };
       loadTheme();
+      loadXP();
     }, [])
   );
 
@@ -120,7 +127,7 @@ export default function ProfileScreen() {
   useFocusEffect(
     useCallback(() => {
       ReactNativeAsyncStorage.getItem('recentRoutines').then(raw => {
-        if (raw) setRecentRoutines(JSON.parse(raw));
+        if (raw) setRecentRoutines(JSON.parse(raw).slice(0, 5));
         else setRecentRoutines([]);
       }).catch(() => { });
     }, [])
@@ -582,6 +589,47 @@ export default function ProfileScreen() {
             </Animated.View>
           </View>
         </Modal>
+        {/* ── XP / Level card ── */}
+        {xpInfo && (
+          <View style={[styles.xpCard, darkMode && styles.xpCardDark]}>
+            <View style={styles.xpCardHeader}>
+              <View style={styles.xpLevelBadge}>
+                <Text style={styles.xpLevelEmoji}>{xpInfo.current.emoji}</Text>
+              </View>
+              <View style={{ flex: 1, marginLeft: 14 }}>
+                <Text style={[styles.xpLevelName, darkMode && styles.darkText]}>
+                  {xpInfo.current.name}
+                </Text>
+                <Text style={[styles.xpLevelSub, darkMode && { color: '#aaa' }]}>
+                  Nivel {xpInfo.current.level}
+                  {xpInfo.next ? ` · ${xpInfo.xpToNext} XP para ${xpInfo.next.name}` : ' · Nivel máximo 🎉'}
+                </Text>
+              </View>
+              <View style={styles.xpTotalBadge}>
+                <Text style={styles.xpTotalText}>{xpInfo.xp}</Text>
+                <Text style={styles.xpTotalLabel}>XP</Text>
+              </View>
+            </View>
+
+            {/* Progress bar */}
+            <View style={[styles.xpBarBg, darkMode && { backgroundColor: '#333' }]}>
+              <View
+                style={[
+                  styles.xpBarFill,
+                  { width: `${Math.round(xpInfo.progress * 100)}%` }
+                ]}
+              />
+            </View>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
+              <Text style={[styles.xpBarLabel, darkMode && { color: '#666' }]}>
+                {xpInfo.current.minXP} XP
+              </Text>
+              <Text style={[styles.xpBarLabel, darkMode && { color: '#666' }]}>
+                {xpInfo.next ? `${xpInfo.next.minXP} XP` : 'Máx.'}
+              </Text>
+            </View>
+          </View>
+        )}
 
         <Text style={[styles.sectionTitle, darkMode && styles.darkTextSecondary]}>Rutinas recientes</Text>
         {recentRoutines.length === 0 ? (
@@ -924,6 +972,90 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+
+  // ── XP / Level card ──────────────────────────────────────────────────────
+  xpCard: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  xpCardDark: {
+    backgroundColor: '#1e1e1e',
+    elevation: 0,
+    shadowOpacity: 0,
+  },
+  xpCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  xpLevelBadge: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: '#fff5f5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#ef2b2d22',
+  },
+  xpLevelEmoji: {
+    fontSize: 26,
+  },
+  xpLevelName: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#1a1a1a',
+    letterSpacing: -0.3,
+  },
+  xpLevelSub: {
+    fontSize: 13,
+    color: '#888',
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  xpTotalBadge: {
+    backgroundColor: '#ef2b2d',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 14,
+    alignItems: 'center',
+  },
+  xpTotalText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  xpTotalLabel: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 10,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  xpBarBg: {
+    height: 10,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  xpBarFill: {
+    height: '100%',
+    backgroundColor: '#ef2b2d',
+    borderRadius: 10,
+  },
+  xpBarLabel: {
+    fontSize: 11,
+    color: '#bbb',
+    fontWeight: '600',
   },
 
 });

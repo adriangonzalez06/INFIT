@@ -19,6 +19,7 @@ import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { BACKEND_URL } from '../src/config';
+import { getXP, getLevelInfo, syncXPFromBackend } from '../src/services/XPService';
 
 
 const PRIMARY = '#ef2b2d';
@@ -116,11 +117,21 @@ export default function WelcomeScreen() {
   const [userName, setUserName] = useState(null);
   const [userAvatar, setUserAvatar] = useState(null);
   const [streak, setStreak] = useState(0);
+  const [xpInfo, setXpInfo] = useState(getLevelInfo(0));
+
+  // Recargar XP/nivel cada vez que la pantalla gana foco
+  useFocusEffect(
+    useCallback(() => {
+      getXP().then(xp => setXpInfo(getLevelInfo(xp)));
+    }, [])
+  );
 
   useEffect(() => {
     const auth = getAuth();
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (user) {
+        // Sync XP from backend on login
+        syncXPFromBackend(user.uid).then(xp => setXpInfo(getLevelInfo(xp)));
         let name = (user.displayName && user.displayName.trim()) || null;
         let streakVal = 0;
 
@@ -148,6 +159,9 @@ export default function WelcomeScreen() {
             if (nombre) {
               name = nombre;
               await AsyncStorage.setItem('userName', nombre);
+            }
+            if (resp.data.id) {
+              await AsyncStorage.setItem('userDocId', resp.data.id);
             }
             if (bkStreak !== undefined) {
               streakVal = bkStreak;
@@ -232,11 +246,21 @@ export default function WelcomeScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={[styles.streakChip, { borderColor: theme.hairline, backgroundColor: isDark ? '#1a1a1a' : '#fff' }]}>
-          <Ionicons name="flame" size={20} color={theme.primary} />
-          <Text style={[styles.streakChipText, { color: theme.title }]}>
-            {streak} Días de racha
-          </Text>
+        {/* Streak + Level chips */}
+        <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
+          <View style={[styles.streakChip, { borderColor: theme.hairline, backgroundColor: isDark ? '#1a1a1a' : '#fff' }]}>
+            <Ionicons name="flame" size={20} color={theme.primary} />
+            <Text style={[styles.streakChipText, { color: theme.title }]}>
+              {streak} Días de racha
+            </Text>
+          </View>
+
+          <View style={[styles.streakChip, { borderColor: theme.hairline, backgroundColor: isDark ? '#1a1a1a' : '#fff' }]}>
+            <Text style={{ fontSize: 18 }}>{xpInfo.current.emoji}</Text>
+            <Text style={[styles.streakChipText, { color: theme.title }]}>
+              {xpInfo.current.name} · {xpInfo.xp} XP
+            </Text>
+          </View>
         </View>
       </Animated.View>
 
