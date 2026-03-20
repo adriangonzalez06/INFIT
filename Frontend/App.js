@@ -19,8 +19,15 @@ import {
   initializeAuth,
   getReactNativePersistence,
   updateProfile,
+  GoogleAuthProvider,
+  signInWithCredential,
 } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+
+GoogleSignin.configure({
+  webClientId: '3752609566-9mp2qkbqfonav8t7u5pf757jdorgernd.apps.googleusercontent.com',
+});
 
 // Logos SVG como componentes React (react-native-svg-transformer los convierte en componentes)
 import LogoRedBg from './assets/logos/logo_red_bg.svg';
@@ -151,6 +158,52 @@ function LoginScreen({ navigation }) {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    try {
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+      const idToken = userInfo.data?.idToken || userInfo.idToken;
+
+      if (!idToken) throw new Error('No se recibió idToken de Google');
+
+      const googleCredential = GoogleAuthProvider.credential(idToken);
+      const userCredential = await signInWithCredential(auth, googleCredential);
+      const user = userCredential.user;
+
+      let userId = null;
+      let streak = null;
+
+      try {
+        const resp = await axios.get(
+          `${BACKEND_URL}/api/usuarios/buscar/email/${encodeURIComponent(user.email.trim())}`,
+          { timeout: 5000 }
+        );
+        userId = resp.data?.id;
+        streak = resp.data?.streak;
+
+        if (!userId) {
+          showModal('warning', 'Registro necesario', 'Iniciaste sesión con Google pero no estás registrado en nuestra base de datos. Por favor, regístrate usando este mismo correo de Google.');
+          await getAuth().signOut();
+          return;
+        }
+
+        await AsyncStorage.removeItem('userId');  
+        await AsyncStorage.setItem('userDocId', userId);
+        await AsyncStorage.setItem('streak', (streak || 0).toString());
+        
+      } catch (e) {
+        console.error('Error obteniendo usuario del backend tras Google Login:', e?.message || e);
+        showModal('error', 'Error de red', 'Conectado con Google, pero no pudimos obtener tu perfil de la base de datos.');
+        return;
+      }
+
+      navigation.navigate('MainTabs');
+    } catch (error) {
+      console.error('Error en login con Google:', error);
+      showModal('error', 'Aviso', 'No se completó el inicio de sesión con Google.');
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       style={[styles.container, darkMode && styles.darkContainer]}
@@ -196,12 +249,14 @@ function LoginScreen({ navigation }) {
 
           <Text style={[styles.dividerText, darkMode && { color: '#aaa' }]}>─── O inicia sesión con ───</Text>
 
-
-          <TouchableOpacity style={[styles.google, darkMode && styles.darkGoogle]}>
+          <TouchableOpacity 
+            style={[styles.google, darkMode && styles.darkGoogle]}
+            onPress={handleGoogleLogin}
+          >
             <Image
               source={require('./assets/logos/google.png')}
               style={{ width: 60, height: 30 }}
-              resizeMode="contain"
+              contentFit="contain"
             />
           </TouchableOpacity>
 

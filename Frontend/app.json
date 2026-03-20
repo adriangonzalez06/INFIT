@@ -22,7 +22,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.infit"
+      "package": "com.coboliers.infit"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -30,12 +30,15 @@
     "plugins": [
       "@react-native-firebase/app",
       "@react-native-firebase/auth",
-      "@react-native-firebase/crashlytics",
+      "@react-native-google-signin/google-signin",
       [
         "expo-build-properties",
         {
           "ios": {
             "useFrameworks": "static"
+          },
+          "android": {
+            "multiDexEnabled": true
           }
         }
       ]

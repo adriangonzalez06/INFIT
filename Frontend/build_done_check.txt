@@ -1,0 +1,5 @@
+﻿w: file:///C:/Users/sergi.velasco.ext/Desktop/INFIT/Frontend/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/views/ViewManagerDefinition.kt:41:16 'val errorManager: JSLoggerModule?' is deprecated. Use AppContext.jsLogger instead.
+w: file:///C:/Users/sergi.velasco.ext/Desktop/INFIT/Frontend/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/views/ViewManagerDefinition.kt:41:30 'fun reportExceptionToLogBox(codedException: CodedException): Unit' is deprecated. Use appContext.jsLogger.error(...) instead.
+
+> Task :react-native-worklets:configureCMakeDebug[armeabi-v7a]
+> Task :react-native-screens:configureCMakeDebug[armeabi-v7a]

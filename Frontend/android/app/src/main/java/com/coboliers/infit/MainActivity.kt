@@ -1,7 +1,9 @@
-package com.anonymous.infit
+package com.coboliers.infit
 
 import android.os.Build
 import android.os.Bundle
+import com.coboliers.infit.R
+import com.coboliers.infit.BuildConfig
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
