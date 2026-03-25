@@ -12,6 +12,15 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
+import axios from 'axios';
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  getReactNativePersistence,
+  updateProfile,
+} from 'firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // { changed code }
+
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -29,47 +38,86 @@ import PantallaRutina from './views/PantallaRutina';
 import RuedaSettings from './views/RuedaSettings';
 import ChangingPassword from './views/changing_password';
 import ListaGrupoRecetas from './views/ListaGrupoRecetas';
-import RecipeView from './views/RecipeView';
+import AddDietMenu from './views/AddDietMenu';
 import colors from './views/colors';
+import CreateDishMenu from "./views/CreateDishMenu";
 
 import { initializeApp, getApps } from 'firebase/app';
 import { firebaseConfig } from './firebaseConfig';
-import {
-  getAuth,
-  signInWithEmailAndPassword,
-  getReactNativePersistence,
-} from 'firebase/auth';
-import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
 const Stack = createNativeStackNavigator();
 
 // Inicialización segura de Firebase
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const auth = getAuth(app, {
-  persistence: getReactNativePersistence(ReactNativeAsyncStorage),
+  persistence: getReactNativePersistence(AsyncStorage),
 });
 
 function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Error', 'Por favor, completa todos los campos.');
       return;
     }
+    try {
+      // Autenticar en Firebase
+      const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
+      const user = userCredential.user;
 
-    signInWithEmailAndPassword(auth, email.trim(), password)
-      .then((userCredential) => {
-        console.log('Logged in!');
-        const user = userCredential.user;
-        console.log(user);
-        navigation.navigate('MainTabs');
-      })
-      .catch((error) => {
-        console.error(error);
-        Alert.alert('Error', error.message);
-      });
+      const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+
+      // { changed code }} Declarar variables antes del try
+      let userId = null;
+      let streak = null;
+      let nombreBackend = null;
+
+      try {
+        const resp = await axios.get(
+          `http://${host}:8082/api/usuarios/buscar/email/${encodeURIComponent(user.email.trim())}`,
+          { timeout: 5000 }
+        );
+        userId = resp.data?.id;
+        streak = resp.data?.streak;
+        nombreBackend = resp.data?.nombre;
+
+        // { changed code }} Si no viene userId, error obligatorio
+        if (!userId) {
+          Alert.alert('Error', 'No se encontró el usuario en la base de datos');
+          return;
+        }
+
+        // Guardar userId y streak en AsyncStorage
+        await AsyncStorage.setItem('userId', userId);
+        await AsyncStorage.setItem('streak', (streak || 0).toString());
+        console.log('userId guardado en AsyncStorage:', userId);
+        console.log('streak guardado en AsyncStorage:', streak || 0);
+
+      } catch (e) {
+        // { changed code }} Si falla la consulta, NO navegar
+        console.error('Error obteniendo usuario del backend:', e?.message || e);
+        Alert.alert('Error', 'No se pudo obtener los datos del usuario. Verifica tu conexión.');
+        return; // STOP: no navega
+      }
+
+      // Actualizar displayName si viene del backend
+      if (nombreBackend && (!user.displayName || user.displayName !== nombreBackend)) {
+        try {
+          await updateProfile(user, { displayName: nombreBackend });
+          console.log('displayName actualizado desde backend:', nombreBackend);
+        } catch (e) {
+          console.warn('No se pudo actualizar displayName:', e?.message || e);
+        }
+      }
+
+      // { changed code }} Solo navega si userId fue obtenido correctamente
+      navigation.navigate('MainTabs');
+    } catch (error) {
+      console.error('Error en login:', error);
+      Alert.alert('Error', error.message || 'Error al iniciar sesión');
+    }
   };
 
   return (
@@ -77,7 +125,7 @@ function LoginScreen({ navigation }) {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <StatusBar style="auto" />
+      <StatusBar hidden={true} />
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <Image
           style={styles.logo}
@@ -115,20 +163,36 @@ function LoginScreen({ navigation }) {
           <Text style={styles.dividerText}>─── O inicia sesión con ───</Text>
 
 
-           <TouchableOpacity style={styles.google}>
-           <Image
-            source={require('./assets/logos/google.png')}
-                style={{ width: 24, height: 24 }}
-             resizeMode="contain"
-               />
-           </TouchableOpacity>
+          <TouchableOpacity style={styles.google}>
+            <Image
+              source={require('./assets/logos/google.png')}
+              style={{ width: 60, height: 30 }}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
 
+          <TouchableOpacity style={styles.google2}>
+            <Image
+              source={require('./assets/logos/google2.png')}
+              style={{ width: 50, height: 25, justifyContent: 'center', alignSelf: 'center', marginLeft: -20 }}
+              resizeMode="contain"
+            />
+            <Text style={styles.googletext}>Google</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.google3}>
+            <Image
+              source={require('./assets/logos/google2.png')}
+              style={{ width: 24, height: 24 }}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
         </SafeAreaView>
 
-           {/* Boton para ir al menu sin iniciar sesion para no perder tanto tiempo */}
-          <TouchableOpacity style={styles.boton} onPress = {() => navigation.navigate('MainTabs')}>
-            <Text style={styles.botonTexto}>Debug ir al menu</Text>
-            </TouchableOpacity>
+        {/* Boton para ir al menu sin iniciar sesion para no perder tanto tiempo */}
+        <TouchableOpacity style={styles.boton} onPress={() => navigation.navigate('MainTabs')}>
+          <Text style={styles.botonTexto}>Debug ir al menu</Text>
+        </TouchableOpacity>
 
       </ScrollView>
     </KeyboardAvoidingView>
@@ -168,15 +232,15 @@ export default function App() {
               ),
             })}
           />
-          <Stack.Screen name="Rutinas" component={RutinasScreen} options={{headerShown: false}} />
-          <Stack.Screen name="PantallaRutina" component={PantallaRutina}options={{headerShown: false}} />
-          <Stack.Screen name="Alimentacion" component={AlimentacionScreen} options={{headerShown: false}} />
-          <Stack.Screen name="RuedaSettings" component={RuedaSettings} options={{headerShown: false}} />
-          <Stack.Screen name="Ajustes" component={SettingsScreen} options={{headerShown: false}}/>
-          <Stack.Screen name="ChangingPassword" component={ChangingPassword} options={{headerShown: false}}/>
-          <Stack.Screen name="ListaGrupoRecetas" component={ListaGrupoRecetas} options={{headerShown: false}}/>
-          <Stack.Screen name="Recipe" component={RecipeView} options={{headerShown: false}}/>
-          <Stack.Screen name="Challenges" component={Challenges} options={{headerShown: false}}/>
+          <Stack.Screen name="PantallaRutina" component={PantallaRutina} options={{ headerShown: false }} />
+          <Stack.Screen name="Alimentacion" component={AlimentacionScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="RuedaSettings" component={RuedaSettings} options={{ headerShown: false }} />
+          <Stack.Screen name="Ajustes" component={SettingsScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="ChangingPassword" component={ChangingPassword} options={{ headerShown: false }} />
+          <Stack.Screen name="ListaGrupoRecetas" component={ListaGrupoRecetas} options={{ headerShown: false }} />
+          <Stack.Screen name="Challenges" component={Challenges} options={{ headerShown: false }} />
+          <Stack.Screen name="AddDietMenu" component={AddDietMenu} options={{ headerShown: false }} />
+          <Stack.Screen name="CreateDishMenu" component={CreateDishMenu} options={{ headerShown: false }} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
@@ -237,20 +301,60 @@ const styles = StyleSheet.create({
     color: colors.dark_gray,
   },
 
-google: {
-  width: 50,
-  height: 50,
-  borderRadius: 30,
-  backgroundColor: '#fff',
-  justifyContent: 'center',
-  alignItems: 'center',
-  elevation: 2,
-  shadowColor: '#000',
-  shadowOpacity: 0.2,
-  shadowRadius: 4,
-  alignSelf: 'center',
-  marginTop: -20,
+  google: {
+    width: 280,
+    height: 40,
+    borderRadius: 22,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    alignSelf: 'center',
+    marginTop: -20,
 
-},
+  },
+
+  google2: {
+    width: 280,
+    height: 40,
+    borderRadius: 22,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    alignSelf: 'center',
+    marginTop: 10,
+
+
+  },
+
+  google3: {
+    width: 50,
+    height: 50,
+    borderRadius: 30,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    alignSelf: 'center',
+    marginTop: 10,
+
+  },
+
+  googletext: {
+    fontSize: 16,
+    color: colors.dark_gray,
+    alignSelf: 'center',
+
+  },
 
 });

@@ -11,8 +11,13 @@ import {
   useColorScheme,
   StatusBar,
   FlatList,
+  ImageBackground,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import { Platform } from 'react-native';
 
 
 const PRIMARY = '#ef2b2d';
@@ -35,7 +40,7 @@ const ROUTINE_CARD_TEXT = {
 };
 
 const MEAL_CARD_TEXT = {
-  title: 'ALIMENTACIÓN RECOMENDADA',
+  title: 'MI ALIMENTACIÓN',
   last: 'Última comida: Pollo frito',
 };
 
@@ -85,9 +90,56 @@ export default function WelcomeScreen() {
   const isDark = colorScheme === 'dark';
   const theme = isDark ? darkTheme : lightTheme;
 
+  const [userName, setUserName] = useState(null);
+  const [streak, setStreak] = useState(0);
 
-  const userName = 'Sergi';
-  const streakDays = 12;
+  useEffect(() => {
+    const auth = getAuth();
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        let name = (user.displayName && user.displayName.trim()) || null;
+        let streakVal = 0;
+
+        // { changed code }} Cargar desde AsyncStorage primero (rápido)
+        try {
+          const savedStreak = await AsyncStorage.getItem('streak');
+          if (savedStreak) {
+            streakVal = Number(savedStreak);
+          }
+        } catch (e) {
+          console.warn('Error cargando streak de AsyncStorage:', e?.message);
+        }
+
+        // Si no hay displayName en Firebase, intentar obtener del backend
+        if (!name) {
+          try {
+            const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+            const resp = await axios.get(
+              `http://${host}:8082/api/usuarios/buscar/email/${encodeURIComponent(user.email)}`,
+              { timeout: 5000 }
+            );
+            const nombreBackend = resp?.data?.nombre;
+            streakVal = resp?.data?.streak || streakVal; // { changed code }} usa backend si existe, sino usa AsyncStorage
+            if (nombreBackend) {
+               name = nombreBackend;
+               await AsyncStorage.setItem('userName', nombreBackend);
+               await AsyncStorage.setItem('streak', streakVal.toString());
+             }
+           } catch (e) {
+             console.warn('No se pudo obtener nombre del backend:', e?.message || e);
+             // Aquí streakVal sigue siendo el valor de AsyncStorage
+           }
+         }
+
+         setUserName(name || user.email || user.uid);
+         setStreak(streakVal);
+       } else {
+         setUserName(null);
+         setStreak(0);
+       }
+     });
+     return () => unsub();
+   }, []);
 
   const messages = useMemo(
     () => [
@@ -129,46 +181,45 @@ export default function WelcomeScreen() {
       overScrollMode="never"
       showsVerticalScrollIndicator={false}
     >
-      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+        <StatusBar hidden={true} />
+
+        <ImageBackground source={require('../assets/images/Blur_mancuernas.jpg')} style={styles.headerImage}>
+             <Animated.View
+               style={[
+                 styles.header,
+                 { borderBottomColor: theme.hairline, transform: [{ translateY: mountTranslate }], opacity: mountOpacity },
+               ]}
+             >
+
+               <Image source={require('../assets/avatar.png')} style={styles.avatar} />
+               <Text style={[styles.greeting, { color: theme.primary }]}>¡Hola, {userName ?? 'usuario'}!</Text>
+               <Text style={[styles.subtitle, { color: theme.card }]}>{message}</Text>
 
 
-      <Animated.View
-        style={[
-          styles.header,
-          { borderBottomColor: theme.hairline, transform: [{ translateY: mountTranslate }], opacity: mountOpacity },
-        ]}
-      >
-        <Image source={require('../assets/avatar.png')} style={styles.avatar} />
-        <Text style={[styles.greeting, { color: theme.primary }]}>¡Hola, {userName}!</Text>
-        <Text style={[styles.subtitle, { color: theme.subtle }]}>{message}</Text>
 
-        <View style={[styles.streakChip, { borderColor: theme.primary, backgroundColor: theme.card }]}>
-          <Text style={[styles.streakChipText, { color: theme.primary }]}>  Racha: {streakDays} días seguidos</Text>
-        </View>
+               <Pressable
+                 onPressIn={() => animateIn(scaleHeaderCTA)}
+                 onPressOut={() => animateOut(scaleHeaderCTA)}
+                 onPress={() => navigation.navigate('Rutinas')}
+                 accessibilityRole="button"
+                 accessibilityLabel="Empezar rutina"
+               >
+                 <Animated.View
+                   style={[
+                     styles.startButton,
+                     {
+                       backgroundColor: theme.primary,
+                       shadowColor: '#000',
+                       transform: [{ scale: scaleHeaderCTA }],
+                     },
+                   ]}
+                 >
+                   <Text style={styles.startButtonText}>Empezar rutina</Text>
+                 </Animated.View>
+               </Pressable>
+             </Animated.View>
 
-
-        <Pressable
-          onPressIn={() => animateIn(scaleHeaderCTA)}
-          onPressOut={() => animateOut(scaleHeaderCTA)}
-          onPress={() => navigation.navigate('Rutinas')}
-          accessibilityRole="button"
-          accessibilityLabel="Empezar rutina"
-        >
-          <Animated.View
-            style={[
-              styles.startButton,
-              {
-                backgroundColor: theme.primary,
-                shadowColor: '#000',
-                transform: [{ scale: scaleHeaderCTA }],
-              },
-            ]}
-          >
-            <Text style={styles.startButtonText}>Empezar rutina</Text>
-          </Animated.View>
-        </Pressable>
-      </Animated.View>
-
+       </ImageBackground>
 
       <Pressable onPress={() => navigation.navigate('Rutinas')}>
         <Animated.View
@@ -209,7 +260,7 @@ export default function WelcomeScreen() {
       <View style={{ marginTop: 16 }}>
         <View style={styles.sectionHeaderRow}>
           <Text style={[styles.sectionTitle, { color: theme.title }]}>Retos diarios</Text>
-          <Pressable onPress={() => navigation.navigate('Challenges')} ><Text style={[styles.sectionLink, { color: theme.primary }]}>Desliza para ver más ➔</Text></Pressable>
+          <Pressable onPress={() => navigation.navigate('Challenges')} ><Text style={[styles.sectionLink, { color: theme.primary }]}>Ver más ➔</Text></Pressable>
         </View>
 
         <FlatList
@@ -338,4 +389,8 @@ const styles = StyleSheet.create({
   challengeSubtitle: { fontSize: 14, fontWeight: '600', marginBottom: 14 },
   cta: { alignSelf: 'flex-start', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 8 },
   ctaText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+
+  headerImage: {
+    top:'-5%'
+  }
 });

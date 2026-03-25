@@ -1,7 +1,9 @@
-import { StyleSheet, Dimensions } from "react-native";
+import { StyleSheet, Dimensions, Platform, StatusBar } from "react-native";
 import colors from './colors.js';
+import sizes from './font_sizes.js';
 
 var width = Dimensions.get('window').width;
+var height = Dimensions.get('window').height;
 
 export default StyleSheet.create({
 
@@ -12,30 +14,36 @@ export default StyleSheet.create({
     backgroundColor: colors.bg_gray,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
     width: '100%',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    margin: 20,
+    
   },
   backButton: {
     position: 'absolute',
-    top: 40,
-    left: 20,
+    left: 0,
+    top: 0,
     zIndex: 1,
   },
-
   text: {
     fontSize: 16,
     color: colors.dark_gray,
     textAlign: 'center',
-    marginBottom: 20,
   },
+
+  smallText: {
+    fontSize: 14,
+    color: colors.dark_gray,
+    textAlign: 'left',
+    marginBottom: 5
+  },
+
   scrollContent: {
-    paddingBottom: 40,
     flexGrow: 1,
   },
 
@@ -43,13 +51,38 @@ export default StyleSheet.create({
     marginBottom: 30,
     width: width - 50,
   },
+
+  title: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: colors.primary,
+    textAlign: 'center',
+    width: '100%',
+  },
+  title_2: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.medium_gray,
+    marginTop: 5,
+    marginBottom: 5,
+  },
+  title_3: {
+    fontSize: 16,
+    color: colors.medium_gray,
+  },
   grupoTitulo: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 10,
     color: colors.medium_gray,
   },
-
+  grayButton: {
+    backgroundColor: colors.bg_gray,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    borderColor: colors.dark_gray,
+  },
 
   modalOverlay: {
     flex: 1,
@@ -69,14 +102,6 @@ export default StyleSheet.create({
     marginBottom: 10,
     color: colors.dark_gray,
   },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.medium_gray,
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 20,
-    backgroundColor: colors.white,
-  },
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -85,7 +110,7 @@ export default StyleSheet.create({
     backgroundColor: colors.primary,
     paddingVertical: 10,
     paddingHorizontal: 20,
-    borderRadius: 8,
+    borderRadius: 8
   },
   modalButtonText: {
     color: colors.white,
@@ -94,6 +119,14 @@ export default StyleSheet.create({
 
 
   // Alimentacion Screen Styles
+
+  backButton2: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    zIndex: 1,
+  },
+
   recetaTexto: {
     fontSize: 20,
     color: colors.white,
@@ -114,6 +147,10 @@ export default StyleSheet.create({
     flexWrap: 'wrap',
     gap: 12,
   },
+
+  allRecipeCardsContainer: {
+    marginTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
+  },
   //both cards
   recipeCards: {
     borderColor: colors.light_gray,
@@ -133,11 +170,11 @@ export default StyleSheet.create({
     // Android shadow
     elevation: 5,
   },
-    //all recipes in group list only
+  //all recipes in group list only
   recetaCardGroup: {
     width: width - width * 0.2,
     height: 150,
-    margin: 25,
+    margin: 10,
   },
   //recipes in recipe main list only (vista alimentacion)
   recetaCard: {
@@ -180,8 +217,8 @@ export default StyleSheet.create({
     alignSelf: 'center',
   },
 
-// Recipe Screen Styles
-  platoContainer: {
+  // Recipe Screen Styles
+  dishContainer: {
     borderWidth: 1,
     borderColor: colors.light_gray,
     borderRadius: 10,
@@ -192,7 +229,7 @@ export default StyleSheet.create({
     flexDirection: 'row',
   },
 
-  platoImage: {
+  dishImage: {
     width: '40%',
     height: '100%',
     borderRadius: 10,
@@ -213,36 +250,115 @@ export default StyleSheet.create({
     marginBottom: 5,
   },
 
-  totalsTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: colors.dark_gray,
-  },
-  totalsText: {
-    fontSize: 16,
-    color: colors.dark_gray,
-    marginBottom: 5,
-  },
-
   totalsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginBottom: 5,
   },
 
-//pantalla rutina styles
+  label: {
+    fontSize: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4
+  },
+
+  labelVegetarian: {
+    backgroundColor: '#f0ffb9',
+  },
+
+  labelVegan: {
+    backgroundColor: 'rgb(212, 255, 187)',
+  },
+
+  labelGlutenFree: {
+    backgroundColor: '#feffbe',
+  },
+
+  //create diet screen
+
+  dayButton: {
+    width: width * 0.12,
+    height: width * 0.12,
+    borderRadius: 5,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    alignSelf: 'center',
+    margin: 0,
+  },
+
+  daysContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+    marginLeft: 2,
+    marginRight: 2
+  },
+
+  addDishButton: {
+    borderWidth: 2,
+    borderColor: colors.light_gray,
+    borderRadius: 10,
+    borderStyle: 'dashed',
+    padding: 15,
+    marginBottom: 20,
+    textAlign: 'center',
+    justifyContent: 'center',
+  },
+
+  addDishButtonText: {
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
+
+  createDishButton: {
+    borderWidth: 2,
+    borderColor: colors.light_gray,
+    borderRadius: 10,
+    borderStyle: 'dashed',
+    padding: 15,
+    textAlign: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    marginBottom: 15,
+
+  },
+
+  middleRowElementsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingLeft: '10%',
+    paddingRight: '10%',
+    marginBottom: 15,
+  },
+
+  chooseImage: {
+    flex: 1,
+    alignItems: 'center',
+    borderRadius: 10,
+    margin: 2
+  },
+
+  gridImage: {
+    width: '100%',
+    aspectRatio: 1,
+    borderRadius: 10,
+  },
+
+  //pantalla rutina styles
   rutinaContainer: {
     flex: 1,
     paddingTop: 60,
     paddingHorizontal: 20,
     backgroundColor: colors.light_gray,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
   },
   ejercicioItem: {
     paddingVertical: 12,
@@ -275,9 +391,10 @@ export default StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.light_gray,
     borderRadius: 8,
-    padding: 10,
-    marginBottom: 15,
+    padding: 16,
+    margin: 0,
     backgroundColor: colors.white,
+    width: '100%'
   },
 
   ejercicioItemModal: {
@@ -294,8 +411,8 @@ export default StyleSheet.create({
     fontWeight: '600',
   },
 
-// Changing Password and Forgot Password Screen Styles
-    changingPassTitle: {
+  // Changing Password and Forgot Password Screen Styles
+  changingPassTitle: {
     fontSize: 26,
     fontWeight: 'bold',
     marginBottom: 10,
@@ -319,7 +436,7 @@ export default StyleSheet.create({
     fontWeight: 'bold',
   },
 
-// Daily Challenge Screen Styles
+  // Daily Challenge Screen Styles
   card: {
     backgroundColor: colors.white,
     borderRadius: 12,
@@ -333,14 +450,7 @@ export default StyleSheet.create({
   cardDark: {
     backgroundColor: colors.dark_gray,
   },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: colors.primary,
-    marginBottom: 10,
-    textAlign: 'center',
-    width: '100%',
-  },
+
   challengeTitle: {
     fontSize: 18,
     fontWeight: '600',
@@ -355,6 +465,7 @@ export default StyleSheet.create({
     resizeMode: 'contain',
   },
   button: {
+    color: colors.white,
     backgroundColor: colors.primary,
     paddingVertical: 10,
     paddingHorizontal: 20,
@@ -365,6 +476,8 @@ export default StyleSheet.create({
     color: colors.white,
     fontWeight: 'bold',
     fontSize: 16,
+    textAlign: 'center',
+
   },
   completedText: {
     fontSize: 18,
@@ -393,4 +506,23 @@ export default StyleSheet.create({
     color: colors.dark_gray,
     textAlign: 'center',
   },
+  picker: {
+    borderWidth: 0,
+    backgroundColor: colors.bg_gray,
+    marginBottom: 10,
+  },
+  pickerLabel: {
+    fontWeight: 'bold',
+    fontSize: sizes.l,
+    textAlign: 'center',
+    left: width * 0.04,
+    borderWidth: 0,
+  },
+  pickerDropDownContainer:
+  {
+    backgroundColor: colors.white,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.light_gray,
+  }
 });

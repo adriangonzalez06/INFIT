@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput, Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Header from '../src/components/Header';
+import { StatusBar } from 'expo-status-bar';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import axios from 'axios';
+
 
 const SUGERENCIAS = {
   piernas: ['Sentadillas', 'Zancadas', 'Peso muerto rumano'],
@@ -18,21 +23,39 @@ const rutinasPredefinidas = [
   {
     id: 'piernas',
     nombre: 'Piernas explosivas',
-    ejercicios: ['Sentadillas', 'Zancadas', 'Peso muerto rumano'],
+    ejercicios: [
+      { id: 'p1', nombre: 'Sentadillas', series: '4', repeticiones: '12', peso: '60', animacion: require('../assets/ejercicios/sentadilla.json') },
+      { id: 'p2', nombre: 'Zancadas', series: '3', repeticiones: '10', peso: '20', image: 'https://media.istockphoto.com/id/1310156903/photo/young-woman-doing-lunges-exercise-at-home.jpg?s=612x612&w=0&k=20&c=JCcun30_jK-9_I0E6-I6tUaM0V7QO8_l7v5Z1S_V8_M=' },
+      { id: 'p3', nombre: 'Peso muerto rumano', series: '4', repeticiones: '10', peso: '50', image: 'https://images.squarespace-cdn.com/content/v1/594c3dcd37c58189856cc33b/1589139825444-2L3LXZO3M5ZG1Z3Z3V3Z/Romanian+Deadlift' },
+      { id: 'p4', nombre: 'Prensa de piernas', series: '3', repeticiones: '15', peso: '100', image: 'https://www.verywellfit.com/thmb/Jz_vHwKk_lG5n2u0Y2G9X_4V-I8=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/81-3120071-Leg-Press-GIF-669357e6005740348705009a259c7d81.gif' },
+      { id: 'p5', nombre: 'Extensión de cuádriceps', series: '3', repeticiones: '12', peso: '40', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/LEG-EXTENSION.gif' },
+    ],
     dificultad: 'Intermedio',
     color: '#ef2b2d',
   },
   {
     id: 'espalda',
     nombre: 'Espalda fuerte',
-    ejercicios: ['Dominadas', 'Remo con barra', 'Peso muerto'],
+    ejercicios: [
+      { id: 'e1', nombre: 'Dominadas', series: '4', repeticiones: '8', peso: '0', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/PULL-UP.gif' },
+      { id: 'e2', nombre: 'Remo con barra', series: '4', repeticiones: '10', peso: '40', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/BARBELL-BENT-OVER-ROW.gif' },
+      { id: 'e3', nombre: 'Peso muerto', series: '3', repeticiones: '8', peso: '80', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/BARBELL-DEADLIFT.gif' },
+      { id: 'e4', nombre: 'Jalón al pecho', series: '4', repeticiones: '12', peso: '50', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/LAT-PULLDOWN.gif' },
+      { id: 'e5', nombre: 'Remo en polea baja', series: '3', repeticiones: '12', peso: '45', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/04/Seated-Cable-Row.gif' },
+    ],
     dificultad: 'Avanzado',
     color: '#2a9d8f',
   },
   {
     id: 'pecho',
     nombre: 'Pecho definido',
-    ejercicios: ['Press banca', 'Flexiones', 'Press inclinado'],
+    ejercicios: [
+      { id: 'c1', nombre: 'Press banca', series: '4', repeticiones: '10', peso: '60', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/BARBELL-BENCH-PRESS.gif' },
+      { id: 'c2', nombre: 'Flexiones', series: '3', repeticiones: '20', peso: '0', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/PUSH-UP.gif' },
+      { id: 'c3', nombre: 'Press inclinado', series: '4', repeticiones: '10', peso: '50', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/INCLINE-BARBELL-BENCH-PRESS.gif' },
+      { id: 'c4', nombre: 'Aperturas con mancuernas', series: '3', repeticiones: '12', peso: '15', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/DUMBBELL-FLY.gif' },
+      { id: 'c5', nombre: 'Fondos en paralelas', series: '3', repeticiones: '10', peso: '0', image: 'https://fitnessprogramer.com/wp-content/uploads/2021/06/Triceps-Dips.gif' },
+    ],
     dificultad: 'Principiante',
     color: '#f4a261',
   },
@@ -46,18 +69,77 @@ export default function Rutinas() {
   const [nombreRutina, setNombreRutina] = useState('');
   const [sugerencias, setSugerencias] = useState([]);
   const [dificultad, setDificultad] = useState(null);
-  const [busqueda, setBusqueda] = useState('');
+  const [userName, setUserName] = useState('');
   const [opcionesVisible, setOpcionesVisible] = useState(false);
   const [rutinaSeleccionada, setRutinaSeleccionada] = useState(null);
 
   useEffect(() => {
+    // 1. Cargar rutinas de AsyncStorage
     const cargarRutinas = async () => {
-      const data = await AsyncStorage.getItem('rutinas');
-      if (data) {
-        setRutinas(JSON.parse(data));
+      try {
+        const data = await AsyncStorage.getItem('rutinas');
+        const parsed = data ? JSON.parse(data) : { grupo1: [], predefinidas: rutinasPredefinidas };
+
+        // Sincronizar predefinidas para incluir nuevas imágenes/animaciones
+        const syncPredefinidas = rutinasPredefinidas.map(original => {
+          const saved = (parsed.predefinidas || []).find(p => p.id === original.id);
+          if (!saved) return original;
+
+          // Mezclar ejercicios: mantener series/reps/peso del usuario, pero usar imagen/animación de la constante
+          const mergedEjercicios = original.ejercicios.map(oe => {
+            const se = saved.ejercicios.find(e => e.id === oe.id || e.nombre === oe.nombre);
+            if (!se) return oe;
+            return { ...oe, ...se, image: oe.image, animacion: oe.animacion };
+          });
+
+          return { ...saved, ejercicios: mergedEjercicios };
+        });
+
+        setRutinas({
+          grupo1: parsed.grupo1 || [],
+          predefinidas: syncPredefinidas
+        });
+      } catch (e) {
+        console.error('Error cargando rutinas:', e);
       }
     };
     cargarRutinas();
+
+    // 2. Cargar nombre de usuario (Quick cache + Firebase listener)
+    const setupIdentidad = async () => {
+      const cachedName = await AsyncStorage.getItem('userName');
+      if (cachedName) setUserName(cachedName);
+
+      const auth = getAuth();
+      const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
+        if (firebaseUser) {
+          try {
+            const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+            const resp = await axios.get(
+              `http://${host}:8082/api/usuarios/buscar/email/${encodeURIComponent(firebaseUser.email)}`,
+              { timeout: 5000 }
+            );
+            if (resp.data && resp.data.nombre) {
+              setUserName(resp.data.nombre);
+              await AsyncStorage.setItem('userName', resp.data.nombre);
+            } else {
+              setUserName(firebaseUser.displayName || firebaseUser.email.split('@')[0]);
+            }
+          } catch (e) {
+            console.warn('Error fetching backend user name in Rutinas:', e.message);
+            setUserName(firebaseUser.displayName || firebaseUser.email.split('@')[0]);
+          }
+        }
+      });
+      return unsub;
+    };
+
+    let authUnsub;
+    setupIdentidad().then(unsub => { authUnsub = unsub; });
+
+    return () => {
+      if (authUnsub) authUnsub();
+    };
   }, []);
 
 
@@ -90,7 +172,7 @@ export default function Rutinas() {
 
     const nuevasRutinas = {
       ...rutinas,
-      [grupoActivo]: [...rutinas[grupoActivo], nuevaRutina],
+      [grupoActivo]: [...(rutinas[grupoActivo] || []), nuevaRutina],
     };
 
     setRutinas(nuevasRutinas);
@@ -107,14 +189,16 @@ export default function Rutinas() {
       rutina,
       grupoKey,
       actualizarRutina: async (rutinaActualizada) => {
-        const nuevasRutinas = {
-          ...rutinas,
-          [grupoKey]: rutinas[grupoKey].map((r) =>
-            r.id === rutinaActualizada.id ? rutinaActualizada : r
-          ),
-        };
-        setRutinas(nuevasRutinas);
-        await guardarEnStorage(nuevasRutinas);
+        setRutinas(prev => {
+          const nuevasRutinas = {
+            ...prev,
+            [grupoKey]: (prev[grupoKey] || []).map((r) =>
+              r.id === rutinaActualizada.id ? rutinaActualizada : r
+            ),
+          };
+          guardarEnStorage(nuevasRutinas);
+          return nuevasRutinas;
+        });
       },
     });
   };
@@ -127,7 +211,7 @@ export default function Rutinas() {
   const handleEliminarRutina = async () => {
     const nuevasRutinas = {
       ...rutinas,
-      grupo1: rutinas.grupo1.filter((r) => r.id !== rutinaSeleccionada.id),
+      grupo1: (rutinas.grupo1 || []).filter((r) => r.id !== rutinaSeleccionada.id),
     };
     setRutinas(nuevasRutinas);
     await guardarEnStorage(nuevasRutinas);
@@ -138,7 +222,7 @@ export default function Rutinas() {
     const copia = { ...rutinaSeleccionada, id: Date.now().toString() };
     const nuevasRutinas = {
       ...rutinas,
-      grupo1: [...rutinas.grupo1, copia],
+      grupo1: [...(rutinas.grupo1 || []), copia],
     };
     setRutinas(nuevasRutinas);
     await guardarEnStorage(nuevasRutinas);
@@ -146,15 +230,11 @@ export default function Rutinas() {
   };
 
   const renderGrupo = (titulo, rutinasGrupo, grupoKey) => {
-    const filtradas = rutinasGrupo.filter((r) =>
-      r.nombre.toLowerCase().includes(busqueda.toLowerCase())
-    );
-
     return (
       <View style={styles.grupoContainer}>
         <Text style={styles.grupoTitulo}>{titulo}</Text>
         <View style={styles.rutinasRow}>
-          {filtradas.map((rutina) => (
+          {(rutinasGrupo || []).map((rutina) => (
             <TouchableOpacity
               key={rutina.id}
               style={[styles.rutinaCard, { backgroundColor: rutina.color || '#ccc' }]}
@@ -183,11 +263,12 @@ export default function Rutinas() {
     <View style={styles.grupoContainer}>
       <Text style={styles.grupoTitulo}>Rutinas recomendadas</Text>
       <View style={styles.rutinasRow}>
-        {rutinasPredefinidas.map((rutina) => (
+        {(rutinas.predefinidas || rutinasPredefinidas).map((rutina) => (
           <TouchableOpacity
             key={rutina.id}
             style={[styles.rutinaCard, { backgroundColor: rutina.color }]}
             onPress={() => handleEntrarRutina(rutina, 'predefinidas')}
+            onLongPress={() => handleLongPress(rutina)}
           >
             <Ionicons name="barbell" size={24} color="#fff" />
             <Text style={styles.rutinaTexto}>{rutina.nombre}</Text>
@@ -202,20 +283,15 @@ export default function Rutinas() {
 
   return (
     <View style={styles.container}>
+      <StatusBar style="auto" />
+      <Header title="Rutinas" showBackButton={false} />
 
-      <Text style={styles.title}>Mis rutinas</Text>
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
-      </TouchableOpacity>
+      <View style={styles.greetingContainer}>
+        <Text style={styles.greetingText}>Hola {userName || 'usuario'},</Text>
+        <Text style={styles.subGreetingText}>¿listo para entrenar?</Text>
+      </View>
 
-      <TextInput
-        style={styles.searchInput}
-        placeholder="Buscar rutinas"
-        value={busqueda}
-        onChangeText={setBusqueda}
-      />
-
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {renderPredefinidas()}
         {renderGrupo('Mis rutinas personalizadas', rutinas.grupo1, 'grupo1')}
       </ScrollView>
@@ -282,7 +358,9 @@ export default function Rutinas() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Opciones</Text>
-            <TouchableOpacity onPress={() => handleEntrarRutina(rutinaSeleccionada, 'grupo1')}>
+            <TouchableOpacity onPress={() => {
+              if (rutinaSeleccionada) handleEntrarRutina(rutinaSeleccionada, 'grupo1');
+            }}>
               <Text style={styles.modalButtonText}>Editar</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={handleDuplicarRutina}>
@@ -301,175 +379,145 @@ export default function Rutinas() {
   );
 }
 
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingTop: 60,
+    paddingHorizontal: 20,
+    backgroundColor: '#fff',
+  },
+  greetingContainer: {
+    paddingVertical: 15,
+    marginBottom: 10,
 
-
-
-
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      paddingTop: 60,
-      paddingHorizontal: 20,
-      backgroundColor: '#fff',
-    },
-
-    backButton: {
-      position: 'absolute',
-      top: 60,
-      left: 20,
-      zIndex: 10,
-    },
-
-    title: {
-      fontSize: 28,
-      fontWeight: 'bold',
-      color: '#ef2b2d',
-      marginBottom: 20,
-      textAlign: 'center',
-    },
-
-    searchInput: {
-      borderWidth: 1,
-      borderColor: '#ccc',
-      borderRadius: 8,
-      padding: 10,
-      marginBottom: 20,
-    },
-
-    scrollContent: {
-      paddingBottom: 40,
-    },
-
-    grupoContainer: {
-      marginBottom: 30,
-    },
-
-    grupoTitulo: {
-      fontSize: 18,
-      fontWeight: '600',
-      marginBottom: 10,
-      color: '#333',
-    },
-
-    rutinasRow: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 12,
-    },
-
-    rutinaCard: {
-      width: 140,
-      height: 120,
-      borderRadius: 12,
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: 10,
-    },
-
-    rutinaTexto: {
-      fontSize: 16,
-      color: '#fff',
-      fontWeight: '600',
-      marginTop: 8,
-    },
-
-    rutinaSubTexto: {
-      fontSize: 12,
-      color: '#fff',
-    },
-
-    addCard: {
-      width: 140,
-      height: 120,
-      borderRadius: 12,
-      borderWidth: 2,
-      borderColor: '#ef2b2d',
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: '#fff',
-    },
-
-    modalOverlay: {
-      flex: 1,
-      backgroundColor: 'rgba(0,0,0,0.4)',
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-
-    modalContent: {
-      backgroundColor: '#fff',
-      padding: 20,
-      borderRadius: 12,
-      width: '85%',
-
-    },
-
-    modalTitle: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      marginBottom: 10,
-    },
-
-    input: {
-      borderWidth: 1,
-      borderColor: '#ccc',
-      borderRadius: 8,
-      padding: 10,
-      marginBottom: 10,
-    },
-
-    sugerenciasContainer: {
-      marginBottom: 10,
-    },
-
-    sugerenciasTitulo: {
-      fontWeight: '600',
-      marginBottom: 5,
-    },
-
-    chipsContainer: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 8,
-    },
-
-    chip: {
-      borderWidth: 1,
-      borderColor: '#ccc',
-      borderRadius: 20,
-      paddingVertical: 6,
-      paddingHorizontal: 12,
-    },
-
-    chipSelected: {
-      backgroundColor: '#ef2b2d',
-      borderColor: '#ef2b2d',
-    },
-
-    chipText: {
-      fontSize: 14,
-      color: '#333',
-    },
-
-    chipTextSelected: {
-      color: '#fff',
-    },
-
-    modalButtons: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginTop: 20,
-    },
-
-    modalButton: {
-      backgroundColor: '#ef2b2d',
-      paddingVertical: 10,
-      paddingHorizontal: 20,
-      borderRadius: 8,
-    },
-
-    modalButtonText: {
-      color: '#333',
-      fontWeight: '600',
-    },
-  });
+  },
+  greetingText: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+  },
+  subGreetingText: {
+    fontSize: 18,
+    color: '#666',
+    marginTop: 2,
+    position: 'center',
+    textAlign: 'center',
+  },
+  scrollContent: {
+    paddingBottom: 40,
+  },
+  grupoContainer: {
+    marginBottom: 30,
+  },
+  grupoTitulo: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 10,
+    color: '#333',
+  },
+  rutinasRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  rutinaCard: {
+    width: 140,
+    height: 120,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 10,
+  },
+  rutinaTexto: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: '600',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  rutinaSubTexto: {
+    fontSize: 12,
+    color: '#fff',
+    marginTop: 4,
+  },
+  addCard: {
+    width: 140,
+    height: 120,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#ef2b2d',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 12,
+    width: '85%',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 10,
+  },
+  sugerenciasContainer: {
+    marginBottom: 10,
+  },
+  sugerenciasTitulo: {
+    fontWeight: '600',
+    marginBottom: 5,
+  },
+  chipsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  chip: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 20,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  chipSelected: {
+    backgroundColor: '#ef2b2d',
+    borderColor: '#ef2b2d',
+  },
+  chipText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  chipTextSelected: {
+    color: '#fff',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+  },
+  modalButton: {
+    backgroundColor: '#ef2b2d',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  modalButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+});

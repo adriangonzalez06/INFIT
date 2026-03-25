@@ -14,19 +14,20 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
 import colors from './colors';
-
+import MainTabs from './MainTabs';
+import { NavigationContainer } from '@react-navigation/native';
 import {
   getAuth,
   getReactNativePersistence,
   createUserWithEmailAndPassword,
 } from 'firebase/auth';
 import { initializeApp, getApps } from 'firebase/app';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { firebaseConfig } from '../firebaseConfig';
-import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const auth = getAuth(app, {
-  persistence: getReactNativePersistence(ReactNativeAsyncStorage),
+  persistence: getReactNativePersistence(AsyncStorage),
 });
 
 
@@ -73,6 +74,7 @@ function RegisterScreen({ navigation }) {
 
       // Crear usuario en Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
+
       const user = userCredential.user;
       console.log('Cuenta creada en Firebase:', user.uid);
 
@@ -82,17 +84,27 @@ function RegisterScreen({ navigation }) {
         timeout: 10000,
       });
 
+
       // Verificar respuesta
       if (resp.status === 201 || resp.status === 200) {
         console.log('Datos guardados en la base de datos');
         setError('');
-        navigation.navigate('Login');
+        //Recibimos la respuesta del servidor (id del usuario para despues sacara el nombre)
+        const idUser = resp.data?.id;
+        const streakVal = 0;
+        if (idUser) {
+          //Y la guardamos en el local de la aplicacion
+          await AsyncStorage.setItem('userId', idUser);
+          await AsyncStorage.setItem('streak', streakVal.toString());
+          console.log('userId guardado en AsyncStorage:', idUser, streakVal);
+        }
+        navigation.navigate('MainTabs')
       } else {
         // Si la creación en el backend falla, eliminar el usuario de Firebase para no dejar huérfano
         await user.delete();
         throw new Error('No se pudo crear el usuario en el backend, por favor vuelva a intentarlo.');
       }
-      
+
     } catch (error) {
       // Mejor logging para diagnosticar Network Error
       console.error('Error al registrar:', error?.message || error);
@@ -165,12 +177,12 @@ function RegisterScreen({ navigation }) {
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
-          <TouchableOpacity style={styles.boton} onPress={handleRegister}>
+          <TouchableOpacity style={styles.boton} onPress={(handleRegister)}>
             <Text style={styles.botonTexto}>Registrarse</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-            <Text style={styles.link}>¿Ya tienes cuenta? Inicia sesión</Text>
+          <TouchableOpacity style={styles.boton} onPress={() => navigation.navigate('Login')}>
+            <Text style={styles.botonTexto}>¿Ya tienes cuenta? Inicia sesión</Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>

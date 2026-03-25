@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,8 +8,14 @@ import {
   Modal,
   ScrollView,
   StyleSheet,
+  Image,
+  Platform,
+  Alert
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import LottieView from 'lottie-react-native';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function PantallaRutina({ route, navigation }) {
   const { rutina, grupoKey, actualizarRutina } = route.params;
@@ -17,30 +23,153 @@ export default function PantallaRutina({ route, navigation }) {
   const [buscadorVisible, setBuscadorVisible] = useState(false);
   const [filtro, setFiltro] = useState('');
 
+  // Estado del menú bonito
+  const [opcionesVisible, setOpcionesVisible] = useState(false);
+  const [ejercicioSeleccionado, setEjercicioSeleccionado] = useState(null);
+
+  // Estado para los ejercicios obtenidos del backend
+  const [backendExercises, setBackendExercises] = useState({}); // { [grupo]: [ejercicios] }
+  const [userId, setUserId] = useState(null);
+
+  // Helper para URL
+  const getBackendUrl = (path) => {
+    const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+    return `http://${host}:8082/api${path}`;
+  };
+  // Modal de detalles
+  const [detallesVisible, setDetallesVisible] = useState(false);
+  const [ejercicioEnEdicion, setEjercicioEnEdicion] = useState(null);
+  const [descripcionEjercicio, setDescripcionEjercicio] = useState('');
+  const [pesoEjercicio, setPesoEjercicio] = useState('');
+  const [repeticionesEjercicio, setRepeticionesEjercicio] = useState('');
+  const [series, setSeries] = useState('');
+
+  // NUEVO: modo edición
+  const [modoEdicion, setModoEdicion] = useState(false);
+
+  // Ejercicios predefinidos
   const ejerciciosPredefinidos = {
-    piernas: ['Sentadillas', 'Prensa', 'Zancadas', 'Peso muerto rumano'],
-    pecho: ['Press banca', 'Aperturas', 'Fondos', 'Press inclinado'],
-    espalda: ['Dominadas', 'Remo con barra', 'Peso muerto'],
-    hombros: ['Press militar', 'Elevaciones laterales', 'Pájaros'],
-    brazos: ['Curl bíceps', 'Extensión tríceps', 'Martillo'],
+    piernas: [
+      {
+        nombre: 'Sentadilla',
+        animacion: require('../assets/ejercicios/sentadilla.json'),
+        descripcion: 'Ejercicio básico de piernas que trabaja cuádriceps, glúteos y core.',
+      },
+    ],
   };
 
-  const handleAddEjercicio = (nombreEjercicio) => {
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const id = await AsyncStorage.getItem('userId');
+        if (id) setUserId(id);
+      } catch (e) {
+        console.error('Error getting userId:', e);
+      }
+    };
+    init();
+  }, []);
+
+  // Cargar ejercicios desde el backend
+  useEffect(() => {
+    const fetchExercises = async () => {
+      try {
+        const url = getBackendUrl('/exercises');
+        const response = await axios.get(url);
+
+        if (response.data) {
+          // Agrupar por muscular_group
+          const grouped = {};
+          response.data.forEach((ex) => {
+            const group = ex.muscular_group || 'General';
+            if (!grouped[group]) {
+              grouped[group] = [];
+            }
+            grouped[group].push(ex);
+          });
+          setBackendExercises(grouped);
+        }
+      } catch (error) {
+        console.error('Error fetching exercises:', error);
+      }
+    };
+
+    fetchExercises();
+  }, []);
+
+  // Autosave function
+  const saveRoutineChanges = async (newExercises) => {
+    if (!userId || !rutina.id) return;
+
+    try {
+      const url = getBackendUrl(`/routines/${userId}/${rutina.id}`);
+      const payload = {
+        exercises: newExercises
+      };
+      await axios.put(url, payload);
+    } catch (error) {
+      console.error('Error autosaving routine:', error);
+      Alert.alert('Error', 'No se pudieron guardar los cambios en la nube');
+    }
+  };
+
+  // Añadir ejercicio
+  const handleAddEjercicio = async (ejercicioObj) => {
     const nuevoEjercicio = {
       id: Date.now().toString(),
-      nombre: nombreEjercicio.trim(),
+      nombre: ejercicioObj.name || ejercicioObj.nombre,
+      animacion: ejercicioObj.animacion,
+      image: ejercicioObj.image,
+      gif: ejercicioObj.gif,
+      isBackend: true,
+      originalData: ejercicioObj,
     };
+
     const nuevaLista = [...ejercicios, nuevoEjercicio];
     setEjercicios(nuevaLista);
+    await saveRoutineChanges(nuevaLista);
     actualizarRutina({ ...rutina, ejercicios: nuevaLista });
+
     setBuscadorVisible(false);
     setFiltro('');
   };
 
+  const handleGoBack = () => {
+    navigation.goBack();
+  };
+
+  const handleDeleteEjercicio = async () => {
+    if (!ejercicioSeleccionado) return;
+
+    const nuevaLista = ejercicios.filter((e) => e.id !== ejercicioSeleccionado.id);
+    setEjercicios(nuevaLista);
+    await saveRoutineChanges(nuevaLista);
+    actualizarRutina({ ...rutina, ejercicios: nuevaLista });
+
+    setOpcionesVisible(false);
+  };
+
+  const handleDuplicateEjercicio = async () => {
+    if (!ejercicioSeleccionado) return;
+
+    const copia = {
+      ...ejercicioSeleccionado,
+      id: Date.now().toString(),
+    };
+
+    const nuevaLista = [...ejercicios, copia];
+    setEjercicios(nuevaLista);
+    await saveRoutineChanges(nuevaLista);
+    actualizarRutina({ ...rutina, ejercicios: nuevaLista });
+
+    setOpcionesVisible(false);
+  };
+
   return (
     <View style={styles.rutinaContainer}>
+      {/* HEADER */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="#ef2b2d" />
         </TouchableOpacity>
         <Text style={styles.title}>{rutina.nombre}</Text>
@@ -49,18 +178,57 @@ export default function PantallaRutina({ route, navigation }) {
         </TouchableOpacity>
       </View>
 
+      {/* LISTA DE EJERCICIOS */}
       <FlatList
+        contentContainerStyle={{ paddingTop: 0 }}
         data={ejercicios}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <View style={styles.ejercicioItem}>
-            <Text style={styles.ejercicioTexto}>{item.nombre}</Text>
-          </View>
+          <TouchableOpacity
+            onLongPress={() => {
+              setEjercicioSeleccionado(item);
+              setOpcionesVisible(true);
+            }}
+          >
+            <View style={styles.ejercicioItem}>
+              {item.animacion ? (
+                <LottieView
+                  source={item.animacion}
+                  autoPlay
+                  loop
+                  style={styles.iconoGif}
+                />
+              )
+                : item.image ? (
+                  <Image
+                    source={{ uri: item.image }}
+                    style={styles.iconoGif}
+                    resizeMode="cover"
+                    resizeMethod="resize"
+                    onError={(e) => console.log(`Error loading image for ${item.nombre}:`, e.nativeEvent.error)}
+                  />
+                ) : (
+                  <Ionicons name="barbell-outline" size={40} color="#555" />
+                )}
+
+              <View style={styles.rowBetween}>
+                <Text style={styles.ejercicioTexto}>{item.nombre}</Text>
+
+                {item.series && item.repeticiones && item.peso && (
+                  <Text style={styles.datosEjercicio}>
+                    {item.series}x{item.repeticiones}x{item.peso}
+                  </Text>
+                )}
+              </View>
+            </View>
+          </TouchableOpacity>
         )}
-        ListEmptyComponent={<Text style={styles.emptyText}>No hay ejercicios añadidos aún.</Text>}
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>No hay ejercicios añadidos aún.</Text>
+        }
       />
 
-      {/* Modal buscador */}
+      {/* MODAL BUSCADOR */}
       <Modal visible={buscadorVisible} transparent animationType="fade">
         <View style={styles.overlay}>
           <View style={styles.buscadorContainer}>
@@ -70,26 +238,254 @@ export default function PantallaRutina({ route, navigation }) {
               value={filtro}
               onChangeText={setFiltro}
             />
-            <ScrollView>
-              {Object.entries(ejerciciosPredefinidos).map(([grupo, lista]) => (
-                <View key={grupo}>
-                  <Text style={styles.grupoTitulo}>{grupo.toUpperCase()}</Text>
-                  {lista
-                    .filter((ej) => ej.toLowerCase().includes(filtro.toLowerCase()))
-                    .map((ejercicio) => (
+
+            <FlatList
+              data={Object.entries(backendExercises)}
+              keyExtractor={([grupo]) => grupo}
+              initialNumToRender={5}
+              maxToRenderPerBatch={10}
+              windowSize={5}
+              removeClippedSubviews={Platform.OS === 'android'}
+              renderItem={({ item: [grupo, lista] }) => {
+                const filteredList = lista.filter((ej) =>
+                  (ej.name || '').toLowerCase().includes(filtro.toLowerCase())
+                );
+
+                if (filteredList.length === 0) return null;
+
+                return (
+                  <View>
+                    <Text style={styles.grupoTitulo}>{grupo.toUpperCase()}</Text>
+                    {filteredList.map((ejercicio) => (
                       <TouchableOpacity
-                        key={ejercicio}
+                        key={ejercicio.id || ejercicio.name}
                         style={styles.ejercicioItemModal}
-                        onPress={() => handleAddEjercicio(ejercicio)}
+                        onPress={() => {
+                          setModoEdicion(false);
+                          setEjercicioEnEdicion(ejercicio);
+                          setDescripcionEjercicio(ejercicio.descripcion);
+                          setPesoEjercicio('');
+                          setRepeticionesEjercicio('');
+                          setSeries('');
+                          setDetallesVisible(true);
+                        }}
                       >
-                        <Text>{ejercicio}</Text>
+                        <View style={styles.row}>
+                          {ejercicio.animacion ? (
+                            <LottieView
+                              source={ejercicio.animacion}
+                              autoPlay
+                              loop
+                              style={styles.iconoGif}
+                            />
+                          ) : ejercicio.image ? (
+                            <Image
+                              source={{ uri: ejercicio.image }}
+                              style={styles.iconoGif}
+                              resizeMode="cover"
+                              resizeMethod="resize" // Optimizes memory on Android
+                              onError={(e) => console.log(`Error loading modal image for ${ejercicio.name}:`, e.nativeEvent.error)}
+                            />
+                          ) : (
+                            <Ionicons name="fitness" size={40} color="#ef2b2d" />
+                          )}
+                          <Text style={{ flex: 1, flexWrap: 'wrap' }}>{ejercicio.name || ejercicio.nombre}</Text>
+                        </View>
                       </TouchableOpacity>
                     ))}
-                </View>
-              ))}
-            </ScrollView>
-            <TouchableOpacity onPress={() => setBuscadorVisible(false)} style={styles.cerrar}>
+                  </View>
+                );
+              }}
+              ListEmptyComponent={
+                <Text style={{ textAlign: 'center', padding: 20 }}>
+                  {Object.keys(backendExercises).length === 0 ? 'Cargando ejercicios...' : 'No se encontraron ejercicios.'}
+                </Text>
+              }
+            />
+
+            <TouchableOpacity
+              onPress={() => setBuscadorVisible(false)}
+              style={styles.cerrar}
+            >
               <Text style={styles.cerrarTexto}>Cerrar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* MODAL OPCIONES */}
+      <Modal visible={opcionesVisible} transparent animationType="fade">
+        <View style={styles.optionsOverlay}>
+          <View style={styles.optionsCard}>
+            <Text style={styles.optionsTitle}>Opciones del ejercicio</Text>
+
+            {/* BOTÓN EDITAR */}
+            <TouchableOpacity
+              style={styles.optionButton2}
+              onPress={() => {
+                setOpcionesVisible(false);
+                setModoEdicion(true);
+
+                setEjercicioEnEdicion(ejercicioSeleccionado);
+                setDescripcionEjercicio(ejercicioSeleccionado.descripcion || '');
+                setPesoEjercicio(ejercicioSeleccionado.peso || '');
+                setRepeticionesEjercicio(ejercicioSeleccionado.repeticiones || '');
+                setSeries(ejercicioSeleccionado.series || '');
+
+                setDetallesVisible(true);
+              }}
+            >
+              <Ionicons name="create-outline" size={22} color="#ef2b2d" />
+              <Text style={styles.optionText}>Editar ejercicio</Text>
+            </TouchableOpacity>
+
+            {/* DUPLICAR */}
+            <TouchableOpacity
+              style={styles.optionButton2}
+              onPress={() => {
+                handleDuplicateEjercicio();
+              }}
+            >
+              <Ionicons name="copy-outline" size={22} color="#ef2b2d" />
+              <Text style={styles.optionText}>Duplicar ejercicio</Text>
+            </TouchableOpacity>
+
+            {/* ELIMINAR */}
+            <TouchableOpacity
+              style={[styles.optionButton2, styles.deleteButton]}
+              onPress={() => {
+                handleDeleteEjercicio();
+              }}
+            >
+              <Ionicons name="trash-outline" size={22} color="#fff" />
+              <Text style={[styles.optionText, { color: '#fff' }]}>
+                Eliminar ejercicio
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={() => setOpcionesVisible(false)}
+            >
+              <Text style={styles.cancelText}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* MODAL DETALLES */}
+      <Modal visible={detallesVisible} transparent animationType="slide">
+        <View style={styles.optionsOverlay}>
+          <View style={styles.optionsCard}>
+            <Text style={styles.optionsTitle}>{ejercicioEnEdicion?.nombre || ejercicioEnEdicion?.name}</Text>
+
+            {ejercicioEnEdicion?.animacion ? (
+              <LottieView
+                source={ejercicioEnEdicion.animacion}
+                autoPlay
+                loop
+                style={{ width: 150, height: 150, alignSelf: 'center' }}
+              />
+            ) : ejercicioEnEdicion?.image ? (
+              <Image
+                source={{ uri: ejercicioEnEdicion.image }}
+                style={{ width: 150, height: 150, alignSelf: 'center', borderRadius: 10 }}
+                resizeMode="cover"
+              />
+            ) : null}
+
+            <TextInput
+              style={styles.inputDescripcion}
+              value={descripcionEjercicio}
+              editable={false}
+              multiline
+            />
+
+            <TextInput
+              style={styles.input}
+              placeholder="Repeticiones"
+              keyboardType="numeric"
+              value={repeticionesEjercicio}
+              onChangeText={setRepeticionesEjercicio}
+            />
+
+            <TextInput
+              style={styles.input}
+              placeholder="Peso (kg)"
+              keyboardType="numeric"
+              value={pesoEjercicio}
+              onChangeText={setPesoEjercicio}
+            />
+
+            <TextInput
+              style={styles.input}
+              placeholder="Series"
+              keyboardType="numeric"
+              value={series}
+              onChangeText={setSeries}
+            />
+
+            {/* GUARDAR */}
+            <TouchableOpacity
+              style={styles.optionButton}
+              onPress={() => {
+                if (modoEdicion) {
+                  // EDITAR
+                  const actualizado = {
+                    ...ejercicioEnEdicion,
+                    descripcion: descripcionEjercicio,
+                    series,
+                    repeticiones: repeticionesEjercicio,
+                    peso: pesoEjercicio,
+                  };
+
+                  const nuevaLista = ejercicios.map((e) =>
+                    e.id === ejercicioEnEdicion.id ? actualizado : e
+                  );
+
+                  setEjercicios(nuevaLista);
+                  actualizarRutina({ ...rutina, ejercicios: nuevaLista });
+                  setModoEdicion(false);
+
+                } else {
+                  // AÑADIR
+                  const nuevo = {
+                    id: Date.now().toString(),
+                    nombre: ejercicioEnEdicion.nombre || ejercicioEnEdicion.name,
+                    animacion: ejercicioEnEdicion.animacion,
+                    image: ejercicioEnEdicion.image,
+                    gif: ejercicioEnEdicion.gif,
+                    descripcion: descripcionEjercicio,
+                    series,
+                    repeticiones: repeticionesEjercicio,
+                    peso: pesoEjercicio,
+                  };
+
+                  const nuevaLista = [...ejercicios, nuevo];
+                  setEjercicios(nuevaLista);
+                  actualizarRutina({ ...rutina, ejercicios: nuevaLista });
+                }
+
+                setDetallesVisible(false);
+                setBuscadorVisible(false);
+              }}
+            >
+              <Ionicons
+                name="checkmark-circle-outline"
+                size={22}
+                color="#3a9238ff"
+              />
+              <Text style={styles.optionText}>Guardar ejercicio</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={() => {
+                setModoEdicion(false);
+                setDetallesVisible(false);
+              }}
+            >
+              <Text style={styles.cancelText}>Cancelar</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -98,18 +494,20 @@ export default function PantallaRutina({ route, navigation }) {
   );
 }
 
+/* ===================== ESTILOS ===================== */
+
 const styles = StyleSheet.create({
-  container: {
+  rutinaContainer: {
     flex: 1,
     paddingTop: 60,
-    paddingHorizontal: 20,
-    backgroundColor: '#fff',
+    marginTop: 20,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
+    paddingHorizontal: 20,
   },
   title: {
     fontSize: 22,
@@ -117,13 +515,28 @@ const styles = StyleSheet.create({
     color: '#ef2b2d',
   },
   ejercicioItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
+    paddingHorizontal: 20,
   },
   ejercicioTexto: {
     fontSize: 16,
     color: '#111',
+  },
+  datosEjercicio: {
+    fontSize: 16,
+    color: '#555',
+    fontWeight: '600',
+  },
+  rowBetween: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    flex: 1,
+    alignItems: 'center',
   },
   emptyText: {
     textAlign: 'center',
@@ -151,11 +564,38 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     backgroundColor: '#fff',
   },
-
+  inputDescripcion: {
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 15,
+    height: 80,
+    textAlign: 'center',
+    marginTop: 20,
+  },
+  grupoTitulo: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    marginTop: 12,
+    color: '#ef2b2d',
+  },
   ejercicioItemModal: {
     paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
+  },
+  ejercicioItemModalText: {
+    fontSize: 16,
+    color: '#111',
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  iconoGif: {
+    width: 40,
+    height: 40,
   },
   cerrar: {
     marginTop: 10,
@@ -165,9 +605,65 @@ const styles = StyleSheet.create({
     color: '#ef2b2d',
     fontWeight: '600',
   },
-  rutinaContainer: {
+  optionsOverlay: {
     flex: 1,
-    paddingTop: 60,
-    marginTop: 20,
-  }
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  optionsCard: {
+    width: '100%',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    elevation: 10,
+  },
+  optionsTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 20,
+    textAlign: 'center',
+    color: '#333',
+  },
+  optionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    backgroundColor: '#27894920',
+    marginBottom: 12,
+    gap: 10,
+  },
+  optionButton2: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    backgroundColor: '#a6a6a620',
+    marginBottom: 12,
+    gap: 10,
+  },
+  optionText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+  },
+  deleteButton: {
+    backgroundColor: '#ef2b2d',
+  },
+  cancelButton: {
+    marginTop: 10,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: '#bbbbbbff',
+  },
+  cancelText: {
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#ef2b2d',
+  },
 });

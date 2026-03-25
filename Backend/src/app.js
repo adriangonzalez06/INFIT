@@ -36,6 +36,12 @@ app.get("/", (req, res) => {
 try {
   const usersRouter = require('./routes/users.routes');
   app.use('/api/usuarios', usersRouter);
+  const freeusersRouter = require('./routes/freeUsers');
+  app.use('/api/freeUsers', freeusersRouter);
+  const exercisesRouter = require('./routes/exercises');
+  app.use('/api/exercises', exercisesRouter);
+  const routinesRouter = require('./routes/routines');
+  app.use('/api/routines', routinesRouter);
 } catch (e) {
   console.error('Error cargando routes/users.routes:', e);
 }
